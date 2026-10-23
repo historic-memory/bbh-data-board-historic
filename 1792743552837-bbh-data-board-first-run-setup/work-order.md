@@ -1,5 +1,6 @@
 ---
 title: "WO-01 — First Run Setup via Docker Compose"
+type: work-order
 description: "Implementasi first-run BBH Data Board melalui Docker Compose untuk app, postgres, pgadmin, dan keydb. Setiap checkpoint adalah goal yang harus dibuktikan."
 status: draft
 created: "2026-10-23"

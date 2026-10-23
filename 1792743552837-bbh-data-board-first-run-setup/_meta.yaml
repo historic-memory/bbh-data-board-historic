@@ -8,6 +8,6 @@ files:
       status: complete
     - id: 01a167f4-728d-78ac-8ed0-0b1e21dec0cf
       path: work-order.md
-      type: work-order
+      type: file
       status: complete
 assets: []

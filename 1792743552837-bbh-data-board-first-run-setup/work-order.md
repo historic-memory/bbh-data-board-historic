@@ -195,9 +195,9 @@ Perubahan kunci: **app container Go-only tanpa Node.js** (D-9); frontend deps & 
 | Source mount atau working directory salah | Pastikan repo host dimount ke `/src` dan command dijalankan dari root project di container. |
 
 ## Definition of Done
-- [ ] CP-1 sampai CP-6 semuanya PASS dengan bukti yang tercatat.
-- [ ] Semua SPEC AC terverifikasi atau setiap pengecualian disetujui dan dicatat.
-- [ ] Container `app` tetap idle setelah `docker compose up`; app server/build/test hanya berjalan setelah perintah `exec` eksplisit.
-- [ ] Tidak ada source code aplikasi, migrasi, atau schema bisnis yang diubah/dibuat.
-- [ ] Hanya empat service yang disepakati tersedia.
-- [ ] Risiko data loss akibat `down -v` dijelaskan dengan jelas.
+- [x] CP-1 sampai CP-6 semuanya PASS dengan bukti yang tercatat.
+- [x] Semua SPEC AC terverifikasi atau setiap pengecualian disetujui dan dicatat.
+- [x] Container `app` tetap idle setelah `docker compose up`; app server/build/test hanya berjalan setelah perintah `exec` eksplisit.
+- [x] Tidak ada source code aplikasi, migrasi, atau schema bisnis yang diubah/dibuat.
+- [x] Hanya empat service yang disepakati tersedia.
+- [x] Risiko data loss akibat `down -v` dijelaskan dengan jelas.

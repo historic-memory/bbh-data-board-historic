@@ -28,7 +28,7 @@ Membangun plugin `auth` yang menyediakan **JWT authentication** + **HTTP API** (
 | D-6 | HTTP API CRUD Admin/Member | CRUD admin: hanya root; CRUD member: authenticated admin; route di `/api/admins` dan `/api/members` dengan REST methods |
 | D-7 | Flag Root | Boolean `is_root` pada tabel `admins`. Admin dengan `is_root=true` punya hak administratif penuh; `is_root=false` tidak dapat mengelola admin atau privilege root |
 | D-8 | Change Password | CLI admin: target ID + new password (tanpa old password); HTTP: admin yang sudah login boleh mengganti password akun sendiri dengan new password |
-| D-9 | Migration | Eksplisit menggunakan `plugins/auth/migrations/postgres/*.up.sql` dan `*.down.sql`; jalankan `console migrate up --plugin auth`; tidak ada AutoMigrate saat runtime |
+| D-9 | Migration | Eksplisit menggunakan `plugins/auth/migrations/postgres/*.up.sql` dan `*.down.sql`; gunakan `console migrate make --plugin auth <name>` setelah plugin terdaftar, lalu `console migrate up --plugin auth`; tidak ada AutoMigrate saat runtime |
 | D-10 | ID Utama | UUID v7 sebagai base ID semua tabel (`admins`, `members`) — digenerate di aplikasi via `internal/uuid/uuidv7.go` (`NewString()`), kolom disimpan sebagai `TEXT` PK (portabel lintas DB, tidak bergantung `gen_random_uuid()`/ekstensi). Setiap `INSERT` wajib mengisi `id` eksplisit |
 | D-11 | Member Management | Ya, sama seperti admin: CLI commands dan HTTP API (admin/root saja untuk CRUD) |
 | D-12 | Middleware | `auth_required` middleware untuk guarded routes (`/api/admins/*`, `/api/members/*`, `/api/admin/me`, dst.). Token dikirim via header `Authorization: Bearer <token>` |
@@ -65,8 +65,8 @@ Membangun plugin `auth` yang menyediakan **JWT authentication** + **HTTP API** (
 - `updated_at` TIMESTAMPTZ NOT NULL DEFAULT NOW()
 - `deleted_at` TIMESTAMPTZ NULL
 
-- [AC-2] `console migrate make auth_admin` berhasil membuat file UP/DOWN migration.
-- [AC-3] `console migrate up` berhasil menjalankan migration — tabel ada di PGAdmin/psql setelahnya.
+- [AC-2] Setelah plugin `auth` diregistrasikan di console, `console migrate make --plugin auth create_auth_tables` membuat pasangan file UP/DOWN pada direktori migration plugin untuk diisi SQL schema.
+- [AC-3] `console migrate up --plugin auth` berhasil menjalankan migration — tabel ada di pgAdmin/psql setelahnya.
 - [AC-4] POST `/api/admin/login` dengan body `{email, password}` → sukses return `{access_token, expires_in}`, gagal return 401 JSON error.
 - [AC-5] POST `/api/admin/logout` invalidasi session (jika menggunakan refresh/blacklist) atau stateless return OK.
 - [AC-6] GET `/api/admin/me` dengan valid Bearer token → return profil admin saat ini; 401 jika token invalid/expired.

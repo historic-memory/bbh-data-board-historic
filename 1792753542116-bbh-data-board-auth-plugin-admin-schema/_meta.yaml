@@ -5,9 +5,9 @@ files:
     - id: 01a16870-5e45-7827-b933-01e5e7134439
       path: SPEC.md
       type: spec
-      status: draft
+      status: complete
     - id: 01a16870-5ebe-7251-bf8a-33bda940e01f
       path: work-order.md
-      type: work-order
+      type: file
       status: draft
 assets: []

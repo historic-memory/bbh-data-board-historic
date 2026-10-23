@@ -43,17 +43,16 @@ Mengimplementasikan plugin `auth` sesuai SPEC v2: dua tabel (`admins`, `members`
 **Deliverable:** direktori `plugins/auth/` hasil scaffold (`plugin.go`, `handlers/`, `services/`, `migrations/postgres/`, `events.go`); registrasi di `cmd/server/main.go` dan `cmd/console/main.go`.
 
 **Kriteria penerimaan:**
-- Scaffold dibuat via `docker compose exec app bin/console plugin new --id auth --template crud` dan struktur direktori sesuai konvensi framework.
+- Scaffold dibuat lewat console di dalam container dengan `docker compose exec app bin/console plugin new --id auth --template crud` setelah memastikan path binary; jika binary belum ada, gunakan `go run ./cmd/console plugin new --id auth --template crud`.
 - Plugin `auth` didaftarkan pada `RegisterPlugins` di `cmd/server/main.go` dan `RegisterAdditionalPlugins` di `cmd/console/main.go`.
-- `plugins.RegisteredPlugins()` memuat entri `auth`.
-- `docker compose exec app go build ./...` sukses.
-- `docker compose exec app bin/console --help` menampilkan group command milik plugin `auth`.
+- Perintah `docker compose exec app go build ./...` sukses setelah registrasi.
+- `docker compose exec app bin/console auth --help` (atau `go run ./cmd/console auth --help`) menampilkan group command plugin.
 
 **Verifikasi:**
 ```bash
-docker compose exec app bin/console plugin new --id auth --template crud
+docker compose exec app go run ./cmd/console plugin new --id auth --template crud
 docker compose exec app go build ./...
-docker compose exec app bin/console auth --help
+docker compose exec app go run ./cmd/console auth --help
 ```
 
 **Bukti:** daftar direktori `plugins/auth/`, cuplikan registrasi di kedua `main.go`, output `go build` sukses dan `auth --help`.
@@ -64,6 +63,7 @@ docker compose exec app bin/console auth --help
 **Deliverable:** `plugins/auth/migrations/postgres/<ts>_create_auth_tables.up.sql` dan `.down.sql`.
 
 **Kriteria penerimaan:**
+- Migration files dibuat di `plugins/auth/migrations/postgres/` dengan pola timestamped `*.up.sql` dan `*.down.sql`; gunakan `console migrate make --plugin auth <name>` jika target plugin sudah terdaftar, lalu isi kedua file (scaffold hanya menulis placeholder).
 - `up.sql` membuat `admins` (id TEXT PK, name, email UNIQUE, password_hash, is_root BOOL DEFAULT FALSE, is_active BOOL DEFAULT TRUE, created_at/updated_at/deleted_at TIMESTAMPTZ) dan `members` (id TEXT PK, name, email UNIQUE, password_hash, is_active, timestamps) + index `deleted_at`.
 - Tidak ada `gen_random_uuid()` / ekstensi DB / default `id`.
 - `down.sql` menghapus `members` lalu `admins`.
@@ -72,10 +72,11 @@ docker compose exec app bin/console auth --help
 
 **Verifikasi:**
 ```bash
-docker compose exec app bin/console migrate list --plugin auth
-docker compose exec app bin/console migrate up --plugin auth
-docker compose exec app bin/console migrate down --plugin auth
-docker compose exec app bin/console migrate up --plugin auth
+docker compose exec app go run ./cmd/console migrate make --plugin auth create_auth_tables
+docker compose exec app go run ./cmd/console migrate list --plugin auth
+docker compose exec app go run ./cmd/console migrate up --plugin auth
+docker compose exec app go run ./cmd/console migrate down --plugin auth
+docker compose exec app go run ./cmd/console migrate up --plugin auth
 ```
 
 **Bukti:** status migrasi per langkah, deskripsi tabel (`\d admins`, `\d members`) atau screenshot pgAdmin.
@@ -96,7 +97,7 @@ docker compose exec app bin/console migrate up --plugin auth
 **Verifikasi:**
 ```bash
 docker compose exec app go build ./...
-docker compose exec app go test ./plugins/auth/... -run 'Model|Password|UUID'
+docker compose exec app go test ./... -run 'Model|Password|UUID'
 ```
 
 **Bukti:** nama test + hasil `ok`; contoh id yang dihasilkan berformat v7 (nibble versi = `7`).
@@ -194,7 +195,7 @@ docker compose exec app bin/console auth delete-admin --id <uuid>
 | SPEC AC | Checkpoint |
 |---|---|
 | AC-1 (schema UUIDv7) | CP-2, CP-3 |
-| AC-2, AC-3 (migrate make/up) | CP-2 |
+- AC-2, AC-3 (migrate create/up) | CP-2 |
 | AC-4..AC-8 (login/logout/me/change-password admin & member) | CP-4 |
 | AC-9 (otorisasi root) | CP-5, CP-6 |
 | AC-10..AC-14 (CLI admin/member) | CP-7 |

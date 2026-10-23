@@ -1,0 +1,13 @@
+id: "1792753542116"
+title: BBH Data Board — Auth Plugin & Admin Schema
+created: "2026-10-23"
+files:
+    - id: 01a16870-5e45-7827-b933-01e5e7134439
+      path: SPEC.md
+      type: spec
+      status: draft
+    - id: 01a16870-5ebe-7251-bf8a-33bda940e01f
+      path: work-order.md
+      type: work-order
+      status: draft
+assets: []

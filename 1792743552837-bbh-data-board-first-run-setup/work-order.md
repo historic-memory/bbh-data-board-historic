@@ -1,11 +1,9 @@
 ---
-title: "WO-01 — First Run Setup via Docker Compose"
-type: work-order
-description: "Menyiapkan development stack BBH Data Board melalui Docker Compose; service app idle dan semua command dijalankan manual via exec."
-status: draft
+title: WO-01 — First Run Setup via Docker Compose
+description: Menyiapkan development stack BBH Data Board melalui Docker Compose; service app idle dan semua command dijalankan manual via exec.
+status: complete
 created: "2026-10-23"
 updated: "2026-10-23"
-spec: "1792743552837"
 tags:
     - work-order
     - docker-compose
@@ -31,7 +29,7 @@ Menyiapkan alur development lokal dengan tepat empat service Docker Compose: `ap
 - `app` tidak menjalankan proses aplikasi otomatis; default command `sleep infinity`, lifecycle `restart: "no"`, source repo di-mount agar perubahan terlihat langsung.
 - Build, test, migration, dan run server dilakukan manual dengan `docker compose exec app ...`; `docker compose exec -d app ...` hanya untuk proses development yang perlu berjalan di background.
 - pgAdmin harus punya server `postgres` terdaftar otomatis; prompt password saat koneksi pertama, jangan commit password plaintext dalam `servers.json`.
-- Development image menyediakan toolchain Go dan Node/npm; Swagger CLI tersedia untuk generate docs secara manual bila dibutuhkan.
+- Development image menyediakan toolchain **Go saja (tanpa Node.js)** — sesuai keputusan D-9: deps npm & build Vite dijalankan di host karena repo di-bind mount; Swagger CLI tersedia untuk generate docs secara manual bila dibutuhkan.
 
 ## Checkpoint Goals
 
@@ -83,17 +81,19 @@ Menyiapkan alur development lokal dengan tepat empat service Docker Compose: `ap
 **Bukti:** endpoint pgAdmin merespons dan konfigurasi server menampilkan host `postgres`.
 
 ### CP-4 — App Development Image Siap Dipakai
-**Goal:** image `app` terbangun sebagai development environment (Go + Node/npm + swag CLI) dengan source code ter-mount dan proses utama idle, siap menerima command manual.
+**Goal:** image `app` terbangun sebagai development environment **Go-only (tanpa Node.js, plus swag CLI)** dengan source code ter-mount dan proses utama idle, siap menerima command manual.
 
-**Deliverable:** Dockerfile development multi-stage/berbasis toolchain dan service `app` di Compose dengan working directory `/src` serta source mount.
+**Deliverable:** Dockerfile development Go-only dan service `app` di Compose dengan working directory `/src` serta source mount.
 
 **Kriteria penerimaan:**
-- Image menyediakan versi Go yang kompatibel dengan `go.mod`, Node/npm yang kompatibel dengan frontend, dan swag CLI.
+- Image menyediakan versi Go yang kompatibel dengan `go.mod` dan swag CLI.
+- Image **tidak** menyertakan runtime Node.js/npm; frontend deps & Vite build dijalankan di host (D-9).
 - Container `app` memakai working directory `/src` dan repo host di-mount ke `/src`.
 - Command default container `sleep infinity`; setelah `docker compose up`, container status `running` namun tidak menjalankan server, build, atau test.
 - Restart policy app tidak membuat proses aplikasi jalan otomatis.
 - Port `8080:8080` dipetakan untuk server yang nanti dijalankan manual.
-- `docker compose exec app go version`, `node --version`, dan `npm --version` berhasil.
+- `docker compose exec app go version` dan `swag --version` berhasil; perintah `node`/`npm` tidak tersedia di container (Go-only).
+- Frontend (`npm ci`, `npm run build`) dapat dijalankan di host dan hasil `sub_app/webapp/dist` terlihat di container.
 - `.env`, `.git`, dan `.historic` tidak tersalin di image/build context.
 
 **Verifikasi:** build image; start app; periksa `docker compose ps`, command PID utama, dan versi toolchain melalui `docker compose exec app ...`.
@@ -119,7 +119,7 @@ Menyiapkan alur development lokal dengan tepat empat service Docker Compose: `ap
 ```bash
 docker compose up -d --build
 docker compose ps                     # empat service berjalan; app idle
-Docker compose exec app go version
+docker compose exec app go version
 docker compose exec app go test ./...
 # Di terminal terpisah, jalankan server manual:
 docker compose exec app go run ./cmd/server
@@ -138,13 +138,34 @@ docker compose exec app go run ./cmd/server
 **Kriteria penerimaan:**
 - Instruksi menjelaskan copy `.env.example` ke `.env`, start Compose, URL tiap service, command `docker compose exec app ...`, stop, dan troubleshooting.
 - `docker compose down` lalu `docker compose up -d --build` dapat dijalankan ulang tanpa menghapus data dan app tetap idle setiap kali start.
-- Verifikasi meliputi health Postgres/KeyDB, pgAdmin, Go build/test manual, server start manual dan HTTP response, serta Vite dev server/proxy.
+- Verifikasi meliputi health Postgres/KeyDB, pgAdmin, Go build/test manual (container), build frontend di host, server start manual dan HTTP response, serta Vite dev server/proxy di host.
 - `docker compose down -v` diberi peringatan eksplisit bahwa perintah ini menghapus volume dan data.
 - Tidak ada service selain empat service yang disepakati.
 
 **Verifikasi:** ikuti panduan dari kondisi stack berhenti; catat hasil tiap pemeriksaan dalam tabel PASS/FAIL.
 
 **Bukti:** tabel hasil verifikasi seluruh AC SPEC dengan residual warning (jika ada), termasuk bukti app idle setelah start dan command server hanya aktif setelah diminta.
+
+## Bukti Verifikasi (2026-10-23)
+
+Perubahan kunci: **app container Go-only tanpa Node.js** (D-9); frontend deps & Vite build dijalankan di host.
+
+| CP | Hasil | Bukti |
+|---|---|---|
+| CP-1 | PASS | `.env.example` Compose-first (duplikasi legacy MySQL di-comment paling bawah); `.dockerignore` dibuat; `docker compose config --quiet` → OK; `git check-ignore .env` → `.env`. |
+| CP-2 | PASS | `postgres` + `keydb` `healthy`; `keydb-cli ping` → `PONG`; host `5433`/`16379` aktif; uji persistensi: tabel marker bertahan setelah `docker compose down` → `up -d` (1 baris tetap ada), lalu dibersihkan. |
+| CP-3 | PASS | `http://localhost:5050` → HTTP `200`; log pgAdmin: `Added 1 Server Group(s) and 1 Server(s)`; `PGADMIN_DEFAULT_EMAIL=admin@bbh.dev` (pgAdmin menolak `dev@localhost`). |
+| CP-4 | PASS | Build image sukses (Go 1.27 + swag v1.16.4); `node` **tidak ada** di container; `app` running `sleep infinity` dengan `restart: "no"`; port host `8082 → 8080`; `go version` → go1.27.3. |
+| CP-5 | PASS | `go build ./...` OK; `go test ./...` semua paket `ok`; server manual (`docker compose exec -d app go run ./cmd/server`) → `/` 200, `/app/` 200, `/doc.json` 200 (setelah `swag init`); pkill server tanpa mematikan container. |
+| CP-6 | PASS | Section "Local development via Docker Compose (IDLE)" ditambahkan ke `README.md` (alur exec manual, build frontend di host, peringatan `down -v`, troubleshooting); stack dapat di-`down`/`up -d --build` ulang tanpa kehilangan data dan app tetap idle. |
+
+### Penyimpangan / Keputusan Tambahan
+- **D-9:** image `app` Go-only; `npm ci` & `npm run build` dijalankan di host. `vite.config.ts` proxy memakai `BACKEND_PORT` (default 8080) agar tetap berfungsi bila `APP_PORT` diubah.
+- **Port host 8080 terpakai** proses lain di mesin dev → host mapping app dibuat variabel `APP_PORT`; nilai aktif di `.env` lokal: `APP_PORT=8082`. Port container tetap `8080`.
+- **Image KeyDB** diganti dari `eqb/keydb` (tidak ada) ke `eqalpha/keydb:latest`.
+- **pgAdmin email** default diganti ke `admin@bbh.dev` (validator pgAdmin mewajibkan domain bertitik).
+- Dockerfile men-set `git safe.directory` untuk `/src` agar `go build` tidak gagal VCS stamping pada bind mount.
+- `docs/swagger/` hasil `swag init` bersifat artefak (di-generate manual), tidak di-commit.
 
 ## Pemetaan Checkpoint ke SPEC v2
 

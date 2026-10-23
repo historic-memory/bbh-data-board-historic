@@ -118,4 +118,3 @@ Buat file Compose untuk empat service berikut; detail versi image dapat dipin sa
 - Database tidak auto-migrate; pengguna first run tidak seharusnya mengasumsikan ada tabel bisnis.
 - Compose dan kredensial yang disetujui hanya untuk local development; jangan expose port/services ke jaringan publik tanpa hardening.
 
-

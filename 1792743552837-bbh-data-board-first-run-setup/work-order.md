@@ -1,7 +1,7 @@
 ---
 title: "WO-01 — First Run Setup via Docker Compose"
 type: work-order
-description: "Implementasi first-run BBH Data Board melalui Docker Compose untuk app, postgres, pgadmin, dan keydb. Setiap checkpoint adalah goal yang harus dibuktikan."
+description: "Menyiapkan development stack BBH Data Board melalui Docker Compose; service app idle dan semua command dijalankan manual via exec."
 status: draft
 created: "2026-10-23"
 updated: "2026-10-23"
@@ -17,7 +17,7 @@ tags:
 **Referensi SPEC:** `.historic/1792743552837-bbh-data-board-first-run-setup/SPEC.md` (v2)
 
 ## Tujuan Work Order
-Menyiapkan alur first-run lokal yang reproducible dengan tepat empat service Docker Compose: `app`, `postgres`, `pgadmin`, dan `keydb`.
+Menyiapkan alur development lokal dengan tepat empat service Docker Compose: `app`, `postgres`, `pgadmin`, dan `keydb`. Service `app` adalah development container yang tetap **IDLE** (`sleep infinity`) setelah start; ia tidak menjalankan server/build/test otomatis. Developer menjalankan command secara eksplisit melalui `docker compose exec app ...`.
 
 **Checkpoint adalah goal:** setiap checkpoint dinyatakan selesai hanya jika semua kriteria penerimaannya terpenuhi dan bukti verifikasi dicatat. Kerjakan berurutan; checkpoint berikutnya bergantung pada checkpoint sebelumnya.
 
@@ -28,8 +28,10 @@ Menyiapkan alur first-run lokal yang reproducible dengan tepat empat service Doc
 - Hanya untuk local development; jangan menggunakan kredensial default di production.
 - Postgres dipetakan ke host `5433:5432`; antar-container menggunakan `postgres:5432`.
 - `app` menggunakan `DB_HOST=postgres` dan `KEYDB_HOST=keydb`.
+- `app` tidak menjalankan proses aplikasi otomatis; default command `sleep infinity`, lifecycle `restart: "no"`, source repo di-mount agar perubahan terlihat langsung.
+- Build, test, migration, dan run server dilakukan manual dengan `docker compose exec app ...`; `docker compose exec -d app ...` hanya untuk proses development yang perlu berjalan di background.
 - pgAdmin harus punya server `postgres` terdaftar otomatis; prompt password saat koneksi pertama, jangan commit password plaintext dalam `servers.json`.
-- Swagger CLI dipasang di build stage dan docs dihasilkan saat image build.
+- Development image menyediakan toolchain Go dan Node/npm; Swagger CLI tersedia untuk generate docs secara manual bila dibutuhkan.
 
 ## Checkpoint Goals
 
@@ -80,68 +82,82 @@ Menyiapkan alur first-run lokal yang reproducible dengan tepat empat service Doc
 
 **Bukti:** endpoint pgAdmin merespons dan konfigurasi server menampilkan host `postgres`.
 
-### CP-4 — Image App Build dan Memuat Artifact
-**Goal:** image backend/frontend dapat dibangun dan berisi seluruh artifact runtime yang diperlukan.
+### CP-4 — App Development Image Siap Dipakai
+**Goal:** image `app` terbangun sebagai development environment (Go + Node/npm + swag CLI) dengan source code ter-mount dan proses utama idle, siap menerima command manual.
 
-**Deliverable:** Dockerfile multi-stage di root repo.
-
-**Kriteria penerimaan:**
-- Frontend dibangun dengan Node dari `sub_app/webapp` dan menghasilkan `dist/index.html`.
-- Backend server dan console dibangun dengan Go.
-- `swag` CLI dijalankan terhadap `cmd/server/main.go` dan menghasilkan `docs/swagger/swagger.json`.
-- Runtime image menyertakan binary server, `sub_app/webapp/dist/`, serta `docs/swagger/swagger.json` pada path yang digunakan aplikasi.
-- Build image selesai; `.env`, `.git`, dan `.historic` tidak ada di image.
-
-**Verifikasi:** build image lalu periksa keberadaan binary, SPA index, dan Swagger JSON dengan perintah inspeksi container.
-
-**Bukti:** image build sukses dan seluruh artifact runtime ditemukan.
-
-### CP-5 — App Terhubung ke Service dan Menyerve UI
-**Goal:** backend berjalan di container, menunggu database sehat, dan menyajikan SPA serta Swagger JSON.
-
-**Deliverable:** service `app` di Compose dengan dependency dan environment yang sesuai.
+**Deliverable:** Dockerfile development multi-stage/berbasis toolchain dan service `app` di Compose dengan working directory `/src` serta source mount.
 
 **Kriteria penerimaan:**
-- `app` bergantung pada `postgres` dengan `condition: service_healthy`.
+- Image menyediakan versi Go yang kompatibel dengan `go.mod`, Node/npm yang kompatibel dengan frontend, dan swag CLI.
+- Container `app` memakai working directory `/src` dan repo host di-mount ke `/src`.
+- Command default container `sleep infinity`; setelah `docker compose up`, container status `running` namun tidak menjalankan server, build, atau test.
+- Restart policy app tidak membuat proses aplikasi jalan otomatis.
+- Port `8080:8080` dipetakan untuk server yang nanti dijalankan manual.
+- `docker compose exec app go version`, `node --version`, dan `npm --version` berhasil.
+- `.env`, `.git`, dan `.historic` tidak tersalin di image/build context.
+
+**Verifikasi:** build image; start app; periksa `docker compose ps`, command PID utama, dan versi toolchain melalui `docker compose exec app ...`.
+
+**Bukti:** image build berhasil; app tetap idle/running; semua toolchain command sukses.
+
+### CP-5 — Infra Siap dan App Bisa Dijalankan Manual
+**Goal:** Compose menyalakan service idle beserta dependency sehat; developer dapat menjalankan command aplikasi secara manual dari container.
+
+**Deliverable:** service `app` di Compose dengan dependency dan environment yang sesuai serta dokumentasi command `exec`.
+
+**Kriteria penerimaan:**
+- `app` bergantung pada `postgres` dengan `condition: service_healthy`; KeyDB juga menunggu healthcheck bila healthcheck disediakan.
 - Port host `8080` diteruskan ke port container `8080`.
-- Backend tersambung ke `postgres:5432` dan KeyDB `keydb:6379`.
-- Backend tetap start tanpa menjalankan `migrate up`.
-- `GET http://localhost:8080/app/` sukses dan mengembalikan SPA.
-- `GET http://localhost:8080/doc.json` mengembalikan JSON valid.
-- Log app tidak menunjukkan kegagalan koneksi database atau panic.
+- Backend menerima `DB_HOST=postgres`, `DB_PORT=5432`, `KEYDB_HOST=keydb`, `KEYDB_PORT=6379`.
+- `docker compose up -d` membuat semua empat service running/healthy tanpa memulai Go server.
+- `docker compose exec app go test ./...` dapat dieksekusi manual.
+- `docker compose exec app go run ./cmd/server` dapat memulai server secara manual; bila dijalankan foreground, menghentikan command menghentikan server tanpa mematikan container.
+- Saat server manual aktif, `GET http://localhost:8080/app/` sukses dan `GET http://localhost:8080/doc.json` mengembalikan JSON Swagger valid jika docs telah digenerate.
+- Startup Compose tanpa menjalankan `migrate up` dan tanpa koneksi server awal tidak menghasilkan crash.
 
-**Verifikasi:** `docker compose up -d --build`, `docker compose ps`, HTTP checks untuk `/app/` dan `/doc.json`, serta pemeriksaan logs.
+**Verifikasi:**
+```bash
+docker compose up -d --build
+docker compose ps                     # empat service berjalan; app idle
+Docker compose exec app go version
+docker compose exec app go test ./...
+# Di terminal terpisah, jalankan server manual:
+docker compose exec app go run ./cmd/server
+# Selama proses berjalan, cek endpoint dari host.
+```
 
-**Bukti:** app berjalan, `/app/` merespons sukses, JSON Swagger valid, dan tidak ada error DB.
+**Bukti:** `docker compose ps` menunjukkan app running/idle; Go test command sukses; setelah server dijalankan manual, endpoint HTTP merespons. Catat kegagalan test existing sebagai baseline terpisah.
 
-### CP-6 — First Run End-to-End Dapat Diulang
-**Goal:** pengguna baru dapat menyalakan stack dari kondisi lokal bersih dengan instruksi yang jelas dan hasil konsisten.
+**Catatan command:** Gunakan lowercase `docker` saat menjalankan command. `docker compose exec` secara default foreground; gunakan opsi detached hanya bila developer memang ingin proses server berjalan di latar belakang.
 
-**Deliverable:** instruksi first-run yang diperbarui dalam dokumentasi proyek serta bukti verifikasi acceptance criteria SPEC.
+### CP-6 — Alur Development Manual Dapat Diulang
+**Goal:** developer bisa menghidupkan stack, menjalankan build/test/server secara eksplisit di container, dan mengakses service tanpa proses aplikasi otomatis.
+
+**Deliverable:** instruksi development yang diperbarui dalam dokumentasi proyek serta bukti verifikasi acceptance criteria SPEC.
 
 **Kriteria penerimaan:**
-- Instruksi menjelaskan copy `.env.example` ke `.env`, start stack, URL tiap service, credentials, stop, dan troubleshooting.
-- `docker compose down` lalu `docker compose up --build -d` dapat dijalankan ulang tanpa menghapus data.
-- Verifikasi meliputi app, Postgres health, pgAdmin, KeyDB, Swagger, dan Vite dev server/proxy di host.
+- Instruksi menjelaskan copy `.env.example` ke `.env`, start Compose, URL tiap service, command `docker compose exec app ...`, stop, dan troubleshooting.
+- `docker compose down` lalu `docker compose up -d --build` dapat dijalankan ulang tanpa menghapus data dan app tetap idle setiap kali start.
+- Verifikasi meliputi health Postgres/KeyDB, pgAdmin, Go build/test manual, server start manual dan HTTP response, serta Vite dev server/proxy.
 - `docker compose down -v` diberi peringatan eksplisit bahwa perintah ini menghapus volume dan data.
-- Tidak ada service selain empat service yang disetujui.
+- Tidak ada service selain empat service yang disepakati.
 
 **Verifikasi:** ikuti panduan dari kondisi stack berhenti; catat hasil tiap pemeriksaan dalam tabel PASS/FAIL.
 
-**Bukti:** tabel hasil verifikasi seluruh AC SPEC v2 dengan residual warning (jika ada).
+**Bukti:** tabel hasil verifikasi seluruh AC SPEC dengan residual warning (jika ada), termasuk bukti app idle setelah start dan command server hanya aktif setelah diminta.
 
 ## Pemetaan Checkpoint ke SPEC v2
 
 | SPEC AC | Checkpoint |
 |---|---|
-| AC-1 — stack start dan readiness | CP-2, CP-5 |
+| AC-1 — infra sehat + app idle | CP-2, CP-4, CP-5 |
 | AC-2 — service names dalam env | CP-1, CP-5 |
-| AC-3 — host port 5433 / internal 5432 | CP-2, CP-3 |
-| AC-4 — image app dan port 8080 | CP-4, CP-5 |
-| AC-5 — SPA di `/` dan `/app/` | CP-4, CP-5 |
-| AC-6 — log app tanpa error DB | CP-5 |
+| AC-3 — host port 5433 / internal 5432 | CP-2 |
+| AC-4 — image dev dan port app tersedia | CP-4 |
+| AC-5 — server manual dan HTTP SPA/Swagger | CP-5 |
+| AC-6 — tidak ada startup DB error | CP-5 |
 | AC-7 — pgAdmin auto-connect di 5050 | CP-3 |
-| AC-8 — Swagger JSON tersedia | CP-4, CP-5 |
+| AC-8 — Swagger JSON tersedia setelah generate | CP-4, CP-5 |
 | AC-9 — Vite dev server dan proxy | CP-6 |
 | AC-10 — dockerignore | CP-1 |
 
@@ -150,15 +166,17 @@ Menyiapkan alur first-run lokal yang reproducible dengan tepat empat service Doc
 | Risiko | Mitigasi |
 |---|---|
 | Port 5433, 5050, 6379, atau 8080 sudah digunakan | Periksa port sebelum start; bila perlu ubah host mapping dan catat perubahan di hasil WO. |
-| App start sebelum Postgres siap | Healthcheck + `depends_on: condition: service_healthy`. |
-| Build swag gagal | Pin versi CLI dan pastikan dependency tersedia di build stage; CP-4 tidak boleh PASS tanpa JSON valid. |
+| App tidak idle / command otomatis berjalan | Tetapkan `command: ["sleep", "infinity"]`, `restart: "no"`; verifikasi proses dan `docker compose ps`. |
+| App start sebelum Postgres siap | Healthcheck + `depends_on: condition: service_healthy`; app sendiri tetap idle. |
+| Build swag gagal | Sediakan swag CLI di dev image; generate secara manual dan catat kegagalan bila toolchain tidak tersedia. |
 | pgAdmin tidak membaca servers config | Validasi format dan lokasi mount; pastikan file read-only dapat dibaca container. |
 | Volume lama menyimpan state berbeda | Dokumentasikan reset volume dengan peringatan destruktif; jangan otomatis menghapus data. |
-| SPA dist salah lokasi runtime | Samakan working directory/path dengan `plugins/pages` dan verifikasi dari dalam container. |
+| Source mount atau working directory salah | Pastikan repo host dimount ke `/src` dan command dijalankan dari root project di container. |
 
 ## Definition of Done
 - [ ] CP-1 sampai CP-6 semuanya PASS dengan bukti yang tercatat.
-- [ ] Semua SPEC AC v2 terverifikasi atau setiap pengecualian disetujui dan dicatat.
+- [ ] Semua SPEC AC terverifikasi atau setiap pengecualian disetujui dan dicatat.
+- [ ] Container `app` tetap idle setelah `docker compose up`; app server/build/test hanya berjalan setelah perintah `exec` eksplisit.
 - [ ] Tidak ada source code aplikasi, migrasi, atau schema bisnis yang diubah/dibuat.
 - [ ] Hanya empat service yang disepakati tersedia.
 - [ ] Risiko data loss akibat `down -v` dijelaskan dengan jelas.

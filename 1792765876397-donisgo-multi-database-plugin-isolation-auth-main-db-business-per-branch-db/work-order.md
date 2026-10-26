@@ -39,7 +39,7 @@ WO dipecah per fase agar ringan dan bisa dikerjakan/commit bertahap. File detail
 | 8 | `WO-08-security-registry.md` | Enkripsi (`dbms_secrets`), TLS, audit, CLI aman | complete (rev 2) |
 | 9 | `WO-09-dbms-registry-refactor.md` | **KOREKSI KONTRAK** — refactor DBMS-centric + CLI `--key/--branch-key/--branch-name` + migrasi bentuk lama | complete |
 | 10 | `WO-10-business-generator-plugin.md` | **Plugin `business_generator`** — migrasi registry (dbms/dbms_secrets/db_registry/audit), pindah CLI ke `console`, generator scaffolding entity, admin API `/api/admin/dbms` | complete |
-| 11 | `WO-11-sudo-like-password-prompt.md` | **Prompt password gaya `sudo`** — baca dari `/dev/tty` (abaikan pipe), fallback `os.Stdin`, error non-TTY yang manusiawi, unit test + docs `-it` | draft |
+| 11 | `WO-11-sudo-like-password-prompt.md` | **Prompt password gaya `sudo`** — baca dari `/dev/tty` (abaikan pipe), fallback `os.Stdin`, error non-TTY yang manusiawi, unit test + docs `-it` | complete |
 
 ## Urutan Eksekusi & Dependency
 ```
@@ -60,6 +60,11 @@ WO-01 (pool) ──► WO-02 (deps) ──► WO-03 (migration+guard) ──► 
 - WO-01..WO-08 sudah diimplementasikan (commit `627f016`..`282dd30`).
 - **WO-09 SELESAI** (commit repo `0afb1ef`..`0b5ecfa`): registry DBMS-centric terverifikasi e2e — `dbms` 2 baris, `db_registry` tanpa kredensial, forward migration legacy teruji, `create-branch --key/--branch-key/--branch-name` sukses, `dbms rm` guard OK, migrate 4 koneksi OK.
 - **WO-10 SELESAI** (commit repo `e37d5ab`..`b0258ea`): plugin `business_generator` — DDL registri pindah ke migrasi versioned (target `business_generator` v1 tercatat di `migrations`), CLI console-first (`./bin/console dbms|create-branch|migrate|ping|list-status|generate`), admin API `/api/admin/{dbms,registry}` (200, tanpa kebocoran password), generator entity scaffold.
+- **WO-11 SELESAI** (commit repo `ed6cb3b`..`2ba73e8`): prompt password gaya `sudo` — baca `/dev/tty` (pipe diabaikan), fallback `os.Stdin` bila terminal, `errNoTTY` actionable, empty ditolak, seam `ttyOpen` + 6 unit test lulus. Diverifikasi manager: non-TTY error actionable & exit 1; CI path `--password-stdin` tetap jalan.
+
+## Temuan Verifikasi Manager (WO-10/WO-11)
+
+**⚠️ Berulang: binary `bin/` stale.** Dua kali kejadian (WO-10 & WO-11) — `bin/console`/`bin/business` tidak ikut ter-rebuild karena `go build ./...` tidak menulis ke `bin/`, dan `bin/` untracked. Gejala: fitur baru "tidak berfungsi" padahal kode benar. **Wajib ditangani** sebelum makin sering menyesatkan.
 
 ## Temuan Verifikasi Manager (WO-10)
 Diverifikasi independen: build/vet/test lulus, migrasi tercatat, `dbms rm` guard exit 1, `create-branch` OK, admin API OK, `db_registry` tanpa kredensial, DDL 100% di SQL (0 `CREATE TABLE` di Go).

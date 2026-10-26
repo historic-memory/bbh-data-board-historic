@@ -49,7 +49,7 @@ files:
     - id: 01a1766c-c503-7a60-9f31-4d5e6f708192
       path: WO-11-sudo-like-password-prompt.md
       type: file
-      status: draft
+      status: complete
     - id: 01a1766c-c503-7148-b43e-2e9d8c1bcd62
       path: work-order.md
       type: file

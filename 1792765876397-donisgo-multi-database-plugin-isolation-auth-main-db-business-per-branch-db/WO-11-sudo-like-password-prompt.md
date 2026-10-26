@@ -1,7 +1,7 @@
 ---
 title: 'WO-11: Prompt Password Gaya sudo (/dev/tty) untuk CLI Provisioning'
 description: 'Ubah readPassword() agar membaca password dari /dev/tty (terminal pengendali) seperti sudo, bukan os.Stdin. Pipe/redirect diabaikan saat mode prompt, sehingga `echo salah | ... dbms add` tidak lagi menelan password palsu. Fallback ke os.Stdin bila /dev/tty tak tersedia (tetap butuh TTY untuk prompt).'
-status: draft
+status: complete
 created: "2026-10-26"
 updated: "2026-10-26"
 revision: 1

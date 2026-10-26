@@ -1,7 +1,7 @@
 ---
 title: "Donisgo Multi-Database: Auth di DB Utama + Core Business PostgreSQL Terisolasi (per Cabang)"
 description: "Spesifikasi dukungan multi-database di framework donisgo: plugin auth tetap memakai database utama framework, sedangkan plugin core business (bisa multi-cabang) memakai PostgreSQL terpisah dengan satu database per cabang."
-version: 3
+version: 4
 status: complete
 created: "2026-10-23"
 updated: "2026-10-26"
@@ -47,6 +47,7 @@ SPEC ini mencakup: (1) abstraksi multi-koneksi di framework, (2) desain plugin `
 | D-18 | **Audit Trail** | Tabel `db_registry_audit` mencatat semua CRUD pada registry tanpa menyimpan value sensitif. Field: `action varchar(20)` (create/update/suspend/delete/rotate), `changed_fields text[]` (nama kolom saja), `actor varchar(150)`, `at timestamptz`. Trigger SQL otomatis isi audit pada INSERT/UPDATE/DELETE di `db_registry`, `dbms`, dan `dbms_secrets`. |
 | D-19 | **Registrasi Server DBMS Terpisah (`dbms`)** | Server DBMS didaftarkan **sekali** di tabel `dbms` dengan `key` unik (mis. `main-dbms`, `business-dbms`). Semua koneksi logis (`db_registry`) mengacu via `dbms_key`. Pindah host / ganti password / ganti user **cukup satu baris `dbms`** — seluruh cabang yang mengacu langsung ikut berubah (tanpa update N baris). Ini adalah **kontrak inti**: konfigurasi YAML lama (yang punya konsep `dbms_key`) dikonversi apa adanya ke tabel `dbms` di DB utama. `db_registry` **dilarang** menyimpan host/port/user_name/password. |
 | D-20 | **Kontrak CLI DBMS** | Command provisioning (`bin/business`) mengikuti kontrak: (a) `dbms add --key <key> [--host --port --user --sslmode --label] [--password-stdin]` → daftarkan server sekali; (b) `dbms list`, `dbms rm --key <key>` (ditolak bila masih direferensikan `db_registry`); (c) `create-branch --key <dbms_key> --branch-key <name> --branch-name <label> [--db-name <db>] [--password-stdin]` → `CREATE DATABASE` di server yang **dituju `--key`** lalu INSERT `db_registry` (name=branch-key, dbms_key, database_name, label=branch-name) → auto migrate. `--key` = acuan server DBMS; `--branch-key` = nama koneksi cabang; `--branch-name` = label manusia. |
+| D-21 | **Registry via migrasi plugin `business_generator`** | DDL registri (`dbms`, `dbms_secrets`, `db_registry`, `db_registry_audit` + trigger + seed) dimiliki oleh **migrasi versioned plugin `business_generator`** yang terikat ke koneksi `default` — jadi terlacak di `migrations`/`migration_targets` dan `migrate status`. Prinsip: tabel milik database utama **wajib** lewat migrasi. Seluruh command provisioning (`dbms`, `create-branch`, `migrate`, `ping`, `list-status`, `generate entity`) diekspos sebagai `ConsoleCommands()` plugin, dijalankan via `./bin/console`; `bin/business` dipertahankan sebagai **deprecated**. Admin API: `GET/POST/PUT/DELETE /api/admin/dbms`, `GET /api/admin/registry`. |
 
 
 ## Goal
@@ -77,7 +78,8 @@ SPEC ini mencakup: (1) abstraksi multi-koneksi di framework, (2) desain plugin `
 - [AC-19] **Registrasi DBMS sekali**: `bin/business dbms add --key business-dbms --host postgres-business --port 5432 --user postgres --password-stdin` membuat **satu** baris `dbms` + satu baris `dbms_secrets`; `dbms list` menampilkan `dbms_key`, host, port, user, jumlah koneksi yang mengacu, status. `dbms rm --key <key>` **ditolak** bila masih ada baris `db_registry.dbms_key=<key>`.
 - [AC-20] **Tanpa duplikasi kredensial**: setelah `CREATE TABLE`, `SELECT key,host,port,user_name FROM dbms` berisi tepat satu baris per server, sedangkan `SELECT name,dbms_key,database_name FROM db_registry` — beberapa cabang berbagi `dbms_key` yang sama. Bukti nyata: `tb-jkt`/`tb-sby` (role=branch) sama-sama mengacu `business-dbms`; mengganti password cukup `UPDATE dbms_secrets WHERE dbms_id=(SELECT id FROM dbms WHERE key='business-dbms')`, seluruh cabang langsung ikut.
 - [AC-21] **Kontrak CLI create-branch**: `bin/business create-branch --key business-dbms --branch-key taratara --branch-name "Cabang Taratara"` → `CREATE DATABASE bbh_cbg_taratara` di server `business-dbms` → INSERT `db_registry` (`name=taratara`, `dbms_key=business-dbms`, `database_name=bbh_cbg_taratara`, `label=Cabang Taratara`) → auto-migrate. `--key` yang tidak terdaftar → error jelas; tidak ada flag `--host/--port/--user/--password`.
-- [AC-22] **Migrasi bentuk lama → baru**: `EnsureRegistrySchema` mendeteksi skema lama (kolom `db_registry.host` masih ada) dan memigrasi: buat `dbms` `main-dbms`/`business-dbms` dari env, set `db_registry.dbms_key` sesuai, pindahkan kredensial ke `dbms_secrets`, lalu drop kolom host/port/user_name dari `db_registry`. Idempotent — aman dijalankan berulang. Data cabang existing tetap bisa dipakai migrate tanpa intervensi manual.
+- [AC-22] **Migrasi bentuk lama → baru**: migrasi plugin `business_generator` (`2026_10_26_150000_create_db_registry`) mendeteksi skema lama (kolom `db_registry.host` masih ada) dan memigrasi: buat `dbms` `main-dbms`/`business-dbms` dari env, set `db_registry.dbms_key` sesuai, pindahkan kredensial ke `dbms_secrets`, lalu drop kolom host/port/user_name dari `db_registry`. Idempotent — aman dijalankan berulang. Data cabang existing tetap bisa dipakai migrate tanpa intervensi manual.
+- [AC-23] **Registry via migrasi versioned (D-21)**: DDL `dbms`/`dbms_secrets`/`db_registry`/`db_registry_audit` dibuat oleh migrasi plugin `business_generator` (target `default`), tercatat di `migrations`/`migration_targets`. `EnsureRegistrySchema()` **tidak lagi melakukan DDL** (shim no-op deprecated). Tanpa migrasi, CLI/server error jelas `relation "dbms" does not exist` — bukan panic.
 
 ## Batasan Scope
 - **Fase 1 (SPEC ini):** Infrastruktur multi-koneksi + plugin `business` + migrasi per-connection + satu database per cabang. Belum termasuk model bisnis detail (belum ditentukan entitas apa pun).
@@ -102,7 +104,7 @@ SPEC ini mencakup: (1) abstraksi multi-koneksi di framework, (2) desain plugin `
 ## Rancangan Teknis
 
 ### 1) Registry Koneksi Tabular — DBMS-centric (`internal/db/registry.go`)
-- **Tiga tabel** di database utama (DDL idempotent via `EnsureRegistrySchema`, detail di WO-09):
+- **Tiga tabel** di database utama (DDL versioned via migrasi plugin `business_generator`, detail di WO-09/WO-10):
 
 **Tabel server** (`dbms` — didaftarkan sekali, `key` = acuan):
 ```sql

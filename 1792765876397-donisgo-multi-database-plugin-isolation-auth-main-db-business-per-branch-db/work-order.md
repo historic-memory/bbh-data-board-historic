@@ -38,7 +38,7 @@ WO dipecah per fase agar ringan dan bisa dikerjakan/commit bertahap. File detail
 | 7 | `WO-07-verification-commits.md` | Verifikasi AC + commit granular | complete |
 | 8 | `WO-08-security-registry.md` | Enkripsi (`dbms_secrets`), TLS, audit, CLI aman | complete (rev 2) |
 | 9 | `WO-09-dbms-registry-refactor.md` | **KOREKSI KONTRAK** — refactor DBMS-centric + CLI `--key/--branch-key/--branch-name` + migrasi bentuk lama | complete |
-| 10 | `WO-10-business-generator-plugin.md` | **Plugin `business_generator`** — migrasi registry (dbms/dbms_secrets/db_registry/audit), pindah CLI ke `console`, generator scaffolding entity, admin API `/api/admin/dbms` | draft |
+| 10 | `WO-10-business-generator-plugin.md` | **Plugin `business_generator`** — migrasi registry (dbms/dbms_secrets/db_registry/audit), pindah CLI ke `console`, generator scaffolding entity, admin API `/api/admin/dbms` | complete |
 
 ## Urutan Eksekusi & Dependency
 ```
@@ -58,4 +58,15 @@ WO-01 (pool) ──► WO-02 (deps) ──► WO-03 (migration+guard) ──► 
 ## Catatan Status
 - WO-01..WO-08 sudah diimplementasikan (commit `627f016`..`282dd30`).
 - **WO-09 SELESAI** (commit repo `0afb1ef`..`0b5ecfa`): registry DBMS-centric terverifikasi e2e — `dbms` 2 baris, `db_registry` tanpa kredensial, forward migration legacy teruji, `create-branch --key/--branch-key/--branch-name` sukses, `dbms rm` guard OK, migrate 4 koneksi OK.
-- Bug e2e yang sudah di-fix: (1) `CREATE INDEX dbms_key` dipindah setelah forward migration; (2) alias `AS ssl_mode` pada query JOIN.
+- **WO-10 SELESAI** (commit repo `e37d5ab`..`b0258ea`): plugin `business_generator` — DDL registri pindah ke migrasi versioned (target `business_generator` v1 tercatat di `migrations`), CLI console-first (`./bin/console dbms|create-branch|migrate|ping|list-status|generate`), admin API `/api/admin/{dbms,registry}` (200, tanpa kebocoran password), generator entity scaffold.
+
+## Temuan Verifikasi Manager (WO-10)
+Diverifikasi independen: build/vet/test lulus, migrasi tercatat, `dbms rm` guard exit 1, `create-branch` OK, admin API OK, `db_registry` tanpa kredensial, DDL 100% di SQL (0 `CREATE TABLE` di Go).
+
+**Perlu tindak lanjut (non-blocking, belum ada WO):**
+1. **Binary stale** — `bin/console`/`bin/business` artefak lokal tidak di-rebuild setelah perubahan source; `bin/` untracked sehingga mudah basi. Pertimbangkan rebuild otomatis di `build.sh`/entrypoint atau dokumentasikan.
+2. **Orphan registry rows** — `cbg-jkt`, `cbg-tes`, `taratara` menunjuk database yang sudah di-drop → `migrate up --plugin business` gagal 3/6 (`FATAL: database does not exist`). Perlu dibersihkan (hapus baris atau buat ulang DB).
+3. **Hint text basi** — `internal/db/registry.go:147` masih menyarankan `bin/business dbms add`; seharusnya `bin/console dbms add`.
+4. **`migrate up` polos** → `no migration paths found for target "core"` dengan **exit 0**; membingungkan karena default command terlihat sukses padahal tidak melakukan apa pun.
+5. **Tanpa warning runtime** — `bin/business` hanya menandai DEPRECATED di `Long` help, bukan saat eksekusi.
+6. **Plugin `business_generator` belum punya unit test** (0 file `_test.go`).

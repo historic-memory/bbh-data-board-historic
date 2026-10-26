@@ -1,7 +1,7 @@
 ---
 title: 'WO-10: Plugin business_generator — migrasi registry + generator kode bisnis'
 description: 'Plugin baru yang terikat ke koneksi default untuk menangani: (1) migrasi tabel registri (dbms, dbms_secrets, db_registry, audit), (2) CLI console provisioning dbms add/list/rm & create-branch via --key, (3) generator scaffolding kode bisnis per-entity, (4) HTTP admin API /api/admin/dbms. Menerapkan prinsip user: "tabel registry milik database utama → wajib lewat migrasi."'
-status: draft
+status: complete
 created: "2026-10-26"
 updated: "2026-10-26"
 revision: 1

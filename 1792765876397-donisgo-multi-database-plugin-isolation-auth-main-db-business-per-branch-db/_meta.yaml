@@ -2,6 +2,10 @@ id: "1792765876397"
 title: donisgo multi-database plugin isolation (auth main db + business per-branch db)
 created: "2026-10-23"
 files:
+    - id: 01a177f0-0000-7000-8000-000000000001
+      path: GUIDE.md
+      type: file
+      status: draft
     - id: 01a1766c-c503-7c86-9b23-9e0d226b8972
       path: SPEC.md
       type: spec

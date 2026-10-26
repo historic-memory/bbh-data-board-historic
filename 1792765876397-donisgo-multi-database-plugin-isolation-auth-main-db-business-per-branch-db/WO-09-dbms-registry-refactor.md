@@ -1,7 +1,7 @@
 ---
 title: 'WO-09: Refactor Registry DBMS-centric (koreksi kontrak --key/--branch-key/--branch-name)'
 description: 'Koreksi arsitektur: server DBMS didaftarkan sekali di tabel dbms (key unik) + dbms_secrets; db_registry hanya menyimpan dbms_key + database_name. CLI: dbms add/list/rm, create-branch --key --branch-key --branch-name. Migrasi bentuk lama, update loader/pool/DSN, re-test end-to-end.'
-status: draft
+status: complete
 created: "2026-10-26"
 updated: "2026-10-26"
 revision: 1

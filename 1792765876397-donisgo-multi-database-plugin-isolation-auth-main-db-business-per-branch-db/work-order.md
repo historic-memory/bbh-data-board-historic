@@ -37,7 +37,7 @@ WO dipecah per fase agar ringan dan bisa dikerjakan/commit bertahap. File detail
 | 6 | `WO-06-infrastructure.md` | Compose `postgres-business`, Dockerfile `bin/business`, env `BUSINESS_DB_*`/`BRANCH_*`, README | complete |
 | 7 | `WO-07-verification-commits.md` | Verifikasi AC + commit granular | complete |
 | 8 | `WO-08-security-registry.md` | Enkripsi (`dbms_secrets`), TLS, audit, CLI aman | complete (rev 2) |
-| 9 | `WO-09-dbms-registry-refactor.md` | **KOREKSI KONTRAK** — refactor DBMS-centric + CLI `--key/--branch-key/--branch-name` + migrasi bentuk lama | ready |
+| 9 | `WO-09-dbms-registry-refactor.md` | **KOREKSI KONTRAK** — refactor DBMS-centric + CLI `--key/--branch-key/--branch-name` + migrasi bentuk lama | complete |
 
 ## Urutan Eksekusi & Dependency
 ```
@@ -55,5 +55,6 @@ WO-01 (pool) ──► WO-02 (deps) ──► WO-03 (migration+guard) ──► 
 - SPA/frontend integration untuk business dashboard.
 
 ## Catatan Status
-- WO-01..WO-08 sudah diimplementasikan (commit `627f016`..`282dd30`) — **namun menyimpan kredensial per-baris koneksi** (melanggar kontrak D-19/D-20).
-- **WO-09 = koreksi kontrak**: refactor DBMS-centric + CLI `--key/--branch-key/--branch-name`. Kerjakan WO-09 sebelum melanjutkan fitur bisnis.
+- WO-01..WO-08 sudah diimplementasikan (commit `627f016`..`282dd30`).
+- **WO-09 SELESAI** (commit repo `0afb1ef`..`0b5ecfa`): registry DBMS-centric terverifikasi e2e — `dbms` 2 baris, `db_registry` tanpa kredensial, forward migration legacy teruji, `create-branch --key/--branch-key/--branch-name` sukses, `dbms rm` guard OK, migrate 4 koneksi OK.
+- Bug e2e yang sudah di-fix: (1) `CREATE INDEX dbms_key` dipindah setelah forward migration; (2) alias `AS ssl_mode` pada query JOIN.

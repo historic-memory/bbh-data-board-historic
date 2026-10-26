@@ -1,7 +1,7 @@
 ---
 title: "Donisgo Multi-Database: Auth di DB Utama + Core Business PostgreSQL Terisolasi (per Cabang)"
 description: "Spesifikasi dukungan multi-database di framework donisgo: plugin auth tetap memakai database utama framework, sedangkan plugin core business (bisa multi-cabang) memakai PostgreSQL terpisah dengan satu database per cabang."
-version: 2
+version: 3
 status: complete
 created: "2026-10-23"
 updated: "2026-10-26"

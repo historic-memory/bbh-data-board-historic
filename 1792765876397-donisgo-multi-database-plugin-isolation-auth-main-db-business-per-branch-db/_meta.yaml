@@ -1,0 +1,45 @@
+id: "1792765876397"
+title: donisgo multi-database plugin isolation (auth main db + business per-branch db)
+created: "2026-10-23"
+files:
+    - id: 01a1766c-c503-7c86-9b23-9e0d226b8972
+      path: SPEC.md
+      type: spec
+      status: complete
+    - id: 01a1766c-c503-79a6-8501-8eff6c99386a
+      path: WO-01-named-db-registry.md
+      type: file
+      status: complete
+    - id: 01a1766c-c503-7a7a-8b87-09dbbb88e519
+      path: WO-02-servicedeps-connections.md
+      type: file
+      status: complete
+    - id: 01a1766c-c503-7e73-bae2-9277e5a9fc7f
+      path: WO-03-migration-extract-guard.md
+      type: file
+      status: complete
+    - id: 01a1766c-c503-7c9d-997c-86455e4e3fc2
+      path: WO-04-business-cli.md
+      type: file
+      status: complete
+    - id: 01a1766c-c503-77f9-b3a9-45d580e54544
+      path: WO-05-business-plugin.md
+      type: file
+      status: complete
+    - id: 01a1766c-c503-7836-92db-111817a90e60
+      path: WO-06-infrastructure.md
+      type: file
+      status: complete
+    - id: 01a1766c-c503-79c1-9892-60722a323f7c
+      path: WO-07-verification-commits.md
+      type: file
+      status: complete
+    - id: 01a1766c-c503-7a5d-9c4e-8f2b6d1a3c5e
+      path: WO-08-security-registry.md
+      type: file
+      status: complete
+    - id: 01a1766c-c503-7148-b43e-2e9d8c1bcd62
+      path: work-order.md
+      type: file
+      status: draft
+assets: []

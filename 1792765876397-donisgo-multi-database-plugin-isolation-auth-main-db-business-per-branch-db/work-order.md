@@ -39,6 +39,7 @@ WO dipecah per fase agar ringan dan bisa dikerjakan/commit bertahap. File detail
 | 8 | `WO-08-security-registry.md` | Enkripsi (`dbms_secrets`), TLS, audit, CLI aman | complete (rev 2) |
 | 9 | `WO-09-dbms-registry-refactor.md` | **KOREKSI KONTRAK** — refactor DBMS-centric + CLI `--key/--branch-key/--branch-name` + migrasi bentuk lama | complete |
 | 10 | `WO-10-business-generator-plugin.md` | **Plugin `business_generator`** — migrasi registry (dbms/dbms_secrets/db_registry/audit), pindah CLI ke `console`, generator scaffolding entity, admin API `/api/admin/dbms` | complete |
+| 11 | `WO-11-sudo-like-password-prompt.md` | **Prompt password gaya `sudo`** — baca dari `/dev/tty` (abaikan pipe), fallback `os.Stdin`, error non-TTY yang manusiawi, unit test + docs `-it` | draft |
 
 ## Urutan Eksekusi & Dependency
 ```

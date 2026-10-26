@@ -26,13 +26,16 @@ Arah baru: **federasi instance** — satu aplikasi, banyak instance, satu DB lok
 4. Token disegel AES-GCM; tidak pernah lewat argv, tidak pernah masuk log (D-5).
 5. Satu endpoint aktif per sesi; default `local` (D-6).
 6. **Setiap instance (pusat & cabang) menjalankan plugin `auth` sendiri.** SSO = token pusat + **keanggotaan lokal di cabang** (D-8). User yang belum terdaftar di cabang ditolak 403.
+7. **Semua instance identik** — "pusat" bukan role kode, hanya instance yang mendaftarkan endpoint lain (D-11).
+8. **Anti-loop:** request lintas instance maksimal 1 hop (`X-Forwarded-Instance`) (D-12).
+9. **Captive portal:** dashboard admin pusat memilih "Masuk ke Cabang" → **API business digantikan**; **auth tetap memakai token pusat**.
 
 ## Daftar WO
 
 | # | File | Scope | Status |
 |---|---|---|---|
 | 1 | `WO-01-endpoint-registry.md` | **Endpoint Registry** — pulihkan `internal/migration` minimal, plugin `endpoint` + migrasi (`endpoints`, `endpoint_audit`), CLI `endpoint add/list/rm/test/use/active`, admin API (partial PUT, tanpa token), audit request | draft |
-| 2 | *(belum ditulis)* Endpoint Switching | Proxy HTTP client per request (`X-Branch-Endpoint`), klasifikasi error, fallback `local`, integrasi audit | not started |
+| 2 | *(belum ditulis)* Captive Portal & Switching | Pilihan "Masuk ke Cabang" di dashboard admin pusat → **API business digantikan** ke endpoint cabang; proxy per request (`X-Branch-Endpoint`), anti-loop (`X-Forwarded-Instance`), klasifikasi error, fallback `local`, audit | not started |
 | 3 | *(belum ditulis)* SSO lintas instance | **DIPERLUKAN.** Pusat terbitkan token identitas; cabang verifikasi **lokal** + **guard keanggotaan lokal** (user wajib sudah terdaftar di cabang); pemetaan peran; `aud`. | not started |
 
 ## Urutan Eksekusi & Dependency

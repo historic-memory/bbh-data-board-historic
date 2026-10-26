@@ -36,31 +36,28 @@ SPA (`sub_app/webapp`) **tidak berubah** dan tetap satu deployment bersama pusat
 
 | Jalur | Target | Berpindah? | Contoh |
 |---|---|---|---|
-| **Auth pusat** — login, admin, member pusat | **Pusat** (instance ini sendiri) | ❌ Tidak pernah | `POST /api/auth/login`, `/api/admins`, `/api/members` |
-| **Auth cabang** — user yang melayani cabang | **Cabang** (instance tujuannya) | ✅ Ikut instance tujuan | Sama, tetapi di instance cabang |
-| **Core business** — POS, inventory, transaksi | Endpoint aktif (pusat atau cabang) | ✅ **Inilah yang di-switch** | endpoint dengan `purpose=business` |
+| **Auth** — login, sesi, identitas | **Pusat** (instance pemilik dashboard) | ❌ Tidak pernah | `POST /api/auth/login` |
+| **Core business** — POS, inventory, transaksi | **Endpoint cabang yang dipilih** | ✅ **Inilah yang di-gantikan** | endpoint dengan `purpose=business` |
 
-**Fakta kunci:** **setiap instance (pusat dan cabang) menjalankan plugin `auth` sendiri**, dengan tabel `admins`/`members` miliknya. Jadi cabang **memiliki** dan **butuh** auth-nya sendiri — bukan menerima identitas dari pusat begitu saja.
+### Alur "Captive Portal ke Cabang" (kontrak utama)
 
-**Prinsip SSO (terkonfirmasi user):**
+```
+1. Admin login di dashboard pusat            → auth pusat, dapat access_token
+2. Dashboard menampilkan daftar endpoint cabang (dari endpoint registry)
+3. Admin memilih "Masuk ke Cabang JKT"       → captive portal
+4. API business DIGANTIKAN ke endpoint cabang (base URL cabang + token cabang)
+5. Semua request core business berikutnya     → ke API service cabang
+   Auth tetap memakai access_token pusat      → tidak berubah
+6. "Keluar" atau pilih "local"                → API business kembali ke pusat
+```
 
-> Pusat menerbitkan token identitas. Cabang memverifikasinya **secara lokal**, dan **hanya menerima user yang sudah terdaftar di cabang tersebut**.
-
-Artinya SSO di sini adalah **federated identity + pendaftaran lokal**, bukan pemusatan auth:
-
-1. User login di **pusat** → terbit token identitas (mis. berisi `sub`, `email`, `role`, `iss`, `exp`).
-2. Token dibawa ke **cabang** (lewat jalur endpoint).
-3. Cabang memverifikasi tanda tangan token **lokal** (tanpa callback ke pusat — agar cabang tetap layak bila pusat tak terjangkau).
-4. **Syarat wajib:** user (dicocokkan via `email` atau identitas stabil lain) **harus sudah terdaftar** di `admins`/`members` cabang.
-   - Terdaftar → diterima, dipetakan ke **peran lokal** cabang.
-   - **Belum terdaftar → ditolak** (403) dengan pesan jelas: user belum didaftarkan di cabang ini.
-5. Kredensial (password) **tidak pernah** dipindahkan ke cabang — cabang tidak memakai password untuk user SSO; ia memakai token pusat + keanggotaan lokal.
+**Prinsip kunci:** *auth tetap di pusat; hanya API business yang digantikan.* SPA tidak diubah — yang berubah adalah target pemanggilan API business.
 
 Konsekuensi:
-- Endpoint registry menaungi **core business**; jalur auth mengikuti instance tujuan, dan SSO adalah komponen **yang memang dibutuhkan** (bukan opsional).
-- SPA menyimpan di `localStorage`: `access_token` + `active_endpoint` (petunjuk UI; keputusan routing di server).
+- Endpoint registry menaungi **API business** (`purpose=business`).
+- SPA menyimpan di `localStorage`: `access_token` (dari pusat) + `active_endpoint` (petunjuk UI; keputusan routing di server).
 - **CORS** didaftarkan eksplisit per instance (daftar origin, bukan wildcard).
-- **Pendaftaran user di cabang adalah proses tersendiri** (admin cabang mendaftarkan user, atau sinkronisasi bertahap) — di luar WO-01, dibahas sebagai bagian SSO.
+- **Pendaftaran user di cabang** diperlukan agar SSO bekerja (lihat Fase 3).
 
 ## 2. Keputusan (D-1..D-10)
 
@@ -73,9 +70,11 @@ Konsekuensi:
 | **D-5** | Registry endpoint **tidak menyimpan password DB**. Yang disimpan hanya base URL, label, status, `purpose`, dan referensi token. | Mengurangi permukaan risiko; token disegel (AES-GCM) seperti pola `secrets` yang ada. |
 | **D-6** | Hanya **satu endpoint aktif** dalam satu waktu per sesi/instance (bukan multi-target bersamaan). Default = instance itu sendiri (`local`). | Menghindari ambiguitas "request ini ke mana". |
 | **D-7** | Endpoint aktif dapat di-override **per request** lewat header `X-Branch-Endpoint`, atau di-set sebagai **mode kerja** lewat CLI/API. | Fleksibilitas untuk dashboard pusat + skrip. |
-| **D-8** | **SSO lintas instance (fase 3 — dinyatakan DIPERLUKAN, bukan opsional):** pusat menerbitkan token identitas; cabang memverifikasinya **lokal** (shared secret atau public key, tanpa callback) **dan** hanya menerima user yang **sudah terdaftar di cabang** tersebut. Peran dipetakan ke peran lokal cabang. | Federated identity + pendaftaran lokal; cabang tetap punya otoritas atas user-nya. |
+| **D-8** | **SSO lintas instance (fase 3 — DIPERLUKAN):** setiap instance menjalankan plugin `auth` sendiri. Pusat menerbitkan token identitas; cabang memverifikasinya **lokal** (shared secret/public key, tanpa callback) **dan** hanya menerima user yang **sudah terdaftar di cabang** tersebut. Belum terdaftar → **403** dengan pesan jelas. Peran dipetakan ke peran lokal cabang. | Federated identity + pendaftaran lokal; cabang tetap berdaulat atas user-nya. |
 | **D-9** | Setiap request lintas instance wajib membawa **request ID** dan dicatat di audit log pusat (endpoint, metode, path, status, durasi — **tanpa body/token**). | Ketertelusuran tanpa membocorkan data. |
 | **D-10** | Gagal koneksi ke endpoint **tidak boleh** membuat pusat error total: kembalikan error terklasifikasi (`unreachable`, `unauthorized`, `timeout`, `bad_gateway`) + cadangan ke `local` bila dikonfigurasi. | Ketahanan operasional. |
+| **D-11** | **Semua instance identik.** "Pusat" bukan role di kode — ia hanyalah **instance yang mendaftarkan endpoint lain** di tabel `endpoints` miliknya. Setiap instance dapat bertindak sebagai pusat bagi instance lain. | Simetri; tidak ada mode khusus yang perlu di-hard-code. |
+| **D-12** | **Anti-loop:** request lintas instance maksimum **1 hop**. Instance menolak meneruskan request yang sudah membawa `X-Forwarded-Instance` (sudah berasal dari instance lain). | Mencegah A→B→A→B berputar; mencegah eskalasi tak terbatas. |
 
 ## 3. Ruang Lingkup
 
@@ -87,11 +86,14 @@ Konsekuensi:
 - Token endpoint disegel AES-GCM.
 - Audit request lintas instance.
 
-### Fase 2 — Routing core business per request (WO-02)
+### Fase 2 — Captive portal & routing business per request (WO-02)
 
-- HTTP client terpusat yang bisa dialihkan targetnya **untuk jalur core business**.
+- **Captive portal di dashboard admin pusat**: daftar endpoint cabang + tombol "Masuk ke Cabang" / "Keluar ke local".
+- API bisnis **digantikan**: setelah masuk cabang, seluruh request `purpose=business` diarahkan ke base URL cabang.
+- HTTP client terpusat yang bisa dialihkan targetnya.
 - Override per request via header `X-Branch-Endpoint`.
-- Klasifikasi error (`unreachable`/`timeout`/`unauthorized`/`bad_gateway`) + fallback.
+- **Anti-loop (D-12):** kirim `X-Forwarded-Instance`; tolak request yang sudah membawanya.
+- Klasifikasi error (`unreachable`/`timeout`/`unauthorized`/`bad_gateway`) + fallback `local`.
 - Audit log request lintas instance.
 
 ### Fase 3 — SSO lintas instance + pendaftaran lokal (WO-03, DIPERLUKAN)

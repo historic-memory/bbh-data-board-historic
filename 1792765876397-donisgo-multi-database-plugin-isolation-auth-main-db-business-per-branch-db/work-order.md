@@ -40,7 +40,7 @@ WO dipecah per fase agar ringan dan bisa dikerjakan/commit bertahap. File detail
 | 9 | `WO-09-dbms-registry-refactor.md` | **KOREKSI KONTRAK** — refactor DBMS-centric + CLI `--key/--branch-key/--branch-name` + migrasi bentuk lama | complete |
 | 10 | `WO-10-business-generator-plugin.md` | **Plugin `business_generator`** — migrasi registry (dbms/dbms_secrets/db_registry/audit), pindah CLI ke `console`, generator scaffolding entity, admin API `/api/admin/dbms` | complete |
 | 11 | `WO-11-sudo-like-password-prompt.md` | **Prompt password gaya `sudo`** — baca dari `/dev/tty` (abaikan pipe), fallback `os.Stdin`, error non-TTY yang manusiawi, unit test + docs `-it` | complete |
-| 12 | `WO-12-fix-tty-prompt-invisible.md` | **FIX bug** — label prompt tidak muncul: `/dev/tty` dibuka `O_RDONLY` (EBADF, error diabaikan). Buka `O_RDWR`, tangani error tulis, regression test | draft |
+| 12 | `WO-12-fix-tty-prompt-invisible.md` | **FIX bug** — label prompt tidak muncul: `/dev/tty` dibuka `O_RDONLY` (EBADF, error diabaikan). Buka `O_RDWR`, tangani error tulis, regression test | complete |
 
 ## Urutan Eksekusi & Dependency
 ```

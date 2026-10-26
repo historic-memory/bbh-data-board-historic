@@ -1,7 +1,7 @@
 ---
 title: 'WO-12: Fix Prompt Password Tidak Terlihat — /dev/tty dibuka read-only'
 description: 'Bug: label "Database password (no echo):" tidak pernah muncul karena os.Open("/dev/tty") membuka file read-only (O_RDONLY), sehingga fmt.Fprint ke fd tersebut gagal EBADF dan error-nya diabaikan. Input tetap diterima karena term.ReadPassword hanya membaca. Fix: buka O_RDWR, tangani error tulis, dan tambah regression test.'
-status: draft
+status: complete
 created: "2026-10-26"
 updated: "2026-10-26"
 revision: 1

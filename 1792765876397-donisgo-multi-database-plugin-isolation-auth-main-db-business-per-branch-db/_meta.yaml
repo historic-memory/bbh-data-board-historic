@@ -38,6 +38,10 @@ files:
       path: WO-08-security-registry.md
       type: file
       status: complete
+    - id: 01a1766c-c503-7a5e-9d1f-2b3c4d5e6f70
+      path: WO-09-dbms-registry-refactor.md
+      type: file
+      status: draft
     - id: 01a1766c-c503-7148-b43e-2e9d8c1bcd62
       path: work-order.md
       type: file

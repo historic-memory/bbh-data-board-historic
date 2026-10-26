@@ -20,7 +20,7 @@ Semua AC SPEC (AC-1..AC-18) terverifikasi, dengan commit granular yang rapi.
 7. Auth endpoints masih bekerja (`/api/admin/login`) — tidak ada regresi.
 8. `docker compose up -d` → `postgres-business` healthy (AC-9).
 9. **Isolasi fisik CLI (Opsi B)**: `env -u DB_HOST -u DB_TYPE -u DB_USER bin/business migrate up` → tetap sukses; bila env `DB_*` kebetulan ada, CLI tidak membacanya (cek log TIDAK ada `Connecting DB [name=default]`).
-10. **Keamanan (WO-08)**: `SELECT password_enc FROM db_registry_secrets` = envelope AES-GCM (bukan plaintext, AC-15); `bin/business --help` tidak memuat `--password` (AC-17); log app `grep password` = 0 hit; `db_registry_audit` terisi setelah UPDATE (AC-18).
+10. **Keamanan (WO-08)**: `SELECT password_enc FROM dbms_secrets` = envelope AES-GCM (bukan plaintext, AC-15); `bin/business --help` tidak memuat `--password` (AC-17); log app `grep password` = 0 hit; `db_registry_audit` terisi setelah UPDATE (AC-18).
 
 ## Commit Granular (urut)
 1. `feat(db): tabular connection registry (internal/db/registry.go)` — WO-01

@@ -51,7 +51,16 @@ SPA (`sub_app/webapp`) **tidak berubah** dan tetap satu deployment bersama pusat
 7. "Keluar" / pilih portal pusat              → kembali ke mode pusat
 ```
 
-**Prinsip kunci:** *auth pusat tetap; hanya API business yang digantikan. Saat masuk portal, sesi memegang **dua token** — token pusat dan token cabang — dan setiap menu memakai token yang sesuai.*
+**Prinsip kunci:** *auth pusat tetap; hanya API business yang digantikan. Saat masuk portal, sesi memegang **dua token** — `main token` (pusat) dan `portal token` (cabang) — dan setiap menu memakai token yang sesuai.*
+
+### Dua Token
+
+| Token | Asal | Dipakai untuk | Dibuang saat |
+|---|---|---|---|
+| **`main token`** | Login pusat (`POST /api/auth/login`) | List Portal, Profil Pusat, semua route milik pusat | Logout total |
+| **`portal token`** | SSO saat masuk portal cabang | Menu business, Profil Cabang, semua route milik endpoint | Keluar portal (D-15) |
+
+Aturan: **tidak pernah tertukar.** `main token` tidak dikirim ke endpoint cabang; `portal token` tidak dikirim ke pusat. Endpoint `test` di WO-01 memakai kredensial service (bukan kedua token ini).
 
 ### Peta menu setelah masuk portal cabang
 
@@ -78,7 +87,7 @@ Konsekuensi:
 - **CORS** didaftarkan eksplisit per instance (daftar origin, bukan wildcard).
 - **Pendaftaran user di cabang** diperlukan agar SSO bekerja (lihat Fase 3).
 
-## 2. Keputusan (D-1..D-14)
+## 2. Keputusan (D-1..D-15)
 
 | # | Keputusan | Alasan |
 |---|---|---|
@@ -95,7 +104,8 @@ Konsekuensi:
 | **D-11** | **Semua instance identik.** "Pusat" bukan role di kode — ia hanyalah **instance yang mendaftarkan endpoint lain** di tabel `endpoints` miliknya. Setiap instance dapat bertindak sebagai pusat bagi instance lain. | Simetri; tidak ada mode khusus yang perlu di-hard-code. |
 | **D-12** | **Anti-loop:** request lintas instance maksimum **1 hop**. Instance menolak meneruskan request yang sudah membawa `X-Forwarded-Instance` (sudah berasal dari instance lain). | Mencegah A→B→A→B berputar; mencegah eskalasi tak terbatas. |
 | **D-13** | **Pemilik route wajib eksplisit.** Setiap route/menu ditetapkan pemiliknya: `local` (instance dashboard/pusat) atau `endpoint` (instance tujuan). **List Portal** dan **login** selalu `local`; menu business `endpoint`. Route tanpa penetapan → default `local`. | Tanpa penetapan eksplisit, route acak berpindah dan admin bisa terkunci di cabang. |
-| **D-14** | **Sesi portal memegang DUA token:** token **pusat** (untuk List Portal + Profil Pusat) dan token **cabang** (untuk business + Profil Cabang). **Admin Profile punya dua versi** (pusat & cabang) dan boleh **berbeda**; sistem menampilkan keduanya, tidak memaksa sama. | Profil & peran pusat ≠ cabang; admin berhak melihat kedua datanya. |
+| **D-14** | **Sesi portal memegang DUA token:** **`main token`** (dari login pusat — untuk List Portal + Profil Pusat) dan **`portal token`** (dari SSO cabang — untuk menu business + Profil Cabang). **Admin Profile punya dua versi** (pusat & cabang) dan boleh **berbeda**; sistem menampilkan keduanya, tidak memaksa sama. | Profil & peran pusat ≠ cabang; admin berhak melihat kedua datanya. |
+| **D-15** | **Dua token, dua peran, tidak pernah tertukar.** `main token` **hanya** untuk route milik pusat; `portal token` **hanya** untuk route milik endpoint. Keluar portal **membuang `portal token`** (bukan hanya mengganti base URL) dan mengembalikan semua menu ke pusat. Token tidak boleh digunakan lintas peran. | Mencegah token kadaluarsa/peran lama tertinggal dan mencegah eskalasi lintas instance. |
 
 ## 3. Ruang Lingkup
 
@@ -189,6 +199,8 @@ CREATE INDEX idx_endpoint_audit_key_time ON endpoint_audit (endpoint_key, create
 | AC-18 | **Admin Profile** tersedia dalam **dua versi** (pusat & cabang) dan boleh menampilkan data yang **berbeda**; membuka salah satu tidak merusak yang lain. |
 | AC-19 | Route yang tidak ditetapkan pemiliknya **default ke pusat** (tidak pernah diam-diam ke cabang). |
 | AC-20 | Request yang sudah membawa `X-Forwarded-Instance` **ditolak** (anti-loop D-12). |
+| AC-21 | Sesi memegang **dua token**: `main token` + `portal token`. `main token` **tidak pernah** dikirim ke endpoint cabang; `portal token` **tidak pernah** dikirim ke pusat. |
+| AC-22 | Keluar portal **membuang `portal token`** dan mengembalikan seluruh menu ke pusat; `main token` tetap utuh. |
 
 ### Kriteria Penerimaan Fase 3 (SSO lintas instance)
 

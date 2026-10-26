@@ -98,7 +98,7 @@ Konsekuensi:
 | **D-5** | Registry endpoint **tidak menyimpan password DB**. Yang disimpan hanya base URL, label, status, `purpose`, dan referensi token. | Mengurangi permukaan risiko; token disegel (AES-GCM) seperti pola `secrets` yang ada. |
 | **D-6** | Hanya **satu endpoint aktif** dalam satu waktu per sesi/instance (bukan multi-target bersamaan). Default = instance itu sendiri (`local`). | Menghindari ambiguitas "request ini ke mana". |
 | **D-7** | Endpoint aktif dapat di-override **per request** lewat header `X-Branch-Endpoint`, atau di-set sebagai **mode kerja** lewat CLI/API. | Fleksibilitas untuk dashboard pusat + skrip. |
-| **D-8** | **SSO lintas instance (fase 3 — DIPERLUKAN):** setiap instance menjalankan plugin `auth` sendiri. Pusat menerbitkan token identitas; cabang memverifikasinya **lokal** (shared secret/public key, tanpa callback) **dan** hanya menerima user yang **sudah terdaftar di cabang** tersebut. Belum terdaftar → **403** dengan pesan jelas. Peran dipetakan ke peran lokal cabang. | Federated identity + pendaftaran lokal; cabang tetap berdaulat atas user-nya. |
+| **D-8** | **SSO lintas instance (fase 3 — DIPERLUKAN, **scope: ADMIN saja**):** setiap instance menjalankan plugin `auth` sendiri. Pusat menerbitkan token identitas; cabang memverifikasinya **lokal** (shared secret/public key, tanpa callback) **dan** hanya menerima **admin** yang **sudah terdaftar di `admins` cabang** tersebut. Belum terdaftar → **403** dengan pesan jelas. Peran dipetakan ke peran lokal cabang. **User `members` di luar ruang lingkup federasi saat ini** (ditunda, bukan dihapus). | Federated identity + pendaftaran lokal; cabang tetap berdaulat atas user-nya; ruang lingkup diperkecil ke admin dulu agar sederhana. |
 | **D-9** | Setiap request lintas instance wajib membawa **request ID** dan dicatat di audit log pusat (endpoint, metode, path, status, durasi — **tanpa body/token**). | Ketertelusuran tanpa membocorkan data. |
 | **D-10** | Gagal koneksi ke endpoint **tidak boleh** membuat pusat error total: kembalikan error terklasifikasi (`unreachable`, `unauthorized`, `timeout`, `bad_gateway`) + cadangan ke `local` bila dikonfigurasi. | Ketahanan operasional. |
 | **D-11** | **Semua instance identik.** "Pusat" bukan role di kode — ia hanyalah **instance yang mendaftarkan endpoint lain** di tabel `endpoints` miliknya. Setiap instance dapat bertindak sebagai pusat bagi instance lain. | Simetri; tidak ada mode khusus yang perlu di-hard-code. |
@@ -131,9 +131,9 @@ Konsekuensi:
 
 - Pusat menerbitkan token identitas (klaim: `iss`, `sub`, `email`, `role`, `aud`, `exp`).
 - Cabang memverifikasi token **secara lokal** (shared secret fase awal → public key bila perlu rotasi).
-- **Guard keanggotaan lokal:** cabang menolak user yang belum ada di `admins`/`members` cabang (403 dengan pesan jelas).
+- **Guard keanggotaan lokal (admin saja):** cabang menolak admin yang belum ada di `admins` cabang (403 dengan pesan jelas). `members` tidak disentuh fase ini.
 - Pemetaan peran pusat → peran lokal cabang.
-- **Pendaftaran user di cabang:** proses/prosedur agar user pusat terdaftar di cabang (pilih mekanisme: manual oleh admin cabang, atau sinkronisasi bertahap) — diputuskan di WO-03.
+- **Pendaftaran admin di cabang:** proses/prosedur agar admin pusat terdaftar di `admins` cabang (pilih mekanisme: manual oleh admin cabang, atau sinkronisasi bertahap) — diputuskan di WO-03. **Hanya admin; members di luar ruang lingkup.**
 - `aud` mencegah token satu cabang dipakai di cabang lain.
 
 ### Di luar ruang lingkup
@@ -141,7 +141,8 @@ Konsekuensi:
 - Sinkronisasi/penggabungan data antar cabang (laporan gabungan) — belum ada kebutuhan terkonfirmasi.
 - Replikasi, sharding, HA.
 - Frontend dashboard pemilihan cabang (menyusul setelah API stabil).
-- **SPA (`sub_app/webapp`) tidak diubah** — tetap satu deployment, hanya target API yang berpindah.
+- **User `members`**: federasi/SSO saat ini **hanya untuk admin**. Jalur member (login member lintas instance, pendaftaran member di cabang) ditunda — diteruskan ke WO/fase berikutnya bila dibutuhkan. Tabel `members` tetap ada dan berfungsi normal per instance.
+- **SPA (`sub_app/webapp`)**: halaman/menu **tidak berubah**; hanya modul API client (`client.ts`) perlu dukungan dua token (`main`/`portal`) — perubahan terbatas, bukan redesign.
 
 ## 4. Model Data Usulan (Fase 1)
 
@@ -206,8 +207,8 @@ CREATE INDEX idx_endpoint_audit_key_time ON endpoint_audit (endpoint_key, create
 
 | # | AC |
 |---|---|
-| AC-11 | User yang login di pusat dapat mengakses cabang **tanpa login ulang**, bila **sudah terdaftar di cabang** tersebut. |
-| AC-12 | User yang **belum terdaftar di cabang** ditolak dengan **403 + pesan jelas** (bukan 401), meskipun tokennya sah. |
+| AC-11 | **Admin** yang login di pusat dapat mengakses cabang **tanpa login ulang**, bila **sudah terdaftar di `admins` cabang** tersebut. |
+| AC-12 | **Admin** yang **belum terdaftar di cabang** ditolak dengan **403 + pesan jelas** (bukan 401), meskipun tokennya sah. |
 | AC-13 | Cabang memverifikasi token **secara lokal** — tidak ada callback ke pusat pada setiap request (dibuktikan: pusat dimatikan, token valid tetap diterima cabang). |
 | AC-14 | Token ber-`aud` cabang lain **ditolak** di cabang ini. |
 | AC-15 | Password pengguna **tidak pernah** disimpan/dipindahkan ke cabang untuk user SSO. |

@@ -6,6 +6,10 @@ files:
       path: GUIDE.md
       type: file
       status: draft
+    - id: 01a17900-0000-7000-8000-000000000015
+      path: SHORTNOTE-WO-13-14.md
+      type: file
+      status: draft
     - id: 01a1766c-c503-7c86-9b23-9e0d226b8972
       path: SPEC.md
       type: spec

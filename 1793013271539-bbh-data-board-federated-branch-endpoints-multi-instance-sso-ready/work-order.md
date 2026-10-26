@@ -36,7 +36,7 @@ Arah baru: **federasi instance** — satu aplikasi, banyak instance, satu DB lok
 |---|---|---|---|
 | 1 | [`WO-01-endpoint-registry.md`](rev 2) | **Endpoint Registry** (admin-only, D-8); `endpoints` (+`is_active`+partial index unique) + `endpoint_audit`; migrasi versioned; plugin CLI (`add/list/rm/test/use/active`); admin API (partial PUT tanpa reset `status`, audit semua request lintas endpoint) | draft |
 | 2 | [`WO-02-captive-portal-routing.md`](rev 1) | **Captive Portal & Routing**; pemilihan portal → proxy routing per request (`X-Branch-Endpoint`, anti-loop `X-Forwarded-Instance`), pemilik route eksplisit (**List Portal & login selalu `local`**), dua token (**main token**/**portal token**), error klasifikasi, fallback hanya bila dikonfigurasi + penanda, audit request lintas instance | drafted |
-| 3 | [`WO-03-sso-admin-only.md`](rev 1) | **SSO Lintas Instance (admin-only)** — DIPERLUKAN; issued token pusat (`aud`=target branch, `iss`=issuer, `typ`=`portal`, `exp` pendek); verifikasi **LOKAL** tanpa callback; guard keanggotaan lokal (**403** bila admin belum terdaftar di `admins` cabang); dua-token session integrasi; enrollment mekanisme (A manual/rekomendasi) | drafted |
+| 3 | [`WO-03-sso-admin-only.md`](rev 2) | **SSO Lintas Instance (admin-only)** — DIPERLUKAN; token pusat (`aud`=target branch, `iss`, `sub`=UUIDv7, `typ=portal`, `exp` pendek); verifikasi **LOKAL HS256** (D-17) tanpa callback; guard keanggotaan lokal via **`iss`+`sub`** (D-16) → **403** bila belum/`pending`; **enrollment hybrid A+B** (D-18: manual + auto-provision `pending` wajib approval); SSO tidak pernah beri `is_root` (D-19); butuh migrasi kolom `admins`; dua-token session | drafted |
 
 ## Urutan Eksekusi & Dependency
 ```
@@ -67,12 +67,15 @@ WO-01 (registry + migrasi + CLI + API)
 
 Catatan: migrator baru harus kompatibel dengan `migrations` yang sudah terisi atau menggunakan `CREATE TABLE IF NOT EXISTS`.
 
-## Ketergantungan Terbuka (harus diputuskan user)
-| # | Topik | Rekomendasi |
+## Ketergantungan Terbuka (SUDAH DIPUTUSKAN 2026-10-26)
+| # | Topik | Keputusan |
 |---|---|---|
-| 1 | Enrollment admin cabang | **A — manual** oleh admin cabang tambah baris `admins` |
-| 2 | Identitas pencocokan (`adm`) | **Email** (alternatif: `iss`+`sub`) |
-| 3 | Kunci verifikasi SSO | **HS256 shared secret** (upgrade ke RS256 nanti) |
+| 1 | Enrollment admin cabang | **D-18: Hybrid A+B** — manual oleh admin cabang **dan** auto-provision baris `pending` yang **wajib disetujui** (tanpa auto-approve) |
+| 2 | Identitas pencocokan | **D-16: `iss` + `sub` (UUIDv7)** — bukan email; email hanya atribut tampilan (`atr`) |
+| 3 | Kunci verifikasi SSO | **D-17: HS256 shared secret** — di balik interface verifier, dapat diupgrade ke RS256/JWKS |
+| 4 | Peran (tambahan) | **D-19: SSO tidak pernah memberi `is_root`**; selalu level `admin`. Skema `admins` tidak punya kolom `level` |
+
+**Konsekuensi skema:** `admins` perlu migrasi tambahan (`status`, `origin`, `sso_issuer`, `sso_subject`, `password_hash` nullable, unique index `iss`+`sub`). Lihat `WO-03-sso-admin-only.md` §5.
 
 ## Out of Scope (keseluruhan topic)
 - Sinkronisasi/penggabungan data antar cabang (laporan gabungan) — belum ada kebutuhan terkonfirmasi

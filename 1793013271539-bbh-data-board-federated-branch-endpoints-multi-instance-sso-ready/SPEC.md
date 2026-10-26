@@ -106,6 +106,10 @@ Konsekuensi:
 | **D-13** | **Pemilik route wajib eksplisit.** Setiap route/menu ditetapkan pemiliknya: `local` (instance dashboard/pusat) atau `endpoint` (instance tujuan). **List Portal** dan **login** selalu `local`; menu business `endpoint`. Route tanpa penetapan → default `local`. | Tanpa penetapan eksplisit, route acak berpindah dan admin bisa terkunci di cabang. |
 | **D-14** | **Sesi portal memegang DUA token:** **`main token`** (dari login pusat — untuk List Portal + Profil Pusat) dan **`portal token`** (dari SSO cabang — untuk menu business + Profil Cabang). **Admin Profile punya dua versi** (pusat & cabang) dan boleh **berbeda**; sistem menampilkan keduanya, tidak memaksa sama. | Profil & peran pusat ≠ cabang; admin berhak melihat kedua datanya. |
 | **D-15** | **Dua token, dua peran, tidak pernah tertukar.** `main token` **hanya** untuk route milik pusat; `portal token` **hanya** untuk route milik endpoint. Keluar portal **membuang `portal token`** (bukan hanya mengganti base URL) dan mengembalikan semua menu ke pusat. Token tidak boleh digunakan lintas peran. | Mencegah token kadaluarsa/peran lama tertinggal dan mencegah eskalasi lintas instance. |
+| **D-16** | **Identitas federasi = pasangan `iss` + `sub`** (`iss` = instance penerbit, `sub` = id admin di DB penerbit berupa **UUIDv7**). Cabang mencocokkan admin berdasarkan **pasangan ini**, **bukan email**. Email hanya dibawa sebagai atribut tampilan (`atr`), bukan kunci. | UUIDv7 stabil dan tidak berubah meski email/domain berganti; email rawan berubah sehingga bisa gagal cocok atau salah cocok. |
+| **D-17** | **Kunci verifikasi SSO fase awal = HS256 shared secret**, dibungkus di balik **interface verifier** agar dapat dinaikkan ke RS256/JWKS tanpa membongkar pemanggil. | Paling sederhana dan sudah didukung `internal/auth` (HS256); jalur upgrade tetap terbuka. |
+| **D-18** | **Pendaftaran admin cabang = hybrid A+B.** (A) Admin cabang dapat menambah admin SSO secara **manual**. (B) Saat SSO pertama kali, cabang **membuat baris `admins` berstatus `pending`** (auto-provision) yang **wajib disetujui** admin cabang sebelum dapat dipakai. **Auto-approve dilarang.** | Praktis sekaligus tetap terkendali; cabang tetap berdaulat atas user-nya; mencegah pemegang token sah masuk tanpa persetujuan. |
+| **D-19** | **Peran lokal tidak pernah dinaikkan oleh SSO.** Skema `admins` saat ini hanya punya `is_root` (bool) dan `is_active` (bool) — **tidak ada kolom `level`**. Aturan: SSO **selalu** memetakan ke level `admin` dan **tidak pernah** memberikan `is_root`. Root tetap wewenang lokal cabang. | Mencegah eskalasi lintas instance; sesuai skema yang sudah ada tanpa migrasi berlebihan. |
 
 ## 3. Ruang Lingkup
 
@@ -129,11 +133,12 @@ Konsekuensi:
 
 ### Fase 3 — SSO lintas instance + pendaftaran lokal (WO-03, DIPERLUKAN)
 
-- Pusat menerbitkan token identitas (klaim: `iss`, `sub`, `email`, `role`, `aud`, `exp`).
-- Cabang memverifikasi token **secara lokal** (shared secret fase awal → public key bila perlu rotasi).
-- **Guard keanggotaan lokal (admin saja):** cabang menolak admin yang belum ada di `admins` cabang (403 dengan pesan jelas). `members` tidak disentuh fase ini.
-- Pemetaan peran pusat → peran lokal cabang.
-- **Pendaftaran admin di cabang:** proses/prosedur agar admin pusat terdaftar di `admins` cabang (pilih mekanisme: manual oleh admin cabang, atau sinkronisasi bertahap) — diputuskan di WO-03. **Hanya admin; members di luar ruang lingkup.**
+- Pusat menerbitkan token identitas (klaim: `iss`, `sub`, `atr` (email, tampilan), `lvl`, `typ=portal`, `aud`, `iat`, `exp`).
+- Cabang memverifikasi token **secara lokal** — **HS256 shared secret** (D-17), tanpa callback ke pusat.
+- **Guard keanggotaan lokal (admin saja):** cabang menolak admin yang belum ada / belum disetujui di `admins` cabang (**403** dengan pesan jelas). `members` tidak disentuh fase ini.
+- **Pencocokan identitas (D-16):** memakai **`iss`+`sub`** (UUIDv7), **bukan** email.
+- **Pendaftaran admin di cabang (D-18, hybrid A+B):** manual oleh admin cabang, **dan** auto-provision baris `pending` saat SSO pertama kali — **wajib disetujui** admin cabang sebelum dipakai. **Hanya admin; members di luar ruang lingkup.**
+- **Peran (D-19):** SSO selalu memetakan ke level `admin` dan **tidak pernah** memberi `is_root`.
 - `aud` mencegah token satu cabang dipakai di cabang lain.
 
 ### Di luar ruang lingkup
@@ -212,6 +217,10 @@ CREATE INDEX idx_endpoint_audit_key_time ON endpoint_audit (endpoint_key, create
 | AC-13 | Cabang memverifikasi token **secara lokal** — tidak ada callback ke pusat pada setiap request (dibuktikan: pusat dimatikan, token valid tetap diterima cabang). |
 | AC-14 | Token ber-`aud` cabang lain **ditolak** di cabang ini. |
 | AC-15 | Password pengguna **tidak pernah** disimpan/dipindahkan ke cabang untuk user SSO. |
+| AC-23 | **Auto-provision (D-18):** SSO pertama kali oleh admin yang belum terdaftar **membuat baris `admins` berstatus `pending`** di cabang; admin tersebut **tetap ditolak** sampai admin cabang menyetujui. **Tidak ada auto-approve.** |
+| AC-24 | **Pencocokan `iss`+`sub` (D-16):** admin dikenali dari pasangan `iss`+`sub` (UUIDv7); **mengubah email tidak memutus akses**. |
+| AC-25 | **SSO tidak pernah memberi `is_root` (D-19):** token pusat tidak dapat menjadikan seseorang root di cabang. |
+| AC-26 | **Verifikasi HS256 (D-17):** token yang ditandatangani kunci lain / tanda tangan rusak **ditolak** (401). |
 
 ## 6. Risiko & Mitigasi
 
@@ -226,7 +235,8 @@ CREATE INDEX idx_endpoint_audit_key_time ON endpoint_audit (endpoint_key, create
 
 | Komponen | Status |
 |---|---|
-| Plugin `auth` + JWT | **Fondasi SSO fase 3** — diperluas dengan klaim `iss`/`aud`/`email` dan mode verifikasi lokal di cabang. Setiap instance memakai plugin ini atas DB-nya sendiri. |
+| Plugin `auth` + JWT | **Fondasi SSO fase 3** — diperluas dengan klaim `iss`/`sub`/`aud`/`typ` dan mode verifikasi lokal (HS256) di cabang. Setiap instance memakai plugin ini atas DB-nya sendiri. |
+| **Skema `admins` (catatan penting)** | Saat init, `admins` hanya punya `is_root` + `is_active` — **tidak ada kolom `level`** dan `password_hash` **NOT NULL**. Enrollment SSO (D-18) memerlukan **migrasi tambahan di cabang**: kolom `status` (`active`\|`pending`), `origin` (`local`\|`sso`), `sso_issuer`, `sso_subject`, plus `password_hash` menjadi nullable (admin SSO-murni tidak punya password) dan **unique index** pada (`sso_issuer`,`sso_subject`). |
 | `internal/migration` (versioned) | Dipakai ulang untuk migrasi `endpoints`. |
 | `internal/secrets` (AES-GCM) | Dipakai ulang untuk `token_enc`. |
 | `internal/console` (CLI) | Tempat command `endpoint ...`. |

@@ -50,6 +50,10 @@ files:
       path: WO-11-sudo-like-password-prompt.md
       type: file
       status: complete
+    - id: 01a1766c-c503-7a61-a042-5e6f708192a3
+      path: WO-12-fix-tty-prompt-invisible.md
+      type: file
+      status: draft
     - id: 01a1766c-c503-7148-b43e-2e9d8c1bcd62
       path: work-order.md
       type: file

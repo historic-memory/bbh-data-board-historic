@@ -1,6 +1,6 @@
 ---
 title: 'SPEC: Federated Branch Endpoints — 1 Aplikasi, N Instance, SSO-ready'
-description: 'Arah arsitektur baru: pusat dan cabang menjalankan aplikasi yang sama. Pusat beralih endpoint ke API service cabang (bukan mengakses DB cabang). Setiap instance punya DB lokal sendiri. SSO menyusul lewat JWT yang diterbitkan pusat.'
+description: 'Federasi instance: pusat & cabang menjalankan aplikasi yang sama. Captive portal pengalih API business ke cabang, kecuali List Portal (tetap pusat) & Admin Profile (dua versi). SSO lintas instance dengan keanggotaan lokal.'
 status: draft
 created: "2026-10-26"
 updated: "2026-10-26"
@@ -42,24 +42,43 @@ SPA (`sub_app/webapp`) **tidak berubah** dan tetap satu deployment bersama pusat
 ### Alur "Captive Portal ke Cabang" (kontrak utama)
 
 ```
-1. Admin login di dashboard pusat            → auth pusat, dapat access_token
-2. Dashboard menampilkan daftar endpoint cabang (dari endpoint registry)
+1. Admin login di dashboard pusat            → auth pusat, dapat access_token PUSAT
+2. Dashboard menampilkan daftar portal cabang (dari endpoint registry)
 3. Admin memilih "Masuk ke Cabang JKT"       → captive portal
-4. API business DIGANTIKAN ke endpoint cabang (base URL cabang + token cabang)
-5. Semua request core business berikutnya     → ke API service cabang
-   Auth tetap memakai access_token pusat      → tidak berubah
-6. "Keluar" atau pilih "local"                → API business kembali ke pusat
+4. SSO: dashboard menukar identitas ke cabang → dapat access_token CABANG
+5. Dashboard RELOAD                          → menu diarahkan ulang (lihat peta menu)
+6. Request business berikutnya                → ke API service cabang, pakai token CABANG
+7. "Keluar" / pilih portal pusat              → kembali ke mode pusat
 ```
 
-**Prinsip kunci:** *auth tetap di pusat; hanya API business yang digantikan.* SPA tidak diubah — yang berubah adalah target pemanggilan API business.
+**Prinsip kunci:** *auth pusat tetap; hanya API business yang digantikan. Saat masuk portal, sesi memegang **dua token** — token pusat dan token cabang — dan setiap menu memakai token yang sesuai.*
+
+### Peta menu setelah masuk portal cabang
+
+Setelah reload, menu diarahkan ulang — **kecuali dua hal**:
+
+| Menu | Setelah masuk portal | Token yang dipakai |
+|---|---|---|
+| Menu business (POS, inventory, transaksi, laporan) | ➡️ **Point ke cabang** | token **cabang** |
+| **List Portal** (daftar/berpindah portal) | 🏠 **Tetap pusat** | token **pusat** |
+| **Admin Profile** | 🏠 **Dua versi** (pusat & cabang) | sesuai versi yang dibuka |
+
+**Aturan:**
+- **List Portal selalu ke pusat.** Kalau ia ikut berpindah, admin terkunci di cabang tanpa jalan keluar. Ini jalur keluar dari captive portal — ia **tidak boleh** bergantung pada instance tujuan.
+- **Admin Profile punya dua versi**, dan admin boleh melihat **datanya masing-masing**:
+  - **Profil Pusat** → dibaca dari instance pusat (peran pusat).
+  - **Profil Cabang** → dibaca dari instance cabang (peran lokal cabang dari SSO).
+  - Keduanya boleh **berbeda** (mis. admin di pusat, kasir di cabang). Sistem menampilkan keduanya apa adanya; **tidak** memaksa keduanya sama.
+- Menu yang tidak jelas kepemilikannya → **default ke pusat** sampai ada penetapan eksplisit. Lebih baik menu kembali ke pusat daripada memanggil endpoint yang tidak melayani route tersebut.
 
 Konsekuensi:
 - Endpoint registry menaungi **API business** (`purpose=business`).
-- SPA menyimpan di `localStorage`: `access_token` (dari pusat) + `active_endpoint` (petunjuk UI; keputusan routing di server).
+- Setiap route perlu **penetapan pemilik**: `local` (pusat) atau `endpoint` (cabang). Lihat D-13.
+- SPA menyimpan di `localStorage`: `access_token` pusat, `access_token` cabang (bila ada), dan portal aktif.
 - **CORS** didaftarkan eksplisit per instance (daftar origin, bukan wildcard).
 - **Pendaftaran user di cabang** diperlukan agar SSO bekerja (lihat Fase 3).
 
-## 2. Keputusan (D-1..D-10)
+## 2. Keputusan (D-1..D-14)
 
 | # | Keputusan | Alasan |
 |---|---|---|
@@ -75,6 +94,8 @@ Konsekuensi:
 | **D-10** | Gagal koneksi ke endpoint **tidak boleh** membuat pusat error total: kembalikan error terklasifikasi (`unreachable`, `unauthorized`, `timeout`, `bad_gateway`) + cadangan ke `local` bila dikonfigurasi. | Ketahanan operasional. |
 | **D-11** | **Semua instance identik.** "Pusat" bukan role di kode — ia hanyalah **instance yang mendaftarkan endpoint lain** di tabel `endpoints` miliknya. Setiap instance dapat bertindak sebagai pusat bagi instance lain. | Simetri; tidak ada mode khusus yang perlu di-hard-code. |
 | **D-12** | **Anti-loop:** request lintas instance maksimum **1 hop**. Instance menolak meneruskan request yang sudah membawa `X-Forwarded-Instance` (sudah berasal dari instance lain). | Mencegah A→B→A→B berputar; mencegah eskalasi tak terbatas. |
+| **D-13** | **Pemilik route wajib eksplisit.** Setiap route/menu ditetapkan pemiliknya: `local` (instance dashboard/pusat) atau `endpoint` (instance tujuan). **List Portal** dan **login** selalu `local`; menu business `endpoint`. Route tanpa penetapan → default `local`. | Tanpa penetapan eksplisit, route acak berpindah dan admin bisa terkunci di cabang. |
+| **D-14** | **Sesi portal memegang DUA token:** token **pusat** (untuk List Portal + Profil Pusat) dan token **cabang** (untuk business + Profil Cabang). **Admin Profile punya dua versi** (pusat & cabang) dan boleh **berbeda**; sistem menampilkan keduanya, tidak memaksa sama. | Profil & peran pusat ≠ cabang; admin berhak melihat kedua datanya. |
 
 ## 3. Ruang Lingkup
 
@@ -158,6 +179,16 @@ CREATE INDEX idx_endpoint_audit_key_time ON endpoint_audit (endpoint_key, create
 | AC-8 | `endpoint rm` menolak menghapus endpoint yang sedang aktif / `is_local`. |
 | AC-9 | Kegagalan endpoint tidak membuat proses pusat crash; error terklasifikasi dikembalikan. |
 | AC-10 | Skema dibuat lewat migrasi versioned; `CREATE TABLE` nol di kode Go. |
+
+### Kriteria Penerimaan Fase 2 (Captive Portal & Routing)
+
+| # | AC |
+|---|---|
+| AC-16 | Memilih "Masuk ke Cabang JKT" melakukan **SSO** dan sesi memegang token **cabang**; dashboard reload dengan menu business menunjuk ke cabang. |
+| AC-17 | Setelah masuk portal, **List Portal tetap menunjuk pusat** dan tetap berfungsi untuk berpindah/keluar portal. |
+| AC-18 | **Admin Profile** tersedia dalam **dua versi** (pusat & cabang) dan boleh menampilkan data yang **berbeda**; membuka salah satu tidak merusak yang lain. |
+| AC-19 | Route yang tidak ditetapkan pemiliknya **default ke pusat** (tidak pernah diam-diam ke cabang). |
+| AC-20 | Request yang sudah membawa `X-Forwarded-Instance` **ditolak** (anti-loop D-12). |
 
 ### Kriteria Penerimaan Fase 3 (SSO lintas instance)
 

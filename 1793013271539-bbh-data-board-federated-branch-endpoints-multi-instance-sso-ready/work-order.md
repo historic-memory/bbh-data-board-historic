@@ -35,7 +35,7 @@ Arah baru: **federasi instance** — satu aplikasi, banyak instance, satu DB lok
 | # | File | Scope | Status |
 |---|---|---|---|
 | 1 | `WO-01-endpoint-registry.md` | **Endpoint Registry** — pulihkan `internal/migration` minimal, plugin `endpoint` + migrasi (`endpoints`, `endpoint_audit`), CLI `endpoint add/list/rm/test/use/active`, admin API (partial PUT, tanpa token), audit request | draft |
-| 2 | *(belum ditulis)* Captive Portal & Switching | Pilihan "Masuk ke Cabang" di dashboard admin pusat → **API business digantikan** ke endpoint cabang; proxy per request (`X-Branch-Endpoint`), anti-loop (`X-Forwarded-Instance`), klasifikasi error, fallback `local`, audit | not started |
+| 2 | *(belum ditulis)* Captive Portal & Switching | Pilihan "Masuk ke Cabang" di dashboard admin pusat → SSO, reload, menu diarahkan ulang **kecuali List Portal (tetap pusat) & Admin Profile (dua versi)**; proxy per request (`X-Branch-Endpoint`), anti-loop (`X-Forwarded-Instance`), klasifikasi error, fallback `local`, audit | not started |
 | 3 | *(belum ditulis)* SSO lintas instance | **DIPERLUKAN.** Pusat terbitkan token identitas; cabang verifikasi **lokal** + **guard keanggotaan lokal** (user wajib sudah terdaftar di cabang); pemetaan peran; `aud`. | not started |
 
 ## Urutan Eksekusi & Dependency

@@ -45,12 +45,13 @@ Memakai jalur yang **sudah ada** (`internal/auth`, HS256) dengan klaim berikut:
   "aud": ["cabang-jkt"],
   "sub": "<uuid-v7-admin-id-di-pusat>",
   "atr": "admin@example.com",        // atribut tampilan saja (email tidak jadi kunci)
-  "lvl": "admin",
   "typ": "portal",
   "iat": 1730000000,
   "exp": 1730000900
 }
 ```
+
+> 🔴 **TIDAK ADA klaim peran/izin di token** (`lvl`, `role`, `groups`, `permissions`). Ini keputusan sadar (D-19): **identitas federatif, otorisasi lokal**. Kalau peran ditulis di token, pusat bisa memberi hak lebih di cabang — itu eskalasi yang harus dicegah.
 
 | Klaim | Fungsi |
 |---|---|
@@ -58,7 +59,6 @@ Memakai jalur yang **sudah ada** (`internal/auth`, HS256) dengan klaim berikut:
 | `aud` | **Guard tujuan** — token cabang lain ditolak (AC-14) |
 | `sub` | **Kunci pencocokan enrollment**: id admin di DB pusat berupa **UUIDv7** (§5) |
 | `atr` | Email/atribut tampilan untuk UI saja — **bukan** kunci pencocokan |
-| `lvl` | Peran yang diminta; SSO selalu `admin`; cabang boleh menolaknya jika belum disetujui |
 | `typ` | Membedakan `portal` dari `access`/`refresh` yang sudah ada |
 | `exp` | **Pendek** (usul: 15 menit) |
 
@@ -90,7 +90,7 @@ LIMIT 1;
 
 | Hasil | Aksi |
 |---|---|
-| Ditemukan, status `active` | ✅ Lanjut; peran selalu `admin` (SSO **tidak pernah** memberi `is_root`) |
+| Ditemukan, status `active` | ✅ Lanjut; **izin ditentukan RBAC lokal cabang** (WO-04), bukan dari token |
 | Ditemukan, status `pending` | ❌ **403** — "autentikasi berhasil, tetapi pendaftaran Anda masih menunggu persetujuan admin cabang" |
 | Ditemukan tapi `is_active = false` | ❌ **403** — "akun dinonaktifkan di cabang ini" |
 | Tidak ditemukan (pertama kali) | 🔨 **Auto-provision baris `pending`** (D-18 opsi B) → lalu **tolak** sampai disetujui |
@@ -170,11 +170,13 @@ Route memakai token sesuai **pemiliknya** (WO-02 bagian 3). Token **tidak boleh*
 | 5 | Password admin **tidak pernah** dikirim/disimpan di cabang (AC-15) | grep + query |
 | 6 | **Auto-provision (D-18):** SSO pertama kali membuat baris `pending`, ditolak hingga disetujui (AC-23) | test |
 | 7 | **Pencocokan `iss`+`sub` (D-16):** mengganti email tidak memutus akses (AC-24) | test |
-| 8 | SSO tidak pernah memberi `is_root` (D-19/AC-25) | grep + query |
-| 9 | **Verifikasi HS256 (D-17):** token palsu / tanda tangan rusak → 401 (AC-26) | test |
-| 10 | `main token` tidak pernah ke cabang; `portal token` tidak pernah ke pusat (AC-21) | grep/trace |
-| 11 | Keluar portal membuang `portal token`, `main token` utuh (AC-22) | test |
-| 12 | `go build ./... && go vet ./... && go test ./...` lulus | CI |
+| 8 | **Otorisasi lokal (D-19):** token tidak membawa peran; hak akses = RBAC cabang (AC-25) | grep token claims + test |
+| 9 | Admin SSO tanpa grup di cabang → login boleh, tetapi **403** di route ber-izin (D-22) | test |
+| 10 | Izin cabang berubah → berlaku **tanpa** minta token baru (D-23) | test |
+| 11 | **Verifikasi HS256 (D-17):** token palsu / tanda tangan rusak → 401 (AC-26) | test |
+| 12 | `main token` tidak pernah ke cabang; `portal token` tidak pernah ke pusat (AC-21) | grep/trace |
+| 13 | Keluar portal membuang `portal token`, `main token` utuh (AC-22) | test |
+| 14 | `go build ./... && go vet ./... && go test ./...` lulus | CI |
 
 ## 10. Definition of Done
 
@@ -202,13 +204,14 @@ Route memakai token sesuai **pemiliknya** (WO-02 bagian 3). Token **tidak boleh*
 |---|---|---|---|
 | 1 | Enrollment admin cabang | **D-18: Hybrid A + B** | Manual + auto-provision `pending` + wajib approval. |
 | 2 | Identitas pencocokan | **D-16: `iss` + `sub` (UUIDv7)** | Bukan email. Stabil walau email berganti. |
-| 3 | Kunci verifikasi SSO | **D-17: HS256 shared secret** | Di balik interface verifier agar bisa upgrade ke RS256. |
+| 3 | Kunci verifikasi SSO | **D-17: HS256 shared secret** | Di balik interface verifier agar bisa naik ke RS256. |
+| 4 | Otorisasi | **D-19: otorisasi LOKAL** | Token hanya identitas; hak akses = RBAC cabang (**WO-04 wajib selesai dulu**) |
 
 ### Hal Teknis Tambahan untuk Dev Agent
 
 1. **Skema `admins`** (⚠️ kritis): tabel `admins` tidak punya kolom `level`, `status`, `sso_issuer`, `sso_subject`, `origin`. Migrasi D-18 wajib menambahkan kolom-kolom ini (lihat §5). Tanpa migrasi ini, enrollment tidak bisa berjalan.
-2. **Peran/Level**: `admins` hanya punya `is_root` + `is_active`. SSO selalu memetakan ke `admin` (`LevelAdmin`) dan **tidak pernah** memberi `is_root` (D-19). Tidak perlu kolom `federated_level` kecuali pemetaan lebih rumit benar-benar dibutuhkan.
-3. **Interface verifier**:
+2. **Otorisasi = RBAC lokal** (D-19..D-23): setelah identitas terbukti, cabang menghitung izin dari `admin_groups` → `group_permissions`. **Jangan** menyalin izin pusat. Lihat `WO-04-rbac-groups-permissions.md`.
+3. **Tidak ada `is_root` dari SSO**: root adalah keanggotaan grup `root` **di cabang**, diberikan admin cabang sendiri.
 
 ```go
 type IdentityVerifier interface {

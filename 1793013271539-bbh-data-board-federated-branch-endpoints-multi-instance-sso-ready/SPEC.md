@@ -109,7 +109,12 @@ Konsekuensi:
 | **D-16** | **Identitas federasi = pasangan `iss` + `sub`** (`iss` = instance penerbit, `sub` = id admin di DB penerbit berupa **UUIDv7**). Cabang mencocokkan admin berdasarkan **pasangan ini**, **bukan email**. Email hanya dibawa sebagai atribut tampilan (`atr`), bukan kunci. | UUIDv7 stabil dan tidak berubah meski email/domain berganti; email rawan berubah sehingga bisa gagal cocok atau salah cocok. |
 | **D-17** | **Kunci verifikasi SSO fase awal = HS256 shared secret**, dibungkus di balik **interface verifier** agar dapat dinaikkan ke RS256/JWKS tanpa membongkar pemanggil. | Paling sederhana dan sudah didukung `internal/auth` (HS256); jalur upgrade tetap terbuka. |
 | **D-18** | **Pendaftaran admin cabang = hybrid A+B.** (A) Admin cabang dapat menambah admin SSO secara **manual**. (B) Saat SSO pertama kali, cabang **membuat baris `admins` berstatus `pending`** (auto-provision) yang **wajib disetujui** admin cabang sebelum dapat dipakai. **Auto-approve dilarang.** | Praktis sekaligus tetap terkendali; cabang tetap berdaulat atas user-nya; mencegah pemegang token sah masuk tanpa persetujuan. |
-| **D-19** | **Peran lokal tidak pernah dinaikkan oleh SSO.** Skema `admins` saat ini hanya punya `is_root` (bool) dan `is_active` (bool) — **tidak ada kolom `level`**. Aturan: SSO **selalu** memetakan ke level `admin` dan **tidak pernah** memberikan `is_root`. Root tetap wewenang lokal cabang. | Mencegah eskalasi lintas instance; sesuai skema yang sudah ada tanpa migrasi berlebihan. |
+| **D-19** | **Otorisasi SELALU lokal; token tidak membawa peran.** Portal token **hanya** membawa identitas (`iss`, `sub`, `atr`, `aud`, `typ`, `exp`) — **tidak ada** klaim `lvl`/`role`/`group`/`permission`. Setelah identitas terbukti, cabang **menentukan sendiri** izin admin tersebut dari tabel RBAC miliknya. Izin dari pusat **tidak pernah** dipercaya atau diteruskan. | Prinsip "identitas federatif, otorisasi lokal": cabang berdaulat penuh atas hak aksesnya, dan tidak ada jalur eskalasi lewat token. |
+| **D-20** | **Model izin berbasis grup:** `admins` ↔ `admin_groups` ↔ `groups` ↔ `group_permissions` ↔ `permissions`. **Izin efektif** seorang admin = **gabungan (union)** izin dari seluruh grup **aktif** yang diikutinya. Tidak ada kolom `level`; tidak ada peran hard-coded. | Satu model izin untuk semua; admin bisa punya banyak grup sekaligus; mudah diaudit. |
+| **D-21** | **`is_root` digantikan grup sistem `root`** yang memegang satu permission `*` (semua izin). Migrasi memindahkan setiap baris `is_root = true` menjadi keanggotaan grup `root`, lalu **kolom `is_root` dihapus** setelah kode tidak lagi membacanya. Guard `RequireRootAdmin` diganti `RequirePermission("*")`. | Satu sumber kebenaran; menghilangkan dua model izin yang berjalan bersamaan. |
+| **D-22** | **Tidak ada izin implisit.** Admin tanpa grup = **tidak punya izin apa pun** (boleh login, tetapi setiap route yang butuh izin → **403**). **Tidak ada "default allow"**. | Aman secara bawaan (fail-closed); salah konfigurasi berakibat menolak, bukan membuka. |
+| **D-23** | **Izin di-resolve per request dari DB**, tidak pernah disimpan di dalam token. Perubahan grup berlaku **segera** tanpa perlu login ulang. | Mencabut izin harus langsung efektif; token hanya identitas (D-19). |
+| **D-24** | **Daftar permission awal** (key stabil, dipakai kode): `*`, `admin.read`, `admin.write`, `admin.delete`, `group.read`, `group.write`, `permission.read`, `member.read`, `member.write`, `member.delete`, `endpoint.read`, `endpoint.write`, `endpoint.test`, `audit.read`. Grup sistem awal: `root` (`*`), `admin`, `viewer` (read-only). | Key harus stabil karena dirujuk di kode & dokumentasi; grup sistem mencegah admin terkunci total. |
 
 ## 3. Ruang Lingkup
 
@@ -133,13 +138,23 @@ Konsekuensi:
 
 ### Fase 3 — SSO lintas instance + pendaftaran lokal (WO-03, DIPERLUKAN)
 
-- Pusat menerbitkan token identitas (klaim: `iss`, `sub`, `atr` (email, tampilan), `lvl`, `typ=portal`, `aud`, `iat`, `exp`).
+- Pusat menerbitkan token identitas — **identitas saja**: `iss`, `sub` (UUIDv7), `atr` (email, tampilan), `typ=portal`, `aud`, `iat`, `exp`. **Tanpa klaim peran/izin** (D-19).
 - Cabang memverifikasi token **secara lokal** — **HS256 shared secret** (D-17), tanpa callback ke pusat.
 - **Guard keanggotaan lokal (admin saja):** cabang menolak admin yang belum ada / belum disetujui di `admins` cabang (**403** dengan pesan jelas). `members` tidak disentuh fase ini.
 - **Pencocokan identitas (D-16):** memakai **`iss`+`sub`** (UUIDv7), **bukan** email.
 - **Pendaftaran admin di cabang (D-18, hybrid A+B):** manual oleh admin cabang, **dan** auto-provision baris `pending` saat SSO pertama kali — **wajib disetujui** admin cabang sebelum dipakai. **Hanya admin; members di luar ruang lingkup.**
-- **Peran (D-19):** SSO selalu memetakan ke level `admin` dan **tidak pernah** memberi `is_root`.
+- **Otorisasi (D-19..D-23):** setelah identitas terbukti, cabang menghitung **izin efektif dari RBAC lokalnya sendiri** (`admin_groups` → `group_permissions`). Izin dari pusat tidak pernah dipakai.
 - `aud` mencegah token satu cabang dipakai di cabang lain.
+
+### Fase 2b — RBAC: groups & permissions (WO-04, PRASYARAT Fase 3)
+
+- Tabel `permissions`, `groups`, `admin_groups`, `group_permissions` lewat migrasi versioned.
+- **Izin efektif** = union izin dari grup aktif yang diikuti admin (D-20).
+- Guard berbasis permission: `RequirePermission("admin.write")`, dst.; `RequireRootAdmin` → `RequirePermission("*")` (D-21).
+- Grup sistem awal: `root` (`*`), `admin`, `viewer`; migrasi `is_root=true` → grup `root`; kolom `is_root` dihapus (D-21).
+- CLI: `auth group create|list|assign|unassign`, `auth permission list`.
+- API admin: baca/tulis grup & keanggotaan grup (butuh izin `group.*`).
+- **Fail-closed:** tanpa grup → tanpa izin (D-22).
 
 ### Di luar ruang lingkup
 
@@ -219,8 +234,18 @@ CREATE INDEX idx_endpoint_audit_key_time ON endpoint_audit (endpoint_key, create
 | AC-15 | Password pengguna **tidak pernah** disimpan/dipindahkan ke cabang untuk user SSO. |
 | AC-23 | **Auto-provision (D-18):** SSO pertama kali oleh admin yang belum terdaftar **membuat baris `admins` berstatus `pending`** di cabang; admin tersebut **tetap ditolak** sampai admin cabang menyetujui. **Tidak ada auto-approve.** |
 | AC-24 | **Pencocokan `iss`+`sub` (D-16):** admin dikenali dari pasangan `iss`+`sub` (UUIDv7); **mengubah email tidak memutus akses**. |
-| AC-25 | **SSO tidak pernah memberi `is_root` (D-19):** token pusat tidak dapat menjadikan seseorang root di cabang. |
+| AC-25 | **Otorisasi lokal (D-19):** portal token **tidak** membawa klaim peran/izin; hak akses admin di cabang **sepenuhnya** ditentukan RBAC cabang. Token pusat tidak dapat menaikkan hak di cabang. |
 | AC-26 | **Verifikasi HS256 (D-17):** token yang ditandatangani kunci lain / tanda tangan rusak **ditolak** (401). |
+
+### Kriteria Penerimaan Fase 2b (RBAC — groups & permissions)
+
+| # | AC |
+|---|---|
+| AC-27 | **Izin efektif (D-20):** admin dengan 2 grup mendapat **gabungan** izin keduanya; melepas satu grup **mengurangi** izin seketika. |
+| AC-28 | **Fail-closed (D-22):** admin tanpa grup **tidak bisa** mengakses route ber-izin (403); bukan "diizinkan secara default". |
+| AC-29 | **Migrasi `is_root` (D-21):** setiap admin `is_root=true` menjadi anggota grup `root`; setelah migrasi, perilaku root **identik** seperti sebelumnya (tidak ada yang kehilangan akses). |
+| AC-30 | **Izin tidak di token (D-23):** mencabut grup berlaku **tanpa login ulang** — request berikutnya langsung 403. |
+| AC-31 | **Grup nonaktif diabaikan:** grup dengan `is_active=false` tidak menyumbang izin apa pun. |
 
 ## 6. Risiko & Mitigasi
 
@@ -237,6 +262,7 @@ CREATE INDEX idx_endpoint_audit_key_time ON endpoint_audit (endpoint_key, create
 |---|---|
 | Plugin `auth` + JWT | **Fondasi SSO fase 3** — diperluas dengan klaim `iss`/`sub`/`aud`/`typ` dan mode verifikasi lokal (HS256) di cabang. Setiap instance memakai plugin ini atas DB-nya sendiri. |
 | **Skema `admins` (catatan penting)** | Saat init, `admins` hanya punya `is_root` + `is_active` — **tidak ada kolom `level`** dan `password_hash` **NOT NULL**. Enrollment SSO (D-18) memerlukan **migrasi tambahan di cabang**: kolom `status` (`active`\|`pending`), `origin` (`local`\|`sso`), `sso_issuer`, `sso_subject`, plus `password_hash` menjadi nullable (admin SSO-murni tidak punya password) dan **unique index** pada (`sso_issuer`,`sso_subject`). |
+| **Model izin (`is_root`)** | `is_root` **digantikan** RBAC (`permissions`/`groups`/`admin_groups`/`group_permissions`, D-20..D-24). Guard `RequireRootAdmin` → `RequirePermission("*")`. Kolom `is_root` dihapus setelah migrasi data. |
 | `internal/migration` (versioned) | Dipakai ulang untuk migrasi `endpoints`. |
 | `internal/secrets` (AES-GCM) | Dipakai ulang untuk `token_enc`. |
 | `internal/console` (CLI) | Tempat command `endpoint ...`. |

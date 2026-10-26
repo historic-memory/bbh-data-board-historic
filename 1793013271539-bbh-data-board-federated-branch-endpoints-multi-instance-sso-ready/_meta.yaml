@@ -22,6 +22,10 @@ files:
       path: WO-03-sso-admin-only.md
       type: file
       status: draft
+    - id: 01a17843-e021-71c1-823f-130a712d4175
+      path: WO-04-rbac-groups-permissions.md
+      type: file
+      status: draft
     - id: 01a177ec-c013-7221-8502-c5aa011599f8
       path: work-order.md
       type: file

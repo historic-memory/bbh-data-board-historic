@@ -25,57 +25,101 @@ graph TD
   BR1["🏪 Cabang A<br/>instance sama<br/>DB lokal A"]
   BR2["🏪 Cabang B<br/>instance sama<br/>DB lokal B"]
 
-  HQ -- "HTTP + token (SSO nanti)" --> BR1
-  HQ -- "HTTP + token (SSO nanti)" --> BR2
+  HQ -- "HTTP + token" --> BR1
+  HQ -- "HTTP + token" --> BR2
   BR1 -. "tidak ada akses DB lintas jaringan" .- HQ
 ```
+
+## 1b. Dua Jalur API di SPA (kontrak inti)
+
+SPA (`sub_app/webapp`) **tidak berubah** dan tetap satu deployment bersama pusat. Di dalamnya ada **dua jalur API** dengan perilaku berbeda:
+
+| Jalur | Target | Berpindah? | Contoh |
+|---|---|---|---|
+| **Auth pusat** — login, admin, member pusat | **Pusat** (instance ini sendiri) | ❌ Tidak pernah | `POST /api/auth/login`, `/api/admins`, `/api/members` |
+| **Auth cabang** — user yang melayani cabang | **Cabang** (instance tujuannya) | ✅ Ikut instance tujuan | Sama, tetapi di instance cabang |
+| **Core business** — POS, inventory, transaksi | Endpoint aktif (pusat atau cabang) | ✅ **Inilah yang di-switch** | endpoint dengan `purpose=business` |
+
+**Fakta kunci:** **setiap instance (pusat dan cabang) menjalankan plugin `auth` sendiri**, dengan tabel `admins`/`members` miliknya. Jadi cabang **memiliki** dan **butuh** auth-nya sendiri — bukan menerima identitas dari pusat begitu saja.
+
+**Prinsip SSO (terkonfirmasi user):**
+
+> Pusat menerbitkan token identitas. Cabang memverifikasinya **secara lokal**, dan **hanya menerima user yang sudah terdaftar di cabang tersebut**.
+
+Artinya SSO di sini adalah **federated identity + pendaftaran lokal**, bukan pemusatan auth:
+
+1. User login di **pusat** → terbit token identitas (mis. berisi `sub`, `email`, `role`, `iss`, `exp`).
+2. Token dibawa ke **cabang** (lewat jalur endpoint).
+3. Cabang memverifikasi tanda tangan token **lokal** (tanpa callback ke pusat — agar cabang tetap layak bila pusat tak terjangkau).
+4. **Syarat wajib:** user (dicocokkan via `email` atau identitas stabil lain) **harus sudah terdaftar** di `admins`/`members` cabang.
+   - Terdaftar → diterima, dipetakan ke **peran lokal** cabang.
+   - **Belum terdaftar → ditolak** (403) dengan pesan jelas: user belum didaftarkan di cabang ini.
+5. Kredensial (password) **tidak pernah** dipindahkan ke cabang — cabang tidak memakai password untuk user SSO; ia memakai token pusat + keanggotaan lokal.
+
+Konsekuensi:
+- Endpoint registry menaungi **core business**; jalur auth mengikuti instance tujuan, dan SSO adalah komponen **yang memang dibutuhkan** (bukan opsional).
+- SPA menyimpan di `localStorage`: `access_token` + `active_endpoint` (petunjuk UI; keputusan routing di server).
+- **CORS** didaftarkan eksplisit per instance (daftar origin, bukan wildcard).
+- **Pendaftaran user di cabang adalah proses tersendiri** (admin cabang mendaftarkan user, atau sinkronisasi bertahap) — di luar WO-01, dibahas sebagai bagian SSO.
 
 ## 2. Keputusan (D-1..D-10)
 
 | # | Keputusan | Alasan |
 |---|---|---|
-| **D-1** | Satu basis kode, banyak instance. Tiap instance punya DB lokal sendiri (PostgreSQL). | Deploy seragam, cabang mandiri. |
+| **D-1** | Satu basis kode, banyak instance. Tiap instance (pusat & cabang) punya DB lokal sendiri + plugin `auth` sendiri. | Deploy seragam; cabang mandiri. |
 | **D-2** | Pusat **tidak pernah** membuka koneksi DB ke cabang. Komunikasi hanya HTTP API. | Tidak ada kredensial DB lintas jaringan; port DB cabang tidak perlu terbuka. |
 | **D-3** | Daftar endpoint cabang disimpan di **DB lokal pusat**, tabel `endpoints`, dibuat lewat **migrasi versioned**. | Konsisten dengan kontrak yang sudah terbukti: skema milik DB utama → harus lewat migrasi, bukan DDL bootstrap. |
-| **D-4** | "Ganti cabang" = **ganti base URL + kredensial API**, bukan ganti koneksi DB. | Model federasi. |
-| **D-5** | Registry endpoint **tidak menyimpan password DB**. Yang disimpan hanya base URL, label, status, dan referensi token. | Mengurangi permukaan risiko; token pun disegel (AES-GCM) seperti pola `secrets` yang ada. |
-| **D-6** | Hanya **satu endpoint aktif** dalam satu waktu per sesi/instance (bukan multi-target bersamaan). Default = instance itu sendiri (`local`). | Menghindari ambiguitas "request ini ke mana". Bisa dilonggarkan nanti bila perlu. |
+| **D-4** | "Ganti cabang" = **ganti base URL + kredensial API** untuk core business **dan** auth cabang, bukan ganti koneksi DB. | Model federasi. |
+| **D-5** | Registry endpoint **tidak menyimpan password DB**. Yang disimpan hanya base URL, label, status, `purpose`, dan referensi token. | Mengurangi permukaan risiko; token disegel (AES-GCM) seperti pola `secrets` yang ada. |
+| **D-6** | Hanya **satu endpoint aktif** dalam satu waktu per sesi/instance (bukan multi-target bersamaan). Default = instance itu sendiri (`local`). | Menghindari ambiguitas "request ini ke mana". |
 | **D-7** | Endpoint aktif dapat di-override **per request** lewat header `X-Branch-Endpoint`, atau di-set sebagai **mode kerja** lewat CLI/API. | Fleksibilitas untuk dashboard pusat + skrip. |
-| **D-8** | **SSO (fase 2):** pusat menerbitkan JWT; cabang memverifikasi dengan shared secret/public key. Fase 1 hanya menyiapkan tempat (kolom + interface), belum membangun alur login lintas instance. | Bertahap; fase 1 harus berguna tanpa SSO. |
+| **D-8** | **SSO lintas instance (fase 3 — dinyatakan DIPERLUKAN, bukan opsional):** pusat menerbitkan token identitas; cabang memverifikasinya **lokal** (shared secret atau public key, tanpa callback) **dan** hanya menerima user yang **sudah terdaftar di cabang** tersebut. Peran dipetakan ke peran lokal cabang. | Federated identity + pendaftaran lokal; cabang tetap punya otoritas atas user-nya. |
 | **D-9** | Setiap request lintas instance wajib membawa **request ID** dan dicatat di audit log pusat (endpoint, metode, path, status, durasi — **tanpa body/token**). | Ketertelusuran tanpa membocorkan data. |
 | **D-10** | Gagal koneksi ke endpoint **tidak boleh** membuat pusat error total: kembalikan error terklasifikasi (`unreachable`, `unauthorized`, `timeout`, `bad_gateway`) + cadangan ke `local` bila dikonfigurasi. | Ketahanan operasional. |
 
 ## 3. Ruang Lingkup
 
-### Fase 1 — Endpoint Registry & Switching (WO-01, WO-02)
+### Fase 1 — Endpoint Registry (WO-01)
 
-- Tabel `endpoints` + migrasi versioned (plugin baru atau perluasan plugin yang ada).
-- CLI: `endpoint add | list | rm | test | use`.
+- Tabel `endpoints` + `endpoint_audit` via migrasi versioned.
+- CLI: `endpoint add | list | rm | test | use | active`.
 - API admin: CRUD + `POST /api/admin/endpoints/:key/test`.
-- HTTP client terpusat yang bisa dialihkan targetnya.
+- Token endpoint disegel AES-GCM.
+- Audit request lintas instance.
+
+### Fase 2 — Routing core business per request (WO-02)
+
+- HTTP client terpusat yang bisa dialihkan targetnya **untuk jalur core business**.
+- Override per request via header `X-Branch-Endpoint`.
+- Klasifikasi error (`unreachable`/`timeout`/`unauthorized`/`bad_gateway`) + fallback.
 - Audit log request lintas instance.
 
-### Fase 2 — SSO (WO-03, belum dijadwalkan)
+### Fase 3 — SSO lintas instance + pendaftaran lokal (WO-03, DIPERLUKAN)
 
-- Pusat menerbitkan token; cabang memverifikasi.
-- Penukaran/verifikasi identitas antar instance.
-- Pemetaan peran pengguna pusat → cabang.
+- Pusat menerbitkan token identitas (klaim: `iss`, `sub`, `email`, `role`, `aud`, `exp`).
+- Cabang memverifikasi token **secara lokal** (shared secret fase awal → public key bila perlu rotasi).
+- **Guard keanggotaan lokal:** cabang menolak user yang belum ada di `admins`/`members` cabang (403 dengan pesan jelas).
+- Pemetaan peran pusat → peran lokal cabang.
+- **Pendaftaran user di cabang:** proses/prosedur agar user pusat terdaftar di cabang (pilih mekanisme: manual oleh admin cabang, atau sinkronisasi bertahap) — diputuskan di WO-03.
+- `aud` mencegah token satu cabang dipakai di cabang lain.
 
 ### Di luar ruang lingkup
 
 - Sinkronisasi/penggabungan data antar cabang (laporan gabungan) — belum ada kebutuhan terkonfirmasi.
 - Replikasi, sharding, HA.
 - Frontend dashboard pemilihan cabang (menyusul setelah API stabil).
+- **SPA (`sub_app/webapp`) tidak diubah** — tetap satu deployment, hanya target API yang berpindah.
 
 ## 4. Model Data Usulan (Fase 1)
 
 ```sql
 CREATE TABLE endpoints (
     id            BIGSERIAL PRIMARY KEY,
-    key           TEXT UNIQUE NOT NULL,      -- "pusat", "cabang-jkt", "cabang-smg"
+    key           TEXT UNIQUE NOT NULL,      -- "local", "cabang-jkt", "cabang-smg"
     label         TEXT,
     base_url      TEXT NOT NULL,             -- https://cabang-jkt.example.com
-    auth_kind     TEXT NOT NULL DEFAULT 'none',  -- none | bearer | hmac (fase2)
+    purpose       TEXT NOT NULL DEFAULT 'business', -- business (auth TIDAK didaftarkan di sini)
+    auth_kind     TEXT NOT NULL DEFAULT 'none',  -- none | bearer (fase 3: hmac/jwt)
     token_enc     TEXT,                      -- AES-GCM envelope, NULL bila auth_kind=none
     timeout_ms    INT  NOT NULL DEFAULT 10000,
     status        TEXT NOT NULL DEFAULT 'active', -- active | suspended
@@ -113,6 +157,16 @@ CREATE INDEX idx_endpoint_audit_key_time ON endpoint_audit (endpoint_key, create
 | AC-9 | Kegagalan endpoint tidak membuat proses pusat crash; error terklasifikasi dikembalikan. |
 | AC-10 | Skema dibuat lewat migrasi versioned; `CREATE TABLE` nol di kode Go. |
 
+### Kriteria Penerimaan Fase 3 (SSO lintas instance)
+
+| # | AC |
+|---|---|
+| AC-11 | User yang login di pusat dapat mengakses cabang **tanpa login ulang**, bila **sudah terdaftar di cabang** tersebut. |
+| AC-12 | User yang **belum terdaftar di cabang** ditolak dengan **403 + pesan jelas** (bukan 401), meskipun tokennya sah. |
+| AC-13 | Cabang memverifikasi token **secara lokal** — tidak ada callback ke pusat pada setiap request (dibuktikan: pusat dimatikan, token valid tetap diterima cabang). |
+| AC-14 | Token ber-`aud` cabang lain **ditolak** di cabang ini. |
+| AC-15 | Password pengguna **tidak pernah** disimpan/dipindahkan ke cabang untuk user SSO. |
+
 ## 6. Risiko & Mitigasi
 
 | Risiko | Mitigasi |
@@ -126,7 +180,7 @@ CREATE INDEX idx_endpoint_audit_key_time ON endpoint_audit (endpoint_key, create
 
 | Komponen | Status |
 |---|---|
-| Plugin `auth` + JWT | **Fondasi SSO fase 2** — dipertahankan. |
+| Plugin `auth` + JWT | **Fondasi SSO fase 3** — diperluas dengan klaim `iss`/`aud`/`email` dan mode verifikasi lokal di cabang. Setiap instance memakai plugin ini atas DB-nya sendiri. |
 | `internal/migration` (versioned) | Dipakai ulang untuk migrasi `endpoints`. |
 | `internal/secrets` (AES-GCM) | Dipakai ulang untuk `token_enc`. |
 | `internal/console` (CLI) | Tempat command `endpoint ...`. |

@@ -62,6 +62,7 @@ CREATE TABLE endpoints (
     key           TEXT UNIQUE NOT NULL,
     label         TEXT,
     base_url      TEXT NOT NULL,
+    purpose       TEXT NOT NULL DEFAULT 'business', -- hanya core business; auth TIDAK di sini
     auth_kind     TEXT NOT NULL DEFAULT 'none',   -- none | bearer
     token_enc     TEXT,
     timeout_ms    INT  NOT NULL DEFAULT 10000,
@@ -85,8 +86,8 @@ CREATE TABLE endpoint_audit (
 CREATE INDEX idx_endpoint_audit_key_time ON endpoint_audit (endpoint_key, created_at DESC);
 
 -- Seed: instance sendiri selalu tersedia
-INSERT INTO endpoints (key, label, base_url, auth_kind, is_local, status)
-VALUES ('local', 'Instance ini', 'http://127.0.0.1:8082', 'none', TRUE, 'active')
+INSERT INTO endpoints (key, label, base_url, purpose, auth_kind, is_local, status)
+VALUES ('local', 'Instance ini', 'http://127.0.0.1:8082', 'business', 'none', TRUE, 'active')
 ON CONFLICT (key) DO NOTHING;
 ```
 

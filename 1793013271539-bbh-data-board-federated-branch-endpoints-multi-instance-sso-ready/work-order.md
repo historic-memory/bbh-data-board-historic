@@ -25,6 +25,7 @@ Arah baru: **federasi instance** — satu aplikasi, banyak instance, satu DB lok
 3. "Ganti cabang" = ganti **base URL + token API**, bukan ganti koneksi DB (D-4).
 4. Token disegel AES-GCM; tidak pernah lewat argv, tidak pernah masuk log (D-5).
 5. Satu endpoint aktif per sesi; default `local` (D-6).
+6. **Setiap instance (pusat & cabang) menjalankan plugin `auth` sendiri.** SSO = token pusat + **keanggotaan lokal di cabang** (D-8). User yang belum terdaftar di cabang ditolak 403.
 
 ## Daftar WO
 
@@ -32,7 +33,7 @@ Arah baru: **federasi instance** — satu aplikasi, banyak instance, satu DB lok
 |---|---|---|---|
 | 1 | `WO-01-endpoint-registry.md` | **Endpoint Registry** — pulihkan `internal/migration` minimal, plugin `endpoint` + migrasi (`endpoints`, `endpoint_audit`), CLI `endpoint add/list/rm/test/use/active`, admin API (partial PUT, tanpa token), audit request | draft |
 | 2 | *(belum ditulis)* Endpoint Switching | Proxy HTTP client per request (`X-Branch-Endpoint`), klasifikasi error, fallback `local`, integrasi audit | not started |
-| 3 | *(belum ditulis)* SSO fase 2 | Pusat terbitkan JWT, cabang verifikasi, pemetaan peran | not started |
+| 3 | *(belum ditulis)* SSO lintas instance | **DIPERLUKAN.** Pusat terbitkan token identitas; cabang verifikasi **lokal** + **guard keanggotaan lokal** (user wajib sudah terdaftar di cabang); pemetaan peran; `aud`. | not started |
 
 ## Urutan Eksekusi & Dependency
 ```

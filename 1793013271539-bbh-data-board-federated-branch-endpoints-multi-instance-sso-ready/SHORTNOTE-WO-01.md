@@ -9,8 +9,10 @@ updated: "2026-10-26"
 # Shortnote Handoff — WO-01 Endpoint Registry
 
 **Untuk:** Dev Agent
-**Sumber:** `SPEC.md`, `WO-01-endpoint-registry.md`
+**Sumber:** `SPEC.md` (D-1..D-15, AC-1..AC-22), `WO-01-endpoint-registry.md` (rev 2)
 **Mulai dari commit:** `1f5a9b2` (setelah destroy topic multi-DB)
+
+**Konteks arsitektur (penting):** ini fase 1 dari **federasi instance** — pusat & cabang menjalankan aplikasi yang sama. WO ini hanya **endpoint registry** (fase 1). Captive portal + routing = WO-02; SSO **admin-only** (main token / portal token, D-14/D-15) = WO-03. JANGAN membangun hal-hal itu di WO ini.
 
 ---
 
@@ -111,7 +113,7 @@ I. go build/vet/test + rebuild bin/console
 - seed `local` (`is_local=TRUE`) selalu ada
 - **nol `CREATE TABLE` di Go**
 
-**Endpoint aktif:** rekomendasi kolom `is_active` di tabel (bukan file state) — hanya satu baris aktif, dikelola dalam transaksi. Alasan: state tidak hilang antar proses, dan `endpoint active` konsisten dari CLI maupun server.
+**Endpoint aktif:** kolom `is_active` di tabel (bukan file state) — hanya satu baris aktif, dikelola transaksi + **unique partial index** `WHERE is_active` sebagai jaring pengaman di level DB. Alasan: state tidak hilang antar proses, dan `endpoint active` konsisten dari CLI maupun server; inilah basis "portal aktif" untuk WO-02.
 
 **`test`:** panggil `<base_url>/healthz`, fallback `/`. Timeout dari kolom `timeout_ms`. Laporkan sebab terklasifikasi (tabel pemetaan ada di WO-01 Bagian C), bukan `err.Error()` mentah.
 

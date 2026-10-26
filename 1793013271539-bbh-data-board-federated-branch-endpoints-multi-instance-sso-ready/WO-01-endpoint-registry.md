@@ -1,22 +1,24 @@
 ---
 title: 'WO-01: Endpoint Registry — tabel endpoints + CLI + admin API'
-description: 'Fondasi federasi: registry endpoint cabang di DB lokal pusat (migrasi versioned), CLI endpoint add/list/rm/test/use, admin API, penyimpanan token tersegel AES-GCM, audit request lintas instance. Prasyarat: pulihkan command migrate (internal/migration hilang saat destroy).'
+description: 'Fondasi federasi: registry endpoint cabang di DB lokal pusat (migrasi versioned), CLI endpoint add/list/rm/test/use, admin API, penyimpanan token tersegel AES-GCM, audit request lintas instance. Prasyarat: pulihkan command migrate (internal/migration hilang saat destroy). Scope: admin saja (D-8).'
 status: draft
 created: "2026-10-26"
 updated: "2026-10-26"
-revision: 1
+revision: 2
 ---
 
 # WO-01: Endpoint Registry
 
-**SPEC acuan:** `SPEC.md` di topic ini (D-1..D-10, AC-1..AC-10)
-**Fase:** 1 (Endpoint Registry & Switching) — bagian registry saja
+**SPEC acuan:** `SPEC.md` di topic ini (D-1..D-15, AC-1..AC-22)
+**Fase:** 1 (Endpoint Registry) — bagian registry saja. Routing/captive portal = WO-02; SSO (admin-only) = WO-03.
+
+**Cakupan pengguna:** **admin saja** (D-8 scope-down). Tabel `members` tidak disentuh WO ini.
 
 ## Kondisi Awal Kode (terverifikasi 2026-10-26 setelah destroy)
 
 | Komponen | Status | Implikasi |
 |---|---|---|
-| `plugins/auth` (+ JWT, middleware) | ✅ ada | Fondasi SSO fase 2 |
+| `plugins/auth` (+ JWT, middleware) | ✅ ada | Fondasi SSO fase 3 (admin-only, D-8) |
 | `internal/secrets` (AES-GCM) | ✅ ada | Pakai ulang untuk `token_enc` |
 | `plugins/*/migrations/postgres/*.sql` | ✅ pola ada (auth) | Ikuti pola ini untuk `endpoints` |
 | `internal/migration` + `console migrate` | ❌ **hilang** | **Prasyarat: buat ulang minimal** |
@@ -68,9 +70,13 @@ CREATE TABLE endpoints (
     timeout_ms    INT  NOT NULL DEFAULT 10000,
     status        TEXT NOT NULL DEFAULT 'active', -- active | suspended
     is_local      BOOLEAN NOT NULL DEFAULT FALSE,
+    is_active     BOOLEAN NOT NULL DEFAULT FALSE, -- portal aktif saat ini (satu baris; dikelola transaksi, D-6)
     created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Batas integritas: maksimal SATU endpoint aktif sekaligus (D-6)
+CREATE UNIQUE INDEX uq_endpoints_one_active ON endpoints (is_active) WHERE is_active;
 
 CREATE TABLE endpoint_audit (
     id            BIGSERIAL PRIMARY KEY,
@@ -85,9 +91,9 @@ CREATE TABLE endpoint_audit (
 );
 CREATE INDEX idx_endpoint_audit_key_time ON endpoint_audit (endpoint_key, created_at DESC);
 
--- Seed: instance sendiri selalu tersedia
-INSERT INTO endpoints (key, label, base_url, purpose, auth_kind, is_local, status)
-VALUES ('local', 'Instance ini', 'http://127.0.0.1:8082', 'business', 'none', TRUE, 'active')
+-- Seed: instance sendiri selalu tersedia dan aktif secara default
+INSERT INTO endpoints (key, label, base_url, purpose, auth_kind, is_local, is_active, status)
+VALUES ('local', 'Instance ini', 'http://127.0.0.1:8082', 'business', 'none', TRUE, TRUE, 'active')
 ON CONFLICT (key) DO NOTHING;
 ```
 
@@ -120,7 +126,7 @@ bin/console endpoint active         # tampilkan endpoint aktif
 | `list` | Kolom: KEY, LABEL, BASE_URL, AUTH, STATUS, TIMEOUT, AKTIF. Tandai baris `is_local` dan endpoint aktif. |
 | `rm` | **Tolak** bila `is_local` (AC-8) atau sedang aktif (AC-8). Pesan menyebut alasan. |
 | `test` | Panggil `<base_url>/healthz` (fallback: `/`). Laporkan **sebab** terklasifikasi + durasi ms. Exit 1 bila gagal. |
-| `use` | Set endpoint aktif ke file state (`.endpoint-active` di root repo atau kolom di tabel). **Rekomendasi: kolom `is_active` di tabel** agar konsisten antar proses; hanya satu baris boleh aktif → dikelola di transaksi. |
+| `use` | Set endpoint aktif ke kolom `is_active` di tabel (bukan file state) agar konsisten antar proses; hanya satu baris boleh aktif → dikelola di transaksi. Ini basis "portal aktif" untuk captive portal (WO-02). |
 | `active` | Cetak endpoint aktif; default `local` bila belum pernah di-set. |
 
 ### Pemetaan error → kalimat aksiabel (untuk `test`)
@@ -192,8 +198,8 @@ Wajib:
 
 ## Out of Scope
 
-- SSO (fase 2)
-- HTTP client proxy / switching per request via header `X-Branch-Endpoint` (WO-02)
-- UI/dashboard pemilihan cabang
-- `endpoint update` (WO terpisah — tapi desain `PUT` API sudah partial di WO ini)
+- **Captive portal + routing per request** (WO-02): proxy HTTP, `X-Branch-Endpoint`, `X-Forwarded-Instance` (anti-loop D-12), klasifikasi error runtime, dua token (`main`/`portal token` D-14/D-15), UI pemilihan portal
+- **SSO lintas instance (WO-03, admin-only D-8)**: portal token, guard keanggotaan `admins` cabang, enrollment admin, verifikasi lokal
+- **User `members`**: di luar ruang lingkup federasi saat ini (ditunda)
+- `endpoint update` CLI (WO terpisah — tapi desain `PUT` API sudah partial di WO ini)
 - Sinkronisasi data antar cabang

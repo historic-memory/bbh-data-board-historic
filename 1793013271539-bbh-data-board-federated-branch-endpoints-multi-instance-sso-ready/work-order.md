@@ -8,7 +8,7 @@ updated: "2026-10-26"
 # Work Order (Master Index): Federated Branch Endpoints
 
 ## Referensi
-- SPEC: `SPEC.md` di topic ini (D-1..D-10, AC-1..AC-10)
+- SPEC: `SPEC.md` di topic ini (D-1..D-15, AC-1..AC-22)
 - Shortnote handoff: `SHORTNOTE-WO-01.md`
 
 ## Latar Belakang Arah
@@ -34,16 +34,17 @@ Arah baru: **federasi instance** — satu aplikasi, banyak instance, satu DB lok
 
 | # | File | Scope | Status |
 |---|---|---|---|
-| 1 | `WO-01-endpoint-registry.md` | **Endpoint Registry** (rev 2) — pulihkan `internal/migration` minimal, plugin `endpoint` + migrasi (`endpoints` dengan `is_active` + `endpoint_audit`), CLI `endpoint add/list/rm/test/use/active`, admin API (partial PUT, tanpa token), audit request. **Scope: admin saja** (D-8); `members` di luar scope | draft |
-| 2 | *(belum ditulis)* Captive Portal & Switching | Pilihan "Masuk ke Cabang" di dashboard admin pusat → SSO, reload, menu diarahkan ulang **kecuali List Portal (tetap pusat) & Admin Profile (dua versi)**; proxy per request (`X-Branch-Endpoint`), anti-loop (`X-Forwarded-Instance`), klasifikasi error, fallback `local`, audit | not started |
-| 3 | *(belum ditulis)* SSO lintas instance | **DIPERLUKAN.** Pusat terbitkan token identitas; cabang verifikasi **lokal** + **guard keanggotaan lokal** (user wajib sudah terdaftar di cabang); pemetaan peran; `aud`. | not started |
+| 1 | [`WO-01-endpoint-registry.md`](rev 2) | **Endpoint Registry** (admin-only, D-8); `endpoints` (+`is_active`+partial index unique) + `endpoint_audit`; migrasi versioned; plugin CLI (`add/list/rm/test/use/active`); admin API (partial PUT tanpa reset `status`, audit semua request lintas endpoint) | draft |
+| 2 | [`WO-02-captive-portal-routing.md`](rev 1) | **Captive Portal & Routing**; pemilihan portal → proxy routing per request (`X-Branch-Endpoint`, anti-loop `X-Forwarded-Instance`), pemilik route eksplisit (**List Portal & login selalu `local`**), dua token (**main token**/**portal token**), error klasifikasi, fallback hanya bila dikonfigurasi + penanda, audit request lintas instance | drafted |
+| 3 | [`WO-03-sso-admin-only.md`](rev 1) | **SSO Lintas Instance (admin-only)** — DIPERLUKAN; issued token pusat (`aud`=target branch, `iss`=issuer, `typ`=`portal`, `exp` pendek); verifikasi **LOKAL** tanpa callback; guard keanggotaan lokal (**403** bila admin belum terdaftar di `admins` cabang); dua-token session integrasi; enrollment mekanisme (A manual/rekomendasi) | drafted |
 
 ## Urutan Eksekusi & Dependency
 ```
 WO-01 (registry + migrasi + CLI + API)
-   └──► WO-02 (switching per request)
-            └──► WO-03 (SSO fase 2)
+   └──► WO-02 (captive portal & routing)
+            └──► WO-03 (SSO admin-only)
 ```
+**Tidak bisa di-lompat** — WO-02 butuh struktur endpoint dari WO-01; WO-03 butuh routing WO-02 untuk menerima & menguji portal token.
 
 ## Kondisi Kode Saat Ini (verified 2026-10-26)
 | Ada | Hilang |
@@ -54,7 +55,24 @@ WO-01 (registry + migrasi + CLI + API)
 
 `go build ./...` dan `go test ./...` **lulus** pada kondisi ini.
 
-**Catatan DB:** karena database tidak di-drop, tabel `migrations` dan `migration_targets` **sudah ada**. Migrator baru wajib kompatibel atau memakai `CREATE TABLE IF NOT EXISTS`.
+## Tabel Per Instance (ringkas)
+| Tabel | Fungsi | Kapan |
+|---|---|---|
+| `admins` | Akun admin per-instance (ada sebelum WO ini) | Sejak awal |
+| `members` | Akun member per-instance (ada sebelum WO ini) | Sejak awal |
+| `migrations` | Jejak migrasi ada (karena DB tidak di-drop) | Leftover |
+| `migration_targets` | Target migrasi (leftover) | Leftover |
+| `endpoints` | Daftar endpoint + `is_active` | WO-01 |
+| `endpoint_audit` | Audit request lintas instance | WO-01 |
+
+Catatan: migrator baru harus kompatibel dengan `migrations` yang sudah terisi atau menggunakan `CREATE TABLE IF NOT EXISTS`.
+
+## Ketergantungan Terbuka (harus diputuskan user)
+| # | Topik | Rekomendasi |
+|---|---|---|
+| 1 | Enrollment admin cabang | **A — manual** oleh admin cabang tambah baris `admins` |
+| 2 | Identitas pencocokan (`adm`) | **Email** (alternatif: `iss`+`sub`) |
+| 3 | Kunci verifikasi SSO | **HS256 shared secret** (upgrade ke RS256 nanti) |
 
 ## Out of Scope (keseluruhan topic)
 - Sinkronisasi/penggabungan data antar cabang (laporan gabungan) — belum ada kebutuhan terkonfirmasi

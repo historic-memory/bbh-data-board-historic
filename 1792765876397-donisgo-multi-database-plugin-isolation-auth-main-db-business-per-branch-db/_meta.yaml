@@ -42,6 +42,10 @@ files:
       path: WO-09-dbms-registry-refactor.md
       type: file
       status: complete
+    - id: 01a1766c-c503-7a5f-9e20-3c4d5e6f7081
+      path: WO-10-business-generator-plugin.md
+      type: file
+      status: draft
     - id: 01a1766c-c503-7148-b43e-2e9d8c1bcd62
       path: work-order.md
       type: file

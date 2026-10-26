@@ -38,6 +38,7 @@ WO dipecah per fase agar ringan dan bisa dikerjakan/commit bertahap. File detail
 | 7 | `WO-07-verification-commits.md` | Verifikasi AC + commit granular | complete |
 | 8 | `WO-08-security-registry.md` | Enkripsi (`dbms_secrets`), TLS, audit, CLI aman | complete (rev 2) |
 | 9 | `WO-09-dbms-registry-refactor.md` | **KOREKSI KONTRAK** — refactor DBMS-centric + CLI `--key/--branch-key/--branch-name` + migrasi bentuk lama | complete |
+| 10 | `WO-10-business-generator-plugin.md` | **Plugin `business_generator`** — migrasi registry (dbms/dbms_secrets/db_registry/audit), pindah CLI ke `console`, generator scaffolding entity, admin API `/api/admin/dbms` | draft |
 
 ## Urutan Eksekusi & Dependency
 ```

@@ -1,0 +1,21 @@
+id: "1793013271539"
+title: BBH Data Board — Federated Branch Endpoints (multi-instance, SSO-ready)
+created: "2026-10-26"
+files:
+    - id: 01a177ec-c012-70b6-ac59-e5f05ceb4544
+      path: SHORTNOTE-WO-01.md
+      type: file
+      status: draft
+    - id: 01a177ec-c012-7b24-954b-cae5dbfb8889
+      path: SPEC.md
+      type: spec
+      status: draft
+    - id: 01a177ec-c013-75a4-bbf7-0c801612ef14
+      path: WO-01-endpoint-registry.md
+      type: file
+      status: draft
+    - id: 01a177ec-c013-7221-8502-c5aa011599f8
+      path: work-order.md
+      type: file
+      status: draft
+assets: []

@@ -41,6 +41,8 @@ WO dipecah per fase agar ringan dan bisa dikerjakan/commit bertahap. File detail
 | 10 | `WO-10-business-generator-plugin.md` | **Plugin `business_generator`** — migrasi registry (dbms/dbms_secrets/db_registry/audit), pindah CLI ke `console`, generator scaffolding entity, admin API `/api/admin/dbms` | complete |
 | 11 | `WO-11-sudo-like-password-prompt.md` | **Prompt password gaya `sudo`** — baca dari `/dev/tty` (abaikan pipe), fallback `os.Stdin`, error non-TTY yang manusiawi, unit test + docs `-it` | complete |
 | 12 | `WO-12-fix-tty-prompt-invisible.md` | **FIX bug** — label prompt tidak muncul: `/dev/tty` dibuka `O_RDONLY` (EBADF, error diabaikan). Buka `O_RDWR`, tangani error tulis, regression test | complete |
+| 13 | `WO-13-dbms-test.md` | **`dbms test`** — diagnostik koneksi bertingkat (secret → TCP dial → TLS → auth/ping) + uji semua branch per server, alasan kegagalan aksiabel, auto-test warning di `dbms add`, API `POST /api/admin/dbms/test/:key` | draft |
+| 14 | `WO-14-dbms-update.md` | **`dbms update`** — partial update metadata per key (hanya flag yang diberikan), password **opsional** (`--rotate-password`), diff before→after, key immutable, API `PUT /api/admin/dbms/:key` jadi partial | draft |
 
 ## Urutan Eksekusi & Dependency
 ```
@@ -62,6 +64,9 @@ WO-01 (pool) ──► WO-02 (deps) ──► WO-03 (migration+guard) ──► 
 - **WO-09 SELESAI** (commit repo `0afb1ef`..`0b5ecfa`): registry DBMS-centric terverifikasi e2e — `dbms` 2 baris, `db_registry` tanpa kredensial, forward migration legacy teruji, `create-branch --key/--branch-key/--branch-name` sukses, `dbms rm` guard OK, migrate 4 koneksi OK.
 - **WO-10 SELESAI** (commit repo `e37d5ab`..`b0258ea`): plugin `business_generator` — DDL registri pindah ke migrasi versioned (target `business_generator` v1 tercatat di `migrations`), CLI console-first (`./bin/console dbms|create-branch|migrate|ping|list-status|generate`), admin API `/api/admin/{dbms,registry}` (200, tanpa kebocoran password), generator entity scaffold.
 - **WO-11 SELESAI** (commit repo `ed6cb3b`..`2ba73e8`): prompt password gaya `sudo` — baca `/dev/tty` (pipe diabaikan), fallback `os.Stdin` bila terminal, `errNoTTY` actionable, empty ditolak, seam `ttyOpen` + 6 unit test lulus. Diverifikasi manager: non-TTY error actionable & exit 1; CI path `--password-stdin` tetap jalan.
+- **WO-12 SELESAI** (commit repo `6e05497`): label prompt tidak pernah muncul karena `/dev/tty` dibuka `O_RDONLY` → `fmt.Fprint` EBADF dan error ditelan. Diperbaiki ke `O_RDWR` + helper `writePrompt` yang **mengembalikan** error + fallback `os.Stderr` + 3 regression test. Terverifikasi lewat driver pty nyata (label tampil, tanpa echo, password tersimpan AES-GCM).
+- **WO-13 & WO-14 DRAFT** (2026-10-26): dua fitur lanjutan atas permintaan user — (13) `dbms test` diagnostik bertingkat + uji semua branch; (14) `dbms update` partial update dengan password opsional. Belum diimplementasikan.
+- **Temuan penting:** `dbms add` **sudah** upsert (`ON CONFLICT (key) DO UPDATE`), tetapi `readPassword()` menolak input kosong sehingga ganti label pun memaksa retype password — inilah alasan WO-14 ada. Command `ping` yang sudah ada **membuang alasan kegagalan** (`STATUS=down` tanpa sebab) dan hanya menyasar koneksi `db_registry`, bukan server `dbms` — alasan WO-13 ada.
 
 ## Temuan Verifikasi Manager (WO-10/WO-11)
 

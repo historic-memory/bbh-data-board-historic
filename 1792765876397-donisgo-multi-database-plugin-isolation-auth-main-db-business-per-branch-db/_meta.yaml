@@ -58,6 +58,14 @@ files:
       path: WO-12-fix-tty-prompt-invisible.md
       type: file
       status: complete
+    - id: 01a17900-0000-7000-8000-000000000013
+      path: WO-13-dbms-test.md
+      type: file
+      status: draft
+    - id: 01a17900-0000-7000-8000-000000000014
+      path: WO-14-dbms-update.md
+      type: file
+      status: draft
     - id: 01a1766c-c503-7148-b43e-2e9d8c1bcd62
       path: work-order.md
       type: file

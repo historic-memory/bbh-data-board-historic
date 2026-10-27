@@ -1,6 +1,6 @@
 ---
 title: 'SPEC: ERD Data Core — Residents (Bayi) BBH'
-description: 'Skema tabel canonical untuk data core bayi yayasan BBH lintas 5 cabang: ERD, tabel referensi/enum, aturan normalisasi, dan pemetaan dari data mentah Notion. Tanpa implementasi kode.'
+description: 'Skema tabel canonical untuk data core bayi yayasan BBH lintas 5 cabang: ERD, nilai enum statis, aturan normalisasi, dan pemetaan dari data mentah Notion. Tanpa implementasi kode.'
 status: draft
 created: "2026-10-27"
 updated: "2026-10-27"
@@ -27,7 +27,7 @@ revision: 1
 |---|---|---|
 | P-1 | **Canonical schema** adalah kontrak. Semua cabang memetakan ke sini. | Nama field & enum **baku**, tidak mengikuti istilah cabang. |
 | P-2 | **"Titik tengah" = satu standar yang wajib diikuti semua cabang.** Skema canonical menetapkan **field wajib minimum** yang harus diisi setiap cabang; kolom tambahan ditampung bila ada. | Semua cabang mengisi field yang sama -> data comparable. Itulah tujuan sistem (D-1). |
-| P-3 | **Nilai di-enumerasi, bukan hanya kolom.** Istilah yang berbeda tetapi bermakna sama harus dipetakan ke satu nilai baku. | Ada tabel referensi / nilai enum baku. |
+| P-3 | **Nilai di-enumerasi, bukan hanya kolom.** Istilah yang berbeda tetapi bermakna sama harus dipetakan ke satu nilai baku. | Ada **daftar nilai enum statis** (D-3). |
 | P-4 | **Lifecycle dipisahkan dari atribut.** Status hunian adalah kejadian berwaktu, bukan kolom statis. | Tabel `resident_status_history`. |
 | P-5 | **Identitas ganda:** kode lama (Notion) dipertahankan, PK internal UUIDv7. | `resident_code` unik dan stabil; `id` UUIDv7. |
 | P-6 | **PII diperlakukan khusus.** NIK/BPJS/nama ibu bersifat sensitif. | Ditandai di SPEC; penanganan (enkripsi/masking) ditetapkan sebelum implementasi. |
@@ -36,7 +36,7 @@ revision: 1
 | P-9 | **Data derived tidak disimpan.** | `age` dihitung dari `birth_date`; tidak ada kolom `umur`. |
 | P-10 | **Branch adalah dimensi** = `endpoint`/`INSTANCE_KEY`, **bukan tabel baru**. | Tidak ada tabel `branches`; `residents.branch_key` merujuk `endpoints.key`. |
 | P-11 | **Semua data core dibungkus satu plugin `resident`.** | Fitur baru wajib plugin (`plugins/<id>/`), bukan `internal/`. |
-| P-12 | **Tabel referensi `ref_*` tinggal di dalam plugin `resident` dulu.** | Pindah ke plugin `reference` hanya bila muncul konsumen kedua. |
+| P-12 | **Nilai enum statis didefinisikan sekali** di `schema/fields.yaml` + konstanta Go; label via i18n. | Tidak ada tabel `ref_*` (D-3). |
 | P-13 | **Satu sumber kebenaran definisi field.** Migrasi, template, dropdown, dan validator di-generate dari definisi field yang sama. | Template & validator tidak bisa "drift"; perubahan skema otomatis tercermin. |
 | P-14 | **Dua jalur masuk, satu validator.** Jalur A = data mentah (AI-ETL); Jalur B = template patuh SOP. Keduanya berujung ke validator yang sama. | Data dari cabang patuh & tidak patuh sama-sama tervalidasi standar. |
 
@@ -52,11 +52,6 @@ erDiagram
     RESIDENTS ||--o{ RESIDENT_STATUS_HISTORY : "riwayat status"
     RESIDENTS ||--o{ RESIDENT_DOCUMENTS : "dokumen"
     FACILITIES ||--o{ BIRTH_RECORDS : "fasilitas persalinan"
-    REF_RELIGIONS ||--o{ RESIDENTS : ""
-    REF_BLOOD_TYPES ||--o{ RESIDENTS : ""
-    REF_DELIVERY_METHODS ||--o{ BIRTH_RECORDS : ""
-    REF_ATTENDANT_TYPES ||--o{ BIRTH_RECORDS : ""
-    REF_STATUSES ||--o{ RESIDENT_STATUS_HISTORY : ""
 
     ENDPOINTS {
         bigint id PK
@@ -82,8 +77,8 @@ erDiagram
         string bpjs_no
         date birth_date
         string birth_place
-        string religion_code FK
-        string blood_type_code FK
+        string religion_code
+        string blood_type_code
         timestamptz created_at
         timestamptz updated_at
     }
@@ -93,8 +88,8 @@ erDiagram
         int birth_weight_gram
         int birth_length_cm
         int child_order
-        string delivery_method_code FK
-        string attendant_type_code FK
+        string delivery_method_code
+        string attendant_type_code
         uuid facility_id FK
         string attendant_detail
     }
@@ -108,7 +103,7 @@ erDiagram
     RESIDENT_STATUS_HISTORY {
         uuid id PK
         uuid resident_id FK
-        string status_code FK
+        string status_code
         date effective_at
         string note
         uuid changed_by FK
@@ -127,28 +122,6 @@ erDiagram
         string doc_type
         string url
         string label
-    }
-    REF_RELIGIONS {
-        string code PK
-        string label
-    }
-    REF_BLOOD_TYPES {
-        string code PK
-        string label
-        int sort_order
-    }
-    REF_DELIVERY_METHODS {
-        string code PK
-        string label
-    }
-    REF_ATTENDANT_TYPES {
-        string code PK
-        string label
-    }
-    REF_STATUSES {
-        string code PK
-        string label
-        boolean is_terminal
     }
 ```
 
@@ -196,8 +169,8 @@ Cabang **tidak** punya tabel sendiri. Identitas cabang memakai mekanisme yang su
 | `bpjs_no` | TEXT | yes | Nomor BPJS |
 | `birth_date` | DATE | no | Hasil normalisasi `"19 November 2021"` |
 | `birth_place` | TEXT | yes | Kota/tempat lahir |
-| `religion_code` | TEXT | yes | FK → `ref_religions` |
-| `blood_type_code` | TEXT | yes | FK → `ref_blood_types` (50% kosong di sumber) |
+| `religion_code` | TEXT | yes | Enum statis: `ISLAM`, `HINDU`, `KRISTEN`, `KATOLIK`, `BUDDHA`, `KONGHUCU`, `LAINNYA` |
+| `blood_type_code` | TEXT | yes | Enum statis: `A+`, `A-`, `B+`, `B-`, `AB+`, `AB-`, `O+`, `O-`, `O` (50% kosong di sumber) |
 | `created_at`/`updated_at` | TIMESTAMPTZ | no | Audit |
 
 **Tidak ada di tabel ini:** `status` (→ `resident_status_history`), `age` (derived), `place` (kolom sumber 100% kosong, duplikat `birth_place`).
@@ -211,8 +184,8 @@ Cabang **tidak** punya tabel sendiri. Identitas cabang memakai mekanisme yang su
 | `birth_weight_gram` | INT | yes | Normalisasi `"2600 gram"` → `2600` |
 | `birth_length_cm` | INT | yes | Normalisasi `"48 cm"` → `48`; `"-"` → NULL |
 | `child_order` | INT | yes | "Anak Ke" |
-| `delivery_method_code` | TEXT | yes | FK → `ref_delivery_methods` |
-| `attendant_type_code` | TEXT | yes | FK → `ref_attendant_types` |
+| `delivery_method_code` | TEXT | yes | Enum statis: `NORMAL`, `CAESAR`, `VAKUM`, `SENDIRI`, `LAINNYA` |
+| `attendant_type_code` | TEXT | yes | Enum statis: `DOKTER`, `BIDAN`, `DUKUN`, `SENDIRI`, `LAINNYA` |
 | `facility_id` | UUID | yes | FK → `facilities` |
 | `attendant_detail` | TEXT | yes | Nama tenaga medis spesifik (mis. `SpOG`, `Bidan LP. Suyanti`) |
 
@@ -236,7 +209,7 @@ Cabang **tidak** punya tabel sendiri. Identitas cabang memakai mekanisme yang su
 |---|---|---|---|
 | `id` | UUID (v7) | no | PK |
 | `resident_id` | UUID | no | FK → `residents` |
-| `status_code` | TEXT | no | FK → `ref_statuses` |
+| `status_code` | TEXT | no | Enum statis: `DIRAWAT`, `DIKEMBALIKAN`, `TRANSFER`, `MENINGGAL` |
 | `effective_at` | DATE | no | Tanggal status berlaku |
 | `note` | TEXT | yes | Catatan bebas (mis. tujuan transfer, "transfer ke JCH") |
 | `changed_by` | UUID | yes | FK → `admins` (audit) |
@@ -277,17 +250,24 @@ Cabang **tidak** punya tabel sendiri. Identitas cabang memakai mekanisme yang su
 
 > Dipisah dari `residents` karena relasi 1—N. **Keputusan "tetap Drive atau pindah storage internal" masih terbuka** (§10).
 
-### 4.10 Tabel referensi (nilai baku)
+### 4.10 Nilai enum statis (bukan tabel)
 
-| Tabel | PK | Isi awal |
+**D-3 DIPUTUSKAN:** nilai kategorikal **statis di kode** (konstanta + `fields.yaml`), **bukan** tabel referensi. Kolom di DB bertipe `TEXT` dengan `CHECK` constraint. Label tampilan diterjemahkan lewat **i18n**.
+
+| Grup | Nilai baku | Kolom |
 |---|---|---|
-| `ref_religions` | `code` | `ISLAM`, `HINDU`, `KRISTEN`, `KATOLIK`, `BUDDHA`, `KONGHUCU`, `LAINNYA` |
-| `ref_blood_types` | `code` | `A+`, `A-`, `B+`, `B-`, `AB+`, `AB-`, `O+`, `O-`, `O` → lihat §6 |
-| `ref_delivery_methods` | `code` | `NORMAL`, `CAESAR`, `VAKUM`, `SENDIRI`, `LAINNYA` |
-| `ref_attendant_types` | `code` | `DOKTER`, `BIDAN`, `DUKUN`, `SENDIRI`, `LAINNYA` |
-| `ref_statuses` | `code` | `DIRAWAT`, `DIKEMBALIKAN`, `TRANSFER`, `MENINGGAL` (usulan) |
+| Agama | `ISLAM`, `HINDU`, `KRISTEN`, `KATOLIK`, `BUDDHA`, `KONGHUCU`, `LAINNYA` | `residents.religion_code` |
+| Golongan darah | `A+`, `A-`, `B+`, `B-`, `AB+`, `AB-`, `O+`, `O-`, `O` | `residents.blood_type_code` |
+| Persalinan | `NORMAL`, `CAESAR`, `VAKUM`, `SENDIRI`, `LAINNYA` | `birth_records.delivery_method_code` |
+| Ditolong oleh | `DOKTER`, `BIDAN`, `DUKUN`, `SENDIRI`, `LAINNYA` | `birth_records.attendant_type_code` |
+| Status | `DIRAWAT`, `DIKEMBALIKAN`, `TRANSFER`, `MENINGGAL` | `resident_status_history.status_code` |
+| Jenis kelamin | `L`, `P` | `residents.gender` |
+| Tipe fasilitas | `hospital`, `clinic`, `midwife_practice`, `foundation`, `other` | `facilities.facility_type` |
+| Tipe dokumen | `drive_folder`, `media`, `other` | `resident_documents.doc_type` |
 
-> **Usulan** nilai di atas; finalisasi butuh wawancara lintas cabang.
+**Konsekuensi (risiko diterima):** menambah nilai baru = **ubah kode + deploy**, bukan lewat admin UI. Mitigasi: sediakan nilai `LAINNYA` sebagai penampung, dan catat permintaan nilai baru di laporan validasi (WO-09). Bila variasi lintas cabang terbukti tinggi, migrasi ke tabel referensi dapat dilakukan di WO terpisah.
+
+> Tidak ada tabel `ref_*`. `facilities` **tetap tabel** karena nama fasilitas adalah entitas nyata (bukan sekadar enumerasi).
 
 ## 5. Aturan `resident_code`
 
@@ -317,13 +297,13 @@ Temuan sumber: 31/50 terisi, semua unik. `P` sekuens 001–019 (**gap 010**), `L
 | Kolom sumber (Notion) | Field canonical | Transformasi |
 |---|---|---|
 | Nama Bayi | `residents.full_name` | strip BOM + `trim()` |
-| Agama | `residents.religion_code` | uppercase → cocokkan `ref_religions`; kosong → NULL |
+| Agama | `residents.religion_code` | uppercase → cocokkan enum statis; tak cocok → `LAINNYA` + lapor; kosong → NULL |
 | Anak Ke | `birth_records.child_order` | `int()`; kosong → NULL |
 | Berat Badan Lahir (gram) | `birth_records.birth_weight_gram` | regex angka; `"2600 gram"` → `2600` |
-| Ditolong Oleh | `birth_records.attendant_type_code` | padankan `ref_attendant_types` |
+| Ditolong Oleh | `birth_records.attendant_type_code` | padankan enum statis |
 | Files & media | `resident_documents(media)` | URL apa adanya |
 | Folder Drive | `resident_documents(drive_folder)` | URL apa adanya |
-| Golongan Darah | `residents.blood_type_code` | padankan `ref_blood_types`; kosong → NULL |
+| Golongan Darah | `residents.blood_type_code` | padankan enum statis; kosong → NULL |
 | Jenis Kelamin | `residents.gender` | `Perempuan`→`P`, `Laki-laki`→`L` |
 | Keterangan | `birth_records.facility_id` / `attendant_detail` | **kelasifikasi** (lihat §6.3) |
 | NIK Bayi | `residents.nik` | validasi 16 digit; invalid → tolak + lapor |
@@ -332,9 +312,9 @@ Temuan sumber: 31/50 terisi, semua unik. `P` sekuens 001–019 (**gap 010**), `L
 | Nama Ibu | `mothers.full_name` | `trim()` |
 | Nomor BPJS | `residents.bpjs_no` | norma digit; kosong → NULL |
 | Panjang Badan (cm) | `birth_records.birth_length_cm` | regex angka; `"-"` → NULL |
-| Persalinan | `birth_records.delivery_method_code` | padankan `ref_delivery_methods` |
+| Persalinan | `birth_records.delivery_method_code` | padankan enum statis |
 | Place | **dibuang** | 100% kosong, duplikat `Tempat Lahir` |
-| Status di yayasan | `resident_status_history.status_code` | padankan `ref_statuses`; tujuan transfer (mis. "JCH") disimpan di `note` (D-6) |
+| Status di yayasan | `resident_status_history.status_code` | padankan enum statis; tujuan transfer (mis. "JCH") disimpan di `note` (D-6) |
 | Tanggal Lahir | `residents.birth_date` | parse `"19 November 2021"` → DATE |
 | Tanggal Masuk Yayasan | `admissions.admitted_at` | parse `"28/02/2022"` (DD/MM/YYYY) → DATE |
 | Tempat Lahir | `residents.birth_place` | `trim()` |
@@ -359,7 +339,7 @@ Temuan sumber: 31/50 terisi, semua unik. `P` sekuens 001–019 (**gap 010**), `L
 | `RSUP Sanglah`, `RS QIM BATANG`, `Klinik Bumi Sehat`, `Yayasan Bumi Sehat` | `facilities` (+ `facility_type`) |
 | `Praktik Bidan Mandiri Ni Putu Ratna Dewi Ningsih`, `Bidan LP. Suyanti Ratna Dewi (0811394304)` | `facilities` (`midwife_practice`) + `attendant_detail` |
 | `SpOG` (3x) | `attendant_detail` (spesialisasi dokter) |
-| `Melahirkan Sendiri` | `ref_attendant_types.SENDIRI` |
+| `Melahirkan Sendiri` | enum `SENDIRI` (attendant_type) |
 
 ## 7. View Turunan
 
@@ -393,22 +373,22 @@ Gabungan `residents` + `birth_records` + `mothers` + status terkini + cabang —
 | N-3 | Ekspor/laporan/template wajib punya opsi **masking** NIK/BPJS (dan tersedia versi `--no-pii`). |
 | N-4 | Semua perubahan status & data resident wajib tercatat (audit trail). |
 
-## 10. Keputusan Terbuka (D-1..D-10)
+## 10. Keputusan (D-1..D-18)
 
 | # | Pertanyaan | Opsi | Status |
 |---|---|---|---|
 | **D-1** | Bentuk "titik tengah" | (a) super-set semua kolom, (b) irisan minimal semua cabang mampu | ✅ **DIPUTUSKAN: satu standar, semua cabang wajib mengisi field yang sama.** Field wajib minimum: `nama_bayi`, `jenis_kelamin`, `tanggal_lahir`, `branch_key` (+ usulan tambahan: `tanggal_masuk`, `status`). Kolom lain ditampung namun opsional. |
-| **D-2** | `Keterangan` → `facilities`? | Ya / sebagian catatan bebas | Usulan: ya (bukti §6.3). **Menunggu** |
-| **D-3** | Enum → tabel referensi atau enum kode | Tabel referensi / enum statis | Usulan: tabel referensi (cabang bisa menambah). **Menunggu** |
-| **D-4** | Wali selain ibu | `mothers` saja / tambah `guardians` + `relation` | **Menunggu** |
-| **D-5** | `SpOG` / nama bidan | `attendant_detail` di `birth_records` / entitas tenaga medis | Usulan: `attendant_detail`. **Menunggu** |
+| **D-2** | `Keterangan` → `facilities`? | Ya / sebagian catatan bebas | ✅ **DIPUTUSKAN: diklasifikasi ke `facilities`.** Kolom `Keterangan` = **tempat persalinan** (itu sebabnya isinya beragam). Isinya diurai ke `facilities` (+ `facilities_aliases`); `SpOG`/nama bidan -> `attendant_detail`; `Melahirkan Sendiri` -> enum `SENDIRI`. |
+| **D-3** | Enum → tabel referensi atau enum kode | Tabel referensi / enum statis | ✅ **DIPUTUSKAN: enum statis di kode** (§4.10) + label via **i18n**. Tidak ada tabel `ref_*`. Konsekuensi: menambah nilai = deploy (mitigasi: nilai `LAINNYA`). |
+| **D-4** | Wali selain ibu | `mothers` saja / tambah `guardians` | ✅ **DIPUTUSKAN (sementara): mulai TANPA `guardians`.** Data sumber 100% hanya ibu. Tambah tabel bila kebutuhan muncul (tidak merusak). |
+| **D-5** | `SpOG` / nama bidan | `attendant_detail` / entitas tenaga medis | ✅ **DIPUTUSKAN: `attendant_detail` = TEKS NAMA saja**, tanpa tabel tenaga medis terpisah. Klasifikasi mengisi `attendant_type_code` + `facility_id` + `attendant_detail` sekaligus. |
 | **D-6** | "JCH" / tujuan transfer | Tabel transfer / catatan bebas | ✅ **DIPUTUSKAN: cukup `note` bebas.** Tidak ada tabel `transfer_partners`. Status `TRANSFER` + `note` (mis. "transfer ke JCH"). Bila kelak perlu entitas lembaga, tambah di WO terpisah. |
 | **D-7** | Nama field | Inggris / Indonesia | ✅ **DIPUTUSKAN: nama field Bahasa Inggris** (DB/API). Nilai enum tetap istilah domain (mis. `DIRAWAT`). Header template Excel tetap berbahasa Indonesia namun tetap field canonical → dipetakan di `schema/fields.yaml` |
 | **D-8** | Unik `resident_code` | Global / per cabang | ✅ **DIPUTUSKAN: UNIQUE GLOBAL.** Kosong -> `NULL` (bukan string kosong). Butuh **generator kode** (WO-10). Siapkan ruang prefix cabang (`BBH-<CAB>-<YY>-<P\|L>-<NNN>`) untuk masa depan. |
 | **D-9** | Aset dokumen | Tetap Google Drive / pindah `internal/storage` | ✅ **DIPUTUSKAN: link (Google Drive)** disimpan di `resident_documents.url` |
 | **D-10** | PII at-rest | Plaintext / enkripsi kolom / tabel terpisah | ✅ **DIPUTUSKAN: plaintext** (database lokal/tertutup). Konsekuensi: ekspor/laporan **wajib punya opsi masking** (§9 N-3). |
 | **D-11** | Identitas cabang | tabel `branches` baru / pakai `endpoints.key` | ✅ **DIPUTUSKAN: pakai `endpoints.key`** (§4.1) |
-| **D-12** | Tabel referensi `ref_*` | plugin `resident` / plugin `reference` | ✅ **DIPUTUSKAN: di dalam plugin `resident`** dulu |
+| **D-12** | Nilai enum didefinisikan di mana | tabel referensi / konstanta kode | ✅ **DIPUTUSKAN: konstanta kode + `schema/fields.yaml`, label i18n (D-3)** |
 | **D-13** | Nama plugin | `core` / `business` / `resident` | ✅ **DIPUTUSKAN: `plugins/resident`** |
 | **D-14** | Format template impor | XLSX utama + CSV sekunder / CSV saja | ✅ **DIPUTUSKAN: XLSX utama + CSV sekunder** |
 | **D-15** | Bentuk template v1 | 1 baris = 1 bayi, dokumen 1 kolom | ✅ **DIPUTUSKAN: 1 baris = 1 bayi; sheet DOKUMEN menyusul bila perlu** |
@@ -434,7 +414,7 @@ Gabungan `residents` + `birth_records` + `mothers` + status terkini + cabang —
 | AC-2 | Setiap kolom sumber terpetakan eksplisit di §6.1 dengan transformasi tertulis. |
 | AC-3 | Tidak ada kolom turunan (mis. `umur`, `age`) yang disimpan sebagai kolom fisik. |
 | AC-4 | Status hunian **tidak** menjadi kolom statis di `residents`. |
-| AC-5 | Semua field kategorikal sumber punya **nilai baku** di tabel referensi. |
+| AC-5 | Semua field kategorikal sumber punya **nilai baku** (enum statis) yang dideklarasikan di SPEC & `fields.yaml`. |
 | AC-6 | Nama fasilitas yang ditulis berbeda-beda dapat disatukan lewat `facilities` + `facility_aliases`. |
 | AC-7 | Kode RM diekstrak dari teks+URL, disimpan tanpa URL, dan diberi constraint UNIQUE. |
 | AC-8 | Setiap tabel mendeklarasikan PK yang jelas (UUIDv7 untuk entitas, kode untuk referensi). |
@@ -466,7 +446,7 @@ plugins/resident/
 └── services/service.go       # logika + validasi (branch_key, enum, kode RM)
 ```
 
-**Di dalam plugin `resident`:** `residents`, `mothers`, `birth_records`, `admissions`, `resident_status_history`, `facilities`, `facility_aliases`, `resident_documents`, dan semua `ref_*`.
+**Di dalam plugin `resident`:** `residents`, `mothers`, `birth_records`, `admissions`, `resident_status_history`, `facilities`, `facility_aliases`, `resident_documents`. Nilai enum statis disimpan sebagai konstanta Go + `schema/fields.yaml` (tanpa tabel `ref_*`).
 
 **Di luar plugin (dependency):**
 | Komponen | Pemilik | Catatan |

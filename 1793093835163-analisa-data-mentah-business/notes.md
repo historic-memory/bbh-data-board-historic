@@ -76,16 +76,20 @@ created: "2026-10-27"
 - [x] Lampirkan & analisa data mentah core (CSV bayi, 50 baris).
 - [ ] Wawancara jawaban pertanyaan terbuka (khususnya cabang & makna JCH).
 - [x] Susun **ERD/skema tabel canonical** -> lihat `SPEC.md` (revision 1, status draft).
-- [ ] Bekukan enum/controlled vocabulary (status, agama, persalinan, ditolong oleh).
+- [ ] Bekukan enum/controlled vocabulary (status, agama, persalinan, ditolong oleh). **(SELESAI: D-3 -> enum statis di kode + i18n, §4.10 SPEC)**
 - [ ] (Terpisah) alur AI-ETL di topic LLM.
 
 ## Referensi
 - **`SPEC.md`** di topic ini = desain ERD + definisi tabel (belum implementasi).
-  - 8 tabel canonical + 5 tabel referensi, 18 keputusan (D-1..D-18), 7 pertanyaan data.
+  - 8 tabel canonical (tanpa tabel `ref_*`), 18 keputusan (D-1..D-18), 7 pertanyaan data.
 - **`work-order.md`** = master index 7 WO implementasi plugin `resident`.
   - `WO-01-plugin-skeleton.md`, `WO-02-migrasi-skema-canonical.md`, `WO-03-permission-auth.md`, `WO-04-api-admin-crud.md`, `WO-05-cli-resident.md`, `WO-06-importer-csv.md`, `WO-07-swagger-docs.md`.
-- Keputusan dikunci: **D-11** pakai `endpoints.key` (tanpa tabel `branches`); **D-12** `ref_*` di plugin `resident`; **D-13** nama plugin `resident`; **D-1** satu standar (field wajib minimum); **D-8** `resident_code` UNIQUE global; **D-9** dokumen = link Google Drive; **D-10** PII plaintext; **D-14..D-18** template XLSX/CSV di-generate dari `schema/fields.yaml`, global.
+- Keputusan dikunci: **D-11** pakai `endpoints.key` (tanpa tabel `branches`); **D-12** nilai enum di konstanta kode + `schema/fields.yaml`; **D-13** nama plugin `resident`; **D-1** satu standar (field wajib minimum); **D-8** `resident_code` UNIQUE global; **D-9** dokumen = link Google Drive; **D-10** PII plaintext; **D-14..D-18** template XLSX/CSV di-generate dari `schema/fields.yaml`, global.
 - 10 WO: WO-01..WO-10 (WO-10 = generator `resident_code`).
 - **D-7 dikunci: nama field Bahasa Inggris** (DB/API); nilai enum istilah domain; header template Excel tetap Indonesia, dipetakan di `schema/fields.yaml`.
 - **D-6 (JCH) DIPUTUSKAN: disederhanakan** — tujuan transfer (mis. "JCH") cukup disimpan di `resident_status_history.note`; **tidak ada tabel `transfer_partners`**. Status `TRANSFER` tetap ada.
+- **D-3 DIPUTUSKAN: enum statis di kode** (§4.10 SPEC) + label via **i18n** — tidak ada tabel `ref_*`. Cocok untuk nilai yang mudah ditebak (agama, gol darah, persalinan, ditolong oleh, status). Menambah nilai = deploy; mitigasi nilai `LAINNYA`.
+- **D-2 DIPUTUSKAN**: kolom `Keterangan` = **tempat persalinan** -> diklasifikasi ke `facilities` (+ `facility_aliases`); `SpOG`/nama bidan -> `attendant_detail`; `Melahirkan Sendiri` -> enum `SENDIRI`.
+- **D-4 DIPUTUSKAN (sementara): mulai TANPA tabel `guardians`** — data sumber 100% hanya ibu; tambah nanti bila perlu.
+- **D-5 DIPUTUSKAN: `attendant_detail` = teks nama saja** (tanpa tabel tenaga medis terpisah); klasifikasi mengisi `attendant_type_code` + `facility_id` + `attendant_detail`.
 

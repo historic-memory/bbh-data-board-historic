@@ -31,15 +31,9 @@ revision: 1
 ## Keputusan yang Masih Terbuka
 | # | Pertanyaan | Dampak bila belum diputuskan |
 |---|---|---|
-| D-1 | ✅ DIPUTUSKAN: satu standar, field wajib minimum ditetapkan (SPEC §10) | ✅ |
-| D-2 | `Keterangan` → `facilities`? | Mengubah target impor kolom Keterangan (WO-06) |
-| D-3 | Enum → tabel referensi atau enum kode? | Menentukan seed & validasi (WO-02/WO-04) |
-| D-4 | Perlu `guardians` (wali) selain ibu? | Menambah tabel (WO-02) |
-| D-5 | `SpOG`/nama bidan → `attendant_detail` atau entitas? | Menentukan skema birth_records (WO-02) |
-| D-6 | ✅ DIPUTUSKAN: tujuan transfer ("JCH") cukup disimpan di `note`; **tidak ada tabel** `transfer_partners` | ✅ |
-| D-7 | ✅ DIPUTUSKAN: nama field **Bahasa Inggris**; header template Excel berbahasa Indonesia via `fields.yaml` | ✅ |
+| — | **Semua keputusan D-1..D-18 sudah diputuskan.** | — |
 
-> **D-1, D-8, D-10 sudah DIPUTUSKAN** -> WO-04 tidak lagi terhalang oleh ketiganya. Sisa terbuka (D-2..D-6) tidak menghalangi WO-01/02/08 namun menghalangi bentuk final seed & klasifikasi.
+> **Keputusan terkunci (ringkas):** D-1 satu standar; D-2 `Keterangan`=tempat persalinan -> `facilities`; D-3 enum **statis** di kode (i18n), tanpa `ref_*`; D-4 **mulai tanpa** `guardians`; D-5 `attendant_detail`=teks nama; D-6 transfer cukup `note`; D-7 nama field Inggris; D-8 `resident_code` UNIQUE global + generator; D-9 dokumen=link; D-10 PII plaintext; D-11 `endpoints.key`; D-12 enum di kode+`fields.yaml`; D-13 plugin `resident`; D-14..D-18 template XLSX/CSV dari `fields.yaml`, global, versioned.
 
 ## Prinsip Pelaksanaan
 1. **Semua kode fitur di `plugins/resident/`.** Tidak ada kode fitur di `internal/`.
@@ -56,7 +50,7 @@ revision: 1
 | # | File | Scope | Prasyarat | Status |
 |---|---|---|---|---|
 | 1 | `WO-01-plugin-skeleton.md` | Kerangka plugin `resident` + registrasi `server`/`console` + CLI/route stub + test kosong | — | draft |
-| 2 | `WO-02-migrasi-skema-canonical.md` | Migrasi tabel canonical (8 tabel) + 5 tabel referensi + seed nilai baku + `schema/fields.yaml` | WO-01 | draft |
+| 2 | `WO-02-migrasi-skema-canonical.md` | Migrasi 8 tabel canonical + `schema/fields.yaml`; enum statis via CHECK (tanpa tabel `ref_*`) | WO-01 | draft |
 | 3 | `WO-03-permission-auth.md` | Migrasi plugin `auth`: seed permission `resident.read/write/delete` + pemetaan ke grup `root`/`admin`/`viewer` | WO-02 | draft |
 | 4 | `WO-04-api-admin-crud.md` | Model GORM + service (validasi `branch_key`, enum, kode RM) + admin API CRUD ber-guard permission | WO-03 | draft |
 | 5 | `WO-05-cli-resident.md` | CLI `resident list/show/add/update/status/documents` + validasi & output tabel | WO-04 | draft |

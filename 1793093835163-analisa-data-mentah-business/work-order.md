@@ -57,7 +57,7 @@ revision: 1
 | 6 | `WO-06-importer-csv.md` | Importer CSV Notion → canonical + laporan validasi + dry-run; **dua mode** `--format raw|template` | WO-04 | ditunda (deferred) — keputusan: HTTP API + staging table; fokus WO-07/08 dulu |
 | 7 | `WO-07-swagger-docs.md` | Anotasi swagger, regenerasi `docs/swagger`, dokumentasi `.env.example` (`INSTANCE_KEY`) & README | ~~WO-06~~ (usang) | complete |
 | 8 | `WO-08-template-generator.md` | Generator template XLSX + CSV dari `schema/fields.yaml`: sheet PETUNJUK/DATA/REFERENSI/CONTOH, dropdown enum, `template_version` — **via HTTP API** `GET /api/admin/resident-template` | WO-02 | complete |
-| 9 | `WO-09-validasi-umpan-balik.md` | Validator template → file umpan-balik (XLSX/CSV) dengan kolom `hasil_validasi` + `alasan_ditolak` per baris | WO-08 | draft |
+| 9 | `WO-09-validasi-umpan-balik.md` | Validator template → file umpan-balik (XLSX/CSV) dengan kolom `hasil_validasi` + `alasan_ditolak` per baris | WO-08 | complete |
 | 10 | `WO-10-generator-resident-code.md` | Generator kode `resident_code` (`BBH-<YY>-<P\|L>-<NNN>`), urut per gender, aman-konkuren, siap perluas prefix cabang (D-8) | WO-04 | progress |
 
 ## Definisi Selesai (semua WO)

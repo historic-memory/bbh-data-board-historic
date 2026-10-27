@@ -33,7 +33,11 @@ files:
     - id: 01a17c26-97e6-7dc5-b6de-2bd4bfba7b99
       path: WO-05-housekeeping-docs-env.md
       type: file
-      status: progress
+      status: complete
+    - id: 01a17c61-2af2-7435-b88e-624b616801a8
+      path: WO-06-patch-wo-05.md
+      type: file
+      status: draft
     - id: 01a177ec-c013-7221-8502-c5aa011599f8
       path: work-order.md
       type: file

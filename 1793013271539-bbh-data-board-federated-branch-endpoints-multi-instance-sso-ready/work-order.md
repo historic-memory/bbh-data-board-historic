@@ -38,7 +38,8 @@ Arah baru: **federasi instance** — satu aplikasi, banyak instance, satu DB lok
 | 2 | [`WO-02-captive-portal-routing.md`](rev 1) | **Captive Portal & Routing**; pemilihan portal → proxy routing per request (`X-Branch-Endpoint`, anti-loop `X-Forwarded-Instance`), pemilik route eksplisit (**List Portal & login selalu `local`**), dua token (**main token**/**portal token**), error klasifikasi, fallback hanya bila dikonfigurasi + penanda, audit request lintas instance | complete |
 | 3 | [`WO-03-sso-admin-only.md`](rev 3) | **SSO Lintas Instance (admin-only)** — token pusat (`aud`=target branch, `iss`, `sub`=UUIDv7, `typ=portal`, `exp` pendek) **tanpa klaim peran**; verifikasi **LOKAL HS256** (D-17) tanpa callback; guard keanggotaan lokal via **`iss`+`sub`** (D-16) → **403** bila belum/`pending`; **enrollment hybrid A+B** (D-18); **otorisasi = RBAC cabang** (D-19); migrasi kolom `admins`; dua-token session | complete |
 | 4 | [`WO-04-rbac-groups-permissions.md`](rev 1) | **RBAC: groups & permissions** — ganti `is_root` dengan `permissions` ↔ `group_permissions` ↔ `groups` ↔ `admin_groups` ↔ `admins`; izin efektif = union grup aktif; guard `RequirePermission`; **fail-closed**; grup bertingkat `root`(`*`) / `admin`(baca+tulis) / `viewer`(baca, **default**, tanpa audit); **grup default otomatis** ke admin baru; audit hanya `root`; migrasi `is_root=true` → grup `root` lalu kolom dihapus; CLI + API grup; anti-lockout | complete |
-| 5 | [`WO-05-housekeeping-docs-env.md`](rev 2) | **Housekeeping pasca-federasi** — regenerasi swagger (`is_root` basi, route baru hilang), dokumentasikan `INSTANCE_KEY`/`SSO_SHARED_SECRET`/`FEDERATION_FALLBACK_LOCAL` di `.env.example`, **guard fail-closed** `SSO_SHARED_SECRET` ≠ `APP_KEY` (normalisasi base64, tidak mencetak kunci; kosong → SSO nonaktif + log), **bukti AC-13 lewat UI (wajib)**, lalu drop 3 DB sisa | progress |
+| 5 | [`WO-05-housekeeping-docs-env.md`](rev 3) | **Housekeeping pasca-federasi** — regenerasi swagger (`is_root` basi, route baru hilang), dokumentasikan `INSTANCE_KEY`/`SSO_SHARED_SECRET`/`FEDERATION_FALLBACK_LOCAL` di `.env.example`, **guard fail-closed** `SSO_SHARED_SECRET` ≠ `APP_KEY` (normalisasi base64, tidak mencetak kunci; kosong → SSO nonaktif + log), **bukti AC-13 lewat UI (wajib)**, lalu drop 3 DB sisa | complete |
+| 6 | [`WO-06-patch-wo-05.md`](rev 1) | **Penambal WO-05** — verifikasi Manager menemukan 3 cacat: (1) 🔴 `normalizeKey` hanya strip prefix tanpa base64-decode → guard bisa diloloskan (AC 5c belum terpenuhi); (2) komentar `.env.example` bertentangan dengan perilaku (kosong = tetap start); (3) bukti T-1..T-4 & AC-13 tidak terarsip di dokumen | draft |
 
 ## Status Akhir (diverifikasi Manager 2026-10-27)
 
@@ -62,6 +63,27 @@ Arah baru: **federasi instance** — satu aplikasi, banyak instance, satu DB lok
 | T-2 | `INSTANCE_KEY`, `SSO_SHARED_SECRET`, `FEDERATION_FALLBACK_LOCAL` tidak ada di `.env.example` |
 | T-3 | AC-13 belum diuji lewat UI (sudah diakui jujur, tinggal pembuktian) |
 | T-4 | ⚠️ Praktik uji memakai nilai `APP_KEY` sebagai `SSO_SHARED_SECRET` — **kunci dipakai ulang untuk dua tujuan berbeda**; perlu peringatan & pemisahan |
+
+## Verifikasi WO-05 (Manager, 2026-10-27)
+
+| Klaim | Hasil |
+|---|---|
+| Commit `3fc0b5e` (11 file) | ✅ ada |
+| build/vet/test/gofmt lulus | ✅ |
+| T-1 `is_root`=0, route baru ada | ✅ (`endpoints` 15, `sso-enrollments` 2, `portal-token` 1, `whoami` 1) |
+| T-2 `.env.example` 111 baris + 5 var | ✅ |
+| T-3 AC-13 di UI | ✅ perilaku (bukti belum diarsip) |
+| T-4 guard fail-closed | ⚠️ **AC 5c belum** — lihat bawah |
+| Drop 3 DB | ✅ (sisa `bbh_data_board`) |
+| Tidak ada push | ✅ (origin `22ce050`) |
+
+**Cacat → `WO-06`:**
+
+| # | Cacat |
+|---|---|
+| 1 | 🔴 `normalizeKey` tidak base64-decode; `MasterKey()` men-decode → byte kunci sama bisa lolos guard (bukti: `base64:QUJD` vs `ABC`) |
+| 2 | Komentar `.env.example:84` bilang "kalau tidak server menolak start" — bertentangan dengan kode (`shared=="" → return nil`) |
+| 3 | Bukti T-1..T-4 & AC-13 tidak diarsip di dokumen; WO-05 §3 masih berbunyi rencana walau `status: complete` |
 
 ## Urutan Eksekusi & Dependency
 ```

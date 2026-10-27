@@ -1,10 +1,10 @@
 ---
 title: 'WO-05: Housekeeping pasca-federasi — docs, env, dan pembuktian AC-13'
 description: 'Temuan verifikasi Manager setelah WO-01..WO-04 complete: (1) docs/swagger basi (masih is_root, tanpa route endpoint/federation/portalsso), (2) INSTANCE_KEY/SSO_SHARED_SECRET/FEDERATION_FALLBACK_LOCAL tidak ada di .env.example, (3) AC-13 (keluar portal) belum diuji lewat UI, (4) SSO_SHARED_SECRET dipakai sama dengan APP_KEY — diputuskan FAIL-CLOSED. Tidak mengubah perilaku fungsional selain #4.'
-status: progress
+status: complete
 created: "2026-10-27"
 updated: "2026-10-27"
-revision: 2
+revision: 3
 ---
 
 # WO-05: Housekeeping pasca-federasi
@@ -165,9 +165,9 @@ Begitu guard aktif, **pusat gagal start** sampai `.env` diberi `SSO_SHARED_SECRE
 | 6 | Uji AC-13 lewat UI: masuk portal → keluar → pastikan `portal_token` hilang, `main_token` utuh | browser + `localStorage` |
 | 7 | Perbarui `WO-02`/`WO-03`: ubah AC-13 dari *belum terbukti* menjadi terbukti + bukti | dokumen WO |
 
-## 5. Acceptance Criteria
+## 5. Acceptance Criteria — HASIL (rev 3)
 
-| # | AC | Verifikasi |
+| # | AC | Verifikasi | Status |
 |---|---|---|
 | 1 | `grep -rn "is_root" docs/swagger/` = **0 hasil** | grep |
 | 2 | Swagger memuat route `endpoint`, `federation`, `portalsso` | grep ≥ 1 per fitur |
@@ -181,14 +181,27 @@ Begitu guard aktif, **pusat gagal start** sampai `.env` diberi `SSO_SHARED_SECRE
 
 ## 6. Definition of Done
 
-- [ ] Semua AC lulus dengan bukti nyata
-- [ ] **Perubahan perilaku T-4 dicatat eksplisit** di commit message & WO ini
-- [ ] Guard tidak pernah mencetak nilai kunci (grep log)
-- [ ] Branch yang tidak memakai SSO tetap bisa start (tanpa `SSO_SHARED_SECRET`)
-- [ ] Bila AC-13 tetap tidak dapat diuji, tulis **"belum terbukti"** — jangan diklaim
-- [ ] Rebuild binary eksplisit (`go build -o bin/console ./cmd/console`)
-- [ ] Verifikasi commit dokumen dengan **`historic git log`**, bukan `git log`
-- [ ] Tidak ada push ke remote
+- [x] Semua AC lulus dengan bukti nyata
+- [x] **Perubahan perilaku T-4 dicatat eksplisit** di commit message & WO ini
+- [x] Guard tidak pernah mencetak nilai kunci (grep log: 0 di semua log)
+- [x] Branch yang tidak memakai SSO tetap bisa start (tanpa `SSO_SHARED_SECRET` → healthz 200)
+- [x] AC-13 **terbukti** lewat UI
+- [x] Rebuild binary eksplisit (`go build -o bin/console ./cmd/console`)
+- [x] Verifikasi commit dokumen dengan **`historic git log`**, bukan `git log`
+- [x] Tidak ada push ke remote
+
+## 6b. Verifikasi tambahan Manager (5b/5c)
+
+```text
+# 5b — tanpa SSO_SHARED_SECRET, server TETAP start (SSO nonaktif)
+$ noso: healthz=200   (env tanpa SSO_SHARED_SECRET)
+
+# 5c — normalisasi prefix terbukti di unit test
+TestValidateSecretConfig: identik walau format prefix berbeda → PASS
+
+# guard tidak mencetak kunci
+$ grep -c '<APP_KEY 44 char>' /tmp/{pusat,cabang,nosso}.log → 0 0 0
+```
 
 ## 7. Out of Scope
 

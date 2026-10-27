@@ -19,20 +19,27 @@ revision: 1
 | D-11 | Identitas cabang memakai `endpoints.key` — **tidak ada tabel `branches`** |
 | D-12 | Tabel referensi `ref_*` tinggal di dalam plugin `resident` dulu |
 | D-13 | Nama plugin: **`plugins/resident`** |
+| D-8 | **`resident_code` UNIQUE GLOBAL**; kosong = `NULL`; butuh generator kode |
+| D-9 | Dokumen = **link Google Drive** di `resident_documents` |
+| D-10 | PII disimpan **plaintext** (DB lokal/tertutup); ekspor wajib punya opsi masking |
 | D-14 | Template impor: **XLSX utama + CSV sekunder** |
 | D-15 | Template v1: **1 baris = 1 bayi**, dokumen 1 kolom |
 | D-16 | Template **di-generate dari definisi field**, bukan statis |
 | D-17 | **`template_version`** tercatat & divalidasi saat impor |
+| D-18 | Template **global** (satu untuk semua cabang); opsi `--no-pii` disediakan |
 
-## Keputusan yang Masih Terbuka (tidak menghalangi WO-01..WO-02)
+## Keputusan yang Masih Terbuka
 | # | Pertanyaan | Dampak bila belum diputuskan |
 |---|---|---|
-| D-1 | Titik tengah = super-set + wajib minimum | Menentukan kolom `NOT NULL` |
-| D-8 | `resident_code` unik global atau per cabang | Menentukan bentuk UNIQUE index |
-| D-9 | Dokumen tetap Google Drive atau pindah `internal/storage` | Menentukan isi `resident_documents` |
-| D-10 | PII at-rest: plaintext / enkripsi kolom | Menentukan tipe & migrasi kolom |
+| D-1 | ✅ DIPUTUSKAN: satu standar, field wajib minimum ditetapkan (SPEC §10) | ✅ |
+| D-2 | `Keterangan` → `facilities`? | Mengubah target impor kolom Keterangan (WO-06) |
+| D-3 | Enum → tabel referensi atau enum kode? | Menentukan seed & validasi (WO-02/WO-04) |
+| D-4 | Perlu `guardians` (wali) selain ibu? | Menambah tabel (WO-02) |
+| D-5 | `SpOG`/nama bidan → `attendant_detail` atau entitas? | Menentukan skema birth_records (WO-02) |
+| D-6 | Makna "JCH" | Isi `transfer_partners` (WO-02) |
+| D-7 | Nama field Inggris/Indonesia? | Usulan SPEC: Inggris (P-8) |
 
-> WO-01 & WO-02 dapat jalan dengan usulan SPEC. WO-03 ke atas **wajib** D-1, D-8, D-10 sudah diputuskan.
+> **D-1, D-8, D-10 sudah DIPUTUSKAN** -> WO-04 tidak lagi terhalang oleh ketiganya. Sisa terbuka (D-2..D-6) tidak menghalangi WO-01/02/08 namun menghalangi bentuk final seed & klasifikasi.
 
 ## Prinsip Pelaksanaan
 1. **Semua kode fitur di `plugins/resident/`.** Tidak ada kode fitur di `internal/`.
@@ -51,12 +58,13 @@ revision: 1
 | 1 | `WO-01-plugin-skeleton.md` | Kerangka plugin `resident` + registrasi `server`/`console` + CLI/route stub + test kosong | — | draft |
 | 2 | `WO-02-migrasi-skema-canonical.md` | Migrasi tabel canonical (9 tabel) + 5 tabel referensi + seed nilai baku + `schema/fields.yaml` | WO-01 | draft |
 | 3 | `WO-03-permission-auth.md` | Migrasi plugin `auth`: seed permission `resident.read/write/delete` + pemetaan ke grup `root`/`admin`/`viewer` | WO-02 | draft |
-| 4 | `WO-04-api-admin-crud.md` | Model GORM + service (validasi `branch_key`, enum, kode RM) + admin API CRUD ber-guard permission | WO-03, D-1/D-8/D-10 | draft |
+| 4 | `WO-04-api-admin-crud.md` | Model GORM + service (validasi `branch_key`, enum, kode RM) + admin API CRUD ber-guard permission | WO-03 | draft |
 | 5 | `WO-05-cli-resident.md` | CLI `resident list/show/add/update/status/documents` + validasi & output tabel | WO-04 | draft |
 | 6 | `WO-06-importer-csv.md` | Importer CSV Notion → canonical sesuai §6 SPEC + laporan validasi + dry-run; **dua mode** `--format raw|template` | WO-04 | draft |
 | 7 | `WO-07-swagger-docs.md` | Anotasi swagger, regenerasi `docs/swagger`, dokumentasi `.env.example` (`INSTANCE_KEY`) & README | WO-06 | draft |
 | 8 | `WO-08-template-generator.md` | Generator template XLSX + CSV dari `schema/fields.yaml`: sheet PETUNJUK/DATA/REFERENSI/CONTOH, dropdown enum, `template_version` | WO-02 | draft |
 | 9 | `WO-09-validasi-umpan-balik.md` | Validator template → file umpan-balik (XLSX/CSV) dengan kolom `hasil_validasi` + `alasan_ditolak` per baris | WO-08 | draft |
+| 10 | `WO-10-generator-resident-code.md` | Generator kode `resident_code` (`BBH-<YY>-<P\|L>-<NNN>`), urut per gender, aman-konkuren, siap perluas prefix cabang (D-8) | WO-04 | draft |
 
 ## Definisi Selesai (semua WO)
 - `go build ./...` / `go vet ./...` / `go test ./...` lulus di container `app`.

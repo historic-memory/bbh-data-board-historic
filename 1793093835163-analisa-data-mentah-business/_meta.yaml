@@ -42,6 +42,10 @@ files:
       path: WO-09-validasi-umpan-balik.md
       type: file
       status: draft
+    - id: 01a17d13-8b47-7ef7-b3ad-bbd86be1c654
+      path: WO-10-generator-resident-code.md
+      type: file
+      status: draft
     - id: 01a17cb8-d9ac-7864-b376-950ff7458b27
       path: notes.md
       type: file

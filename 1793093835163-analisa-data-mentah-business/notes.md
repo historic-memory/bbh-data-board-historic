@@ -84,5 +84,6 @@ created: "2026-10-27"
   - 10 tabel + 5 tabel referensi, 13 keputusan (D-1..D-13), 7 pertanyaan data.
 - **`work-order.md`** = master index 7 WO implementasi plugin `resident`.
   - `WO-01-plugin-skeleton.md`, `WO-02-migrasi-skema-canonical.md`, `WO-03-permission-auth.md`, `WO-04-api-admin-crud.md`, `WO-05-cli-resident.md`, `WO-06-importer-csv.md`, `WO-07-swagger-docs.md`.
-- Keputusan dikunci: **D-11** pakai `endpoints.key` (tanpa tabel `branches`); **D-12** `ref_*` di plugin `resident`; **D-13** nama plugin `resident`.
+- Keputusan dikunci: **D-11** pakai `endpoints.key` (tanpa tabel `branches`); **D-12** `ref_*` di plugin `resident`; **D-13** nama plugin `resident`; **D-1** satu standar (field wajib minimum); **D-8** `resident_code` UNIQUE global; **D-9** dokumen = link Google Drive; **D-10** PII plaintext; **D-14..D-18** template XLSX/CSV di-generate dari `schema/fields.yaml`, global.
+- 10 WO: WO-01..WO-10 (WO-10 = generator `resident_code`).
 

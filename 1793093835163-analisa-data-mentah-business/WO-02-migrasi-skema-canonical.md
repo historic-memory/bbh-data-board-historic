@@ -55,14 +55,13 @@ plugins/resident/migrations/postgres/
 
 > **Urutan pembuatan tabel** wajib memperhitungkan FK: `ref_*` & `transfer_partners` & `facilities` → `mothers` → `residents` → `birth_records`/`admissions`/`resident_status_history`/`resident_documents` → `facility_aliases`.
 
-## Keputusan yang Dibutuhkan Sebelum WO Ini
-| # | Pertanyaan | Default bila belum diputuskan |
+## Keputusan yang Sudah Dikunci
+| # | Keputusan | Implikasi migrasi |
 |---|---|---|
-| D-1 | Kolom wajib (`NOT NULL`) | Pakai wajib minimum: `full_name`, `gender`, `birth_date`, `branch_key` |
-| D-8 | `resident_code` unik global/per cabang | **Global** (`UNIQUE(resident_code)`) |
-| D-10 | PII at-rest | **Ditunda**: kolom PII dibuat `TEXT` biasa dulu, migrasi enkripsi terpisah. **Bila ingin aman sejak awal, tunda kolom `nik`/`bpjs_no`** |
-
-> Bila D-10 belum diputuskan dan user ingin **fail-safe**, WO ini boleh **menunda** kolom `residents.nik`, `residents.bpjs_no`, `mothers.nik` ke WO terpisah. Catat pilihan yang diambil.
+| D-1 | Satu standar: field wajib minimum ditetapkan | `NOT NULL` pada: `residents.full_name`, `residents.gender`, `residents.birth_date`, `residents.branch_key`. Usulan tambahan yang perlu dikonfirmasi: `admissions.admitted_at`, status awal. |
+| D-8 | `resident_code` UNIQUE **global** | `UNIQUE(resident_code)`; kosong disimpan `NULL` (bukan `''`) agar tidak bentrok |
+| D-10 | PII **plaintext** | `nik`, `bpjs_no` bertipe `VARCHAR(16)`/`TEXT` biasa; **tidak ada** enkripsi di WO ini |
+| D-9 | Dokumen = link | `resident_documents.url TEXT NOT NULL`, tanpa integrasi storage |
 
 ## Bukti yang Harus Dilaporkan
 - `plugins/resident/schema/fields.yaml` ada; jumlah field tercatat.
@@ -86,5 +85,6 @@ plugins/resident/migrations/postgres/
 | AC-7 | **Nol** `CREATE TABLE`/`INSERT ... seed` di kode Go. |
 | AC-8 | `migrate down --plugin resident` membersihkan **semua** tabel yang dibuat (urutan aman FK). |
 | AC-9 | `go build ./...`, `go vet`, `go test`, `gofmt -l` lulus. |
-| AC-10 | Keputusan D-1/D-8/D-10 yang dipakai dicatat di laporan WO (atau eksplisit "ditunda"). |
+| AC-10 | Keputusan D-1/D-8/D-10 yang dipakai dicatat di laporan WO. |
 | AC-11 | `plugins/resident/schema/fields.yaml` dibuat dan konsisten dengan kolom migrasi (ada uji/lint bila tidak di-generate). |
+| AC-12 | `resident_code` UNIQUE global; nilai kosong tersimpan `NULL`, bukan string kosong. |

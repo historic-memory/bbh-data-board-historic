@@ -26,7 +26,7 @@ revision: 1
 | # | Prinsip | Konsekuensi |
 |---|---|---|
 | P-1 | **Canonical schema** adalah kontrak. Semua cabang memetakan ke sini. | Nama field & enum **baku**, tidak mengikuti istilah cabang. |
-| P-2 | **"Titik tengah" = super-set kolom, wajib minimum eksplisit.** Kolom dari cabang mana pun ditampung; field wajib ditetapkan tegas (`NOT NULL`). | Tidak ada data cabang yang hilang; kualitas terjaga di field inti. |
+| P-2 | **"Titik tengah" = satu standar yang wajib diikuti semua cabang.** Skema canonical menetapkan **field wajib minimum** yang harus diisi setiap cabang; kolom tambahan ditampung bila ada. | Semua cabang mengisi field yang sama -> data comparable. Itulah tujuan sistem (D-1). |
 | P-3 | **Nilai di-enumerasi, bukan hanya kolom.** Istilah yang berbeda tetapi bermakna sama harus dipetakan ke satu nilai baku. | Ada tabel referensi / nilai enum baku. |
 | P-4 | **Lifecycle dipisahkan dari atribut.** Status hunian adalah kejadian berwaktu, bukan kolom statis. | Tabel `resident_status_history`. |
 | P-5 | **Identitas ganda:** kode lama (Notion) dipertahankan, PK internal UUIDv7. | `resident_code` unik dan stabil; `id` UUIDv7. |
@@ -323,8 +323,11 @@ Temuan sumber: 31/50 terisi, semua unik. `P` sekuens 001–019 (**gap 010**), `L
 
 **Aturan:**
 - `resident_code` **immutable** setelah dibuat.
-- Unik **global** (lintas cabang), atau unik **per cabang** → **menunggu keputusan** (§10).
+- Unik **global** (lintas cabang) — **D-8 DIPUTUSKAN**.
+- Kosong -> disimpan `NULL` (bukan string kosong), agar tidak bentrok UNIQUE.
 - Sumber berisi teks + URL Notion; **URL dibuang**, hanya kode disimpan.
+- **Generator kode** disediakan (WO-10): `BBH-<YY>-<P|L>-<NNN>`, urut per gender.
+- **Masa depan:** bila 5 cabang mengisi sendiri, siapkan prefix cabang `BBH-<CAB>-<YY>-<P|L>-<NNN>` untuk mencegah bentrok lintas cabang.
 
 ## 6. Normalisasi & Pemetaan dari Data Sumber
 
@@ -405,24 +408,24 @@ Gabungan `residents` + `birth_records` + `mothers` + status terkini + cabang —
 | # | Catatan |
 |---|---|
 | N-1 | `residents.nik`, `mothers.nik`, `residents.bpjs_no`, `mothers.full_name`, `mothers.phone` = **data pribadi sensitif**. |
-| N-2 | Kandidat: pemanfaatan `internal/secrets` (AES-GCM) atau kolom terenkripsi. **Belum diputuskan.** |
-| N-3 | Ekspor/laporan wajib punya opsi **masking** NIK/BPJS. |
+| N-2 | **Keputusan D-10: disimpan PLAINTEXT.** Database dianggap lokal/tertutup. Risiko diterima & dicatat. |
+| N-3 | Ekspor/laporan/template wajib punya opsi **masking** NIK/BPJS (dan tersedia versi `--no-pii`). |
 | N-4 | Semua perubahan status & data resident wajib tercatat (audit trail). |
 
 ## 10. Keputusan Terbuka (D-1..D-10)
 
 | # | Pertanyaan | Opsi | Status |
 |---|---|---|---|
-| **D-1** | Bentuk "titik tengah" | (a) super-set semua kolom, (b) irisan minimal semua cabang mampu | Usulan: super-set + wajib minimum eksplisit (P-2). **Menunggu konfirmasi** |
+| **D-1** | Bentuk "titik tengah" | (a) super-set semua kolom, (b) irisan minimal semua cabang mampu | ✅ **DIPUTUSKAN: satu standar, semua cabang wajib mengisi field yang sama.** Field wajib minimum: `nama_bayi`, `jenis_kelamin`, `tanggal_lahir`, `branch_key` (+ usulan tambahan: `tanggal_masuk`, `status`). Kolom lain ditampung namun opsional. |
 | **D-2** | `Keterangan` → `facilities`? | Ya / sebagian catatan bebas | Usulan: ya (bukti §6.3). **Menunggu** |
 | **D-3** | Enum → tabel referensi atau enum kode | Tabel referensi / enum statis | Usulan: tabel referensi (cabang bisa menambah). **Menunggu** |
 | **D-4** | Wali selain ibu | `mothers` saja / tambah `guardians` + `relation` | **Menunggu** |
 | **D-5** | `SpOG` / nama bidan | `attendant_detail` di `birth_records` / entitas tenaga medis | Usulan: `attendant_detail`. **Menunggu** |
 | **D-6** | "JCH" | Tabel `transfer_partners` / enum status saja | Usulan: `transfer_partners`. **Makna JCH perlu konfirmasi** |
 | **D-7** | Nama field | Inggris / Indonesia | Usulan: Inggris (P-8). **Menunggu** |
-| **D-8** | Unik `resident_code` | Global / per cabang | **Menunggu** |
-| **D-9** | Aset dokumen | Tetap Google Drive / pindah `internal/storage` | **Menunggu** |
-| **D-10** | PII at-rest | Plaintext / enkripsi kolom / tabel terpisah | **Menunggu** |
+| **D-8** | Unik `resident_code` | Global / per cabang | ✅ **DIPUTUSKAN: UNIQUE GLOBAL.** Kosong -> `NULL` (bukan string kosong). Butuh **generator kode** (WO-10). Siapkan ruang prefix cabang (`BBH-<CAB>-<YY>-<P\|L>-<NNN>`) untuk masa depan. |
+| **D-9** | Aset dokumen | Tetap Google Drive / pindah `internal/storage` | ✅ **DIPUTUSKAN: link (Google Drive)** disimpan di `resident_documents.url` |
+| **D-10** | PII at-rest | Plaintext / enkripsi kolom / tabel terpisah | ✅ **DIPUTUSKAN: plaintext** (database lokal/tertutup). Konsekuensi: ekspor/laporan **wajib punya opsi masking** (§9 N-3). |
 | **D-11** | Identitas cabang | tabel `branches` baru / pakai `endpoints.key` | ✅ **DIPUTUSKAN: pakai `endpoints.key`** (§4.1) |
 | **D-12** | Tabel referensi `ref_*` | plugin `resident` / plugin `reference` | ✅ **DIPUTUSKAN: di dalam plugin `resident`** dulu |
 | **D-13** | Nama plugin | `core` / `business` / `resident` | ✅ **DIPUTUSKAN: `plugins/resident`** |
@@ -430,7 +433,7 @@ Gabungan `residents` + `birth_records` + `mothers` + status terkini + cabang —
 | **D-15** | Bentuk template v1 | 1 baris = 1 bayi, dokumen 1 kolom | ✅ **DIPUTUSKAN: 1 baris = 1 bayi; sheet DOKUMEN menyusul bila perlu** |
 | **D-16** | Template statis vs di-generate | File statis / di-generate dari definisi field | ✅ **DIPUTUSKAN: di-generate dari definisi field (P-13)** |
 | **D-17** | Versioning template | tanpa versi / `template_version` tercatat | ✅ **DIPUTUSKAN: ada `template_version` di file & divalidasi saat impor** |
-| **D-18** | Audiens template | internal per cabang / pihak luar | Usulan: **internal per cabang**; kolom PII ditandai & dapat dihilangkan untuk versi luar |
+| **D-18** | Audiens template | internal per cabang / pihak luar | ✅ **DIPUTUSKAN: template global (satu untuk semua cabang).** Opsi `--no-pii` tetap **disediakan** untuk versi tanpa PII (dibagikan ke pihak luar) |
 
 ## 11. Pertanyaan Data (butuh jawaban user)
 

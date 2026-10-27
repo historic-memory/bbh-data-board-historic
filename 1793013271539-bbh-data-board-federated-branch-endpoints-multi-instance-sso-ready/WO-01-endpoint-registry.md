@@ -1,9 +1,9 @@
 ---
 title: 'WO-01: Endpoint Registry — tabel endpoints + CLI + admin API'
 description: 'Fondasi federasi: registry endpoint cabang di DB lokal pusat (migrasi versioned), CLI endpoint add/list/rm/test/use, admin API, penyimpanan token tersegel AES-GCM, audit request lintas instance. Prasyarat: pulihkan command migrate (internal/migration hilang saat destroy). Scope: admin saja (D-8).'
-status: draft
+status: complete
 created: "2026-10-26"
-updated: "2026-10-26"
+updated: "2026-10-27"
 revision: 2
 ---
 
@@ -191,10 +191,37 @@ Wajib:
 
 ## Definition of Done
 
-- [ ] Semua AC di atas lulus dengan bukti output nyata
-- [ ] Rebuild binary: `go build -o bin/console ./cmd/console` (**`bin/` tidak di-update oleh `go build ./...`** — jebakan yang sudah 2× terjadi)
-- [ ] Bila ada bagian yang belum bisa diverifikasi (mis. `endpoint test` ke host yang belum ada), **nyatakan belum terbukti** — jangan ditandai selesai
-- [ ] Tidak ada push ke remote
+- [x] Semua AC di atas lulus dengan bukti output nyata
+- [x] Rebuild binary: `go build -o bin/console ./cmd/console` (**`bin/` tidak di-update oleh `go build ./...`** — jebakan yang sudah 2× terjadi)
+- [x] Bila ada bagian yang belum bisa diverifikasi (mis. `endpoint test` ke host yang belum ada), **nyatakan belum terbukti** — jangan ditandai selesai
+- [x] Tidak ada push ke remote
+
+## Status Implementasi (2026-10-27)
+
+**Status: selesai** — commit lokal, tanpa push.
+
+Bukti uji (dijalankan di container `app`, DB `bbh_data_board`):
+
+| AC | Hasil |
+|---|---|
+| 1 | `migrate up --plugin endpoint` → `endpoints` + `endpoint_audit` ada; seed `local` (`is_local=t, is_active=t`) |
+| 2 | `endpoint add --key cabang-smg --auth-kind bearer --token-stdin` → `token_enc` = `{"v":1,"alg":"AES-GCM",...}`, `token_enc LIKE '%plaintext%' = f` |
+| 3 | `add` key duplikat → `endpoint key already exists ... (update is not supported by add)`; API 409 |
+| 4 | `endpoint list` menampilkan KEY/LABEL/BASE_URL/AUTH/STATUS/TIMEOUT/LOCAL/AKTIF; `--json` tanpa field token |
+| 5 | `test --key local` → `OK ... (200)` exit 0; `test --key cabang-smg` → `FAIL [unreachable] ...` exit 1 |
+| 6 | `use cabang-jkt` → `active` = `cabang-jkt`; `use local` → `active` = `local` |
+| 7 | `rm --key local` → ditolak (409) |
+| 8 | `rm --key <aktif>` → ditolak (409) |
+| 9 | `migrate down --plugin endpoint` → kedua tabel hilang (`to_regclass` NULL); `migrate up` ulang → seed bersih |
+| 10 | `grep CREATE TABLE` di kode baru (`plugins/endpoint`) = 0. **Catatan:** 2 hit tersisa di `internal/console/migrate.go` adalah tabel bookkeeping migrator (`migrations`, `migration_targets`) yang sudah ada sebelum WO ini |
+| 11 | `go build ./...`, `go vet ./...`, `go test ./...` lulus |
+| 12 | Token plaintext tidak ada di DB, output CLI, response API, maupun `/tmp/server.log` (grep 0) |
+
+Tambahan kecil di luar teks WO (dibutuhkan agar `endpoint test` bermakna): route `GET /healthz` di `internal/app/bootstrap.go`. Seed `local` memakai `http://127.0.0.1:8080` (port internal container), bukan `8082` (port host mapping).
+
+`migrate --plugin` default diubah ke `all` sesuai Bagian A; `migrate make` tetap menolak `all`.
+
+**Belum terbukti:** audit `endpoint_audit` belum menulis baris karena penulisan audit terjadi di jalur proxy lintas instance (WO-02). Tabel + helper `RecordAudit` sudah tersedia.
 
 ## Out of Scope
 

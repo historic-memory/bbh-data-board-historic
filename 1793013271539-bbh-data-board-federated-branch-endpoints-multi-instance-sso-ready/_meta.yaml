@@ -13,17 +13,21 @@ files:
     - id: 01a177ec-c013-75a4-bbf7-0c801612ef14
       path: WO-01-endpoint-registry.md
       type: file
-      status: draft
+      status: complete
     - id: 01a17833-8257-7ff5-8b17-3b08dc2555f3
       path: WO-02-captive-portal-routing.md
       type: file
-      status: draft
+      status: complete
     - id: 01a17833-8258-7dfe-908c-2dbbcb0488f3
       path: WO-03-sso-admin-only.md
       type: file
-      status: draft
+      status: complete
     - id: 01a17843-e021-71c1-823f-130a712d4175
       path: WO-04-rbac-groups-permissions.md
+      type: file
+      status: complete
+    - id: 01a17c26-97e6-7dc5-b6de-2bd4bfba7b99
+      path: WO-05-housekeeping-docs-env.md
       type: file
       status: draft
     - id: 01a177ec-c013-7221-8502-c5aa011599f8

@@ -1,9 +1,9 @@
 ---
 title: 'WO-04: RBAC — groups, permissions, admin_groups'
 description: 'Ganti is_root dengan model izin berbasis grup: admins ↔ admin_groups ↔ groups ↔ group_permissions ↔ permissions. Izin efektif = union grup aktif. Guard per permission (RequirePermission). Fail-closed. Prasyarat WO-03 karena otorisasi cabang ditentukan lokal.'
-status: draft
+status: complete
 created: "2026-10-26"
-updated: "2026-10-26"
+updated: "2026-10-27"
 revision: 1
 ---
 
@@ -292,14 +292,49 @@ auth admin groups --admin <email|id>      # daftar grup admin
 
 ## 10. Definition of Done
 
-- [ ] Semua AC lulus dengan bukti output nyata
-- [ ] Migrasi **dipisah** dari penghapusan kolom `is_root` (bisa pulang)
-- [ ] Bukti `is_root` benar-benar tidak dibaca kode lagi: grep bersih
-- [ ] Seed idempotent (`ON CONFLICT DO NOTHING`) — migrasi dijalankan ulang tidak error
-- [ ] Anti-lockout diuji (uji negatif: pastikan aksinya **ditolak**)
-- [ ] Rebuild binary eksplisit (`go build -o bin/console ./cmd/console`)
-- [ ] Bagian yang belum terbukti dinyatakan belum terbukti
-- [ ] Tidak ada push ke remote
+- [x] Semua AC lulus dengan bukti output nyata
+- [x] Migrasi **dipisah** dari penghapusan kolom `is_root` (bisa pulang)
+- [x] Bukti `is_root` benar-benar tidak dibaca kode lagi: grep bersih
+- [x] Seed idempotent (`ON CONFLICT DO NOTHING`) — migrasi dijalankan ulang tidak error
+- [x] Anti-lockout diuji (uji negatif: pastikan aksinya **ditolak**)
+- [x] Rebuild binary eksplisit (`go build -o bin/console ./cmd/console`)
+- [x] Bagian yang belum terbukti dinyatakan belum terbukti
+- [x] Tidak ada push ke remote
+
+## 13. Status Implementasi (2026-10-27)
+
+**Implementasi:** di dalam plugin `auth` (fitur = plugin, bukan `internal/`).
+
+Migrasi (3 file, urut):
+1. `2026_10_27_100000_create_rbac_tables` — tabel + seed 14 permission + 3 grup sistem.
+2. `2026_10_27_101000_migrate_is_root_to_root_group` — data `is_root=true` → grup `root`; admin non-root tanpa grup → grup default.
+3. `2026_10_27_102000_drop_admins_is_root` — hapus kolom (down: re-add + backfill dari grup root).
+
+Kode: `model/rbac.go`, `services/rbac.go`, `handlers/rbac.go`, `cli_rbac.go`, middleware `RequirePermission`, guard di plugin `endpoint` (`endpoint.read/write/test`, `audit.read`).
+
+Bukti uji (server + DB lokal):
+
+| AC | Hasil |
+|---|---|
+| 1 | Admin `viewer`+`admin` → `POST /api/members` 201; setelah `admin` dicabut → **403** seketika (token sama) |
+| 2 | Admin tanpa grup (`--no-default-group`) → `/api/admins` **403**, `/api/admin/me` 200 |
+| 3 | Setelah migrasi `root@admin.local` & `root@bbh.dev` → grup `root` (akses penuh) |
+| 4 | Cabut grup berlaku tanpa login ulang (AC-1 di atas) |
+| 5 | Grup `gudang` dinonaktifkan → `endpoint.read` langsung **403** |
+| 6 | `DELETE /api/groups/root` → 409; `PUT` `is_active=false` pada grup sistem → 409 |
+| 7 | `auth group unassign --admin root@admin.local --group root` (satu-satunya pemegang `*`) → ditolak "last admin with full access" |
+| 8 | Admin baru via API otomatis `["viewer"]`; via CLI juga; `GET` 200 / `POST` 403 |
+| 9 | Grup `admin`: `POST /api/members` 201, `DELETE /api/admins/:id` 403, `PUT /:id/groups` 403 |
+| 10 | `GET /api/audit/endpoints` → viewer 403, admin 403, root 200 |
+| 11 | `set_default` pindah grup; `COUNT(*) WHERE is_default = 1`; UPDATE kedua ditolak `uq_groups_one_default` |
+| 12 | `grep RequireRootAdmin` = **0** |
+| 13 | `go build ./... && go vet ./... && go test ./...` lulus |
+
+Rollback diuji: `migrate down --plugin auth` (versi 4) → kolom `is_root` kembali berisi nilai benar (`t` hanya untuk anggota grup root); `migrate up` → kolom hilang lagi.
+
+**Catatan:** `docs/swagger/docs.go` masih memuat `is_root` karena file generated (`docs/` gitignored). Regenerasi `swag init` diperlukan bila ingin dokumentasi bersih.
+
+**Belum terbukti:** UI pengelolaan grup (out of scope), RBAC untuk member (out of scope).
 
 ## 11. Out of Scope
 

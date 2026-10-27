@@ -3,7 +3,7 @@ title: work order
 description: "Master index WO arsitektur federasi endpoint: pusat & cabang menjalankan aplikasi sama, pusat beralih endpoint ke API cabang, SSO menyusul. Pengganti topic multi-database yang sudah di-destroy."
 status: draft
 created: "2026-10-26"
-updated: "2026-10-26"
+updated: "2026-10-27"
 ---
 # Work Order (Master Index): Federated Branch Endpoints
 
@@ -34,10 +34,34 @@ Arah baru: **federasi instance** — satu aplikasi, banyak instance, satu DB lok
 
 | # | File | Scope | Status |
 |---|---|---|---|
-| 1 | [`WO-01-endpoint-registry.md`](rev 2) | **Endpoint Registry** (admin-only, D-8); `endpoints` (+`is_active`+partial index unique) + `endpoint_audit`; migrasi versioned; plugin CLI (`add/list/rm/test/use/active`); admin API (partial PUT tanpa reset `status`, audit semua request lintas endpoint) | draft |
-| 2 | [`WO-02-captive-portal-routing.md`](rev 1) | **Captive Portal & Routing**; pemilihan portal → proxy routing per request (`X-Branch-Endpoint`, anti-loop `X-Forwarded-Instance`), pemilik route eksplisit (**List Portal & login selalu `local`**), dua token (**main token**/**portal token**), error klasifikasi, fallback hanya bila dikonfigurasi + penanda, audit request lintas instance | drafted |
-| 3 | [`WO-03-sso-admin-only.md`](rev 2) | **SSO Lintas Instance (admin-only)** — DIPERLUKAN; token pusat (`aud`=target branch, `iss`, `sub`=UUIDv7, `typ=portal`, `exp` pendek) **tanpa klaim peran**; verifikasi **LOKAL HS256** (D-17) tanpa callback; guard keanggotaan lokal via **`iss`+`sub`** (D-16) → **403** bila belum/`pending`; **enrollment hybrid A+B** (D-18); **otorisasi = RBAC cabang** (D-19); butuh migrasi kolom `admins`; dua-token session | drafted |
-| 4 | [`WO-04-rbac-groups-permissions.md`](rev 1) | **RBAC: groups & permissions** — ganti `is_root` dengan `permissions` ↔ `group_permissions` ↔ `groups` ↔ `admin_groups` ↔ `admins`; izin efektif = union grup aktif; guard `RequirePermission`; **fail-closed**; grup bertingkat `root`(`*`) / `admin`(baca+tulis) / `viewer`(baca, **default**, tanpa audit); **grup default otomatis** ke admin baru; audit hanya `root`; migrasi `is_root=true` → grup `root` lalu kolom dihapus; CLI + API grup; anti-lockout | drafted |
+| 1 | [`WO-01-endpoint-registry.md`](rev 2) | **Endpoint Registry** (admin-only, D-8); `endpoints` (+`is_active`+partial index unique) + `endpoint_audit`; migrasi versioned; plugin CLI (`add/list/rm/test/use/active`); admin API (partial PUT tanpa reset `status`, audit semua request lintas endpoint) | complete |
+| 2 | [`WO-02-captive-portal-routing.md`](rev 1) | **Captive Portal & Routing**; pemilihan portal → proxy routing per request (`X-Branch-Endpoint`, anti-loop `X-Forwarded-Instance`), pemilik route eksplisit (**List Portal & login selalu `local`**), dua token (**main token**/**portal token**), error klasifikasi, fallback hanya bila dikonfigurasi + penanda, audit request lintas instance | complete |
+| 3 | [`WO-03-sso-admin-only.md`](rev 3) | **SSO Lintas Instance (admin-only)** — token pusat (`aud`=target branch, `iss`, `sub`=UUIDv7, `typ=portal`, `exp` pendek) **tanpa klaim peran**; verifikasi **LOKAL HS256** (D-17) tanpa callback; guard keanggotaan lokal via **`iss`+`sub`** (D-16) → **403** bila belum/`pending`; **enrollment hybrid A+B** (D-18); **otorisasi = RBAC cabang** (D-19); migrasi kolom `admins`; dua-token session | complete |
+| 4 | [`WO-04-rbac-groups-permissions.md`](rev 1) | **RBAC: groups & permissions** — ganti `is_root` dengan `permissions` ↔ `group_permissions` ↔ `groups` ↔ `admin_groups` ↔ `admins`; izin efektif = union grup aktif; guard `RequirePermission`; **fail-closed**; grup bertingkat `root`(`*`) / `admin`(baca+tulis) / `viewer`(baca, **default**, tanpa audit); **grup default otomatis** ke admin baru; audit hanya `root`; migrasi `is_root=true` → grup `root` lalu kolom dihapus; CLI + API grup; anti-lockout | complete |
+| 5 | [`WO-05-housekeeping-docs-env.md`](rev 1) | **Housekeeping pasca-federasi** — regenerasi swagger (`is_root` basi, route baru hilang), dokumentasikan `INSTANCE_KEY`/`SSO_SHARED_SECRET`/`FEDERATION_FALLBACK_LOCAL` di `.env.example`, peringatan `SSO_SHARED_SECRET` ≠ `APP_KEY`, buktikan AC-13 lewat UI | draft |
+
+## Status Akhir (diverifikasi Manager 2026-10-27)
+
+| Klaim Dev Agent | Hasil verifikasi |
+|---|---|
+| Commit `a13645e` / `51b4f06` / `1831ec2` / `bbfeb4a` sesuai judul WO | ✅ benar |
+| `go build` / `go vet` / `go test` / `gofmt` lulus | ✅ benar |
+| Kode fitur di `plugins/` (`endpoint`, `federation`, `portalsso`), bukan `internal/` | ✅ benar |
+| `RequireRootAdmin` sudah tidak dipakai | ✅ benar (0 hasil) |
+| Kolom `is_root` hilang dari model & kode | ✅ benar |
+| Migrasi `is_root` dipisah dari hapus kolom | ✅ benar |
+| Portal token tanpa klaim peran (D-19) | ✅ benar (`sso.go`) |
+| AC-13 belum terbukti | ✅ benar & jujur dilaporkan |
+| Working tree bersih selain `bin/` | ✅ benar |
+
+**Celah yang tidak dilaporkan** → dicatat sebagai `WO-05`:
+
+| # | Celah |
+|---|---|
+| T-1 | `docs/swagger` basi: masih `is_root`, **0** route endpoint/federation/portalsso |
+| T-2 | `INSTANCE_KEY`, `SSO_SHARED_SECRET`, `FEDERATION_FALLBACK_LOCAL` tidak ada di `.env.example` |
+| T-3 | AC-13 belum diuji lewat UI (sudah diakui jujur, tinggal pembuktian) |
+| T-4 | ⚠️ Praktik uji memakai nilai `APP_KEY` sebagai `SSO_SHARED_SECRET` — **kunci dipakai ulang untuk dua tujuan berbeda**; perlu peringatan & pemisahan |
 
 ## Urutan Eksekusi & Dependency
 ```

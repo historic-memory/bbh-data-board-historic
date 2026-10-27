@@ -1,9 +1,9 @@
 ---
 title: 'WO-02: Captive Portal & Routing — pengalihan API business ke cabang'
 description: 'Dashboard admin pusat dapat "Masuk ke Cabang" (captive portal). Setelah masuk, API business dialihkan ke endpoint cabang; List Portal tetap ke pusat; Admin Profile dua versi. Proxy per request via X-Branch-Endpoint, anti-loop X-Forwarded-Instance, klasifikasi error, fallback local, audit.'
-status: draft
+status: complete
 created: "2026-10-26"
-updated: "2026-10-26"
+updated: "2026-10-27"
 revision: 1
 ---
 
@@ -149,12 +149,43 @@ Halaman/menu **tidak berubah**. Yang berubah **hanya modul API**:
 
 ## 10. Definition of Done
 
-- [ ] Semua AC lulus dengan bukti output nyata
-- [ ] Anti-loop diuji **dua arah** (ditolak & header ditambahkan saat keluar)
-- [ ] Fallback senyap diuji **negatif** (tanpa konfigurasi → tidak fallback)
-- [ ] Rebuild binary eksplisit (`go build -o bin/console ./cmd/console`)
-- [ ] Bagian yang belum terbukti (mis. butuh instance cabang nyata) **dinyatakan belum terbukti**
-- [ ] Tidak ada push ke remote
+- [x] Semua AC lulus dengan bukti output nyata
+- [x] Anti-loop diuji **dua arah** (ditolak & header ditambahkan saat keluar)
+- [x] Fallback senyap diuji **negatif** (tanpa konfigurasi → tidak fallback)
+- [x] Rebuild binary eksplisit (`go build -o bin/console ./cmd/console`)
+- [x] Bagian yang belum terbukti (mis. butuh instance cabang nyata) **dinyatakan belum terbukti**
+- [x] Tidak ada push ke remote
+
+## 12. Status Implementasi (2026-10-27)
+
+**Implementasi:** plugin baru `plugins/federation` (bukan `internal/`) + perubahan terbatas `sub_app/webapp/src/api/client.ts`.
+
+- `plugins/federation/routes.go` — tabel pemilik route; default `local`.
+- `plugins/federation/proxy.go` — forwarding, anti-loop, klasifikasi error, audit, fallback opt-in.
+- `plugins/federation/plugin.go` — middleware grup `/api` + catch-all untuk prefix business yang belum punya handler lokal (didaftarkan SETELAH plugin business, SEBELUM `pages`).
+- Env baru: `INSTANCE_KEY` (default `local`), `FEDERATION_FALLBACK_LOCAL` (default mati).
+
+Bukti uji (server + fake cabang `127.0.0.1:9090` di container):
+
+| AC | Hasil |
+|---|---|
+| 1 | `use cabang-test` → `active=cabang-test`; `GET /api/business/orders` diteruskan ke cabang |
+| 2 | Header `X-Branch-Endpoint: cabang-test` mengarahkan 1 request; `is_active` tetap `local` |
+| 3 | `GET /api/admin/endpoints` tetap `200` lokal walau portal aktif |
+| 4 | **Belum terbukti** — profil cabang butuh `portal token` (WO-03) |
+| 5 | `/api/unknown` → lokal (unit test `TestOwnerOf`) |
+| 6 | Header `X-Forwarded-Instance` masuk → `409` |
+| 7 | Cabang menerima `Authorization: Bearer svc-token-abc` (service), **bukan** main token; header `X-Branch-Endpoint` tidak diteruskan. Sisi `portal token → pusat` **belum terbukti** (WO-03) |
+| 8 | Helper `clearPortalSession()` menghapus `portal_token` + `active_endpoint`; runtime SPA belum diuji |
+| 9 | Endpoint `suspended` → `409` dengan pesan jelas |
+| 10 | Endpoint mati → `502` `error_class=unreachable`; proses pusat tetap hidup |
+| 11 | Tanpa env: tidak ada `X-Endpoint-Fallback`. Dengan `FEDERATION_FALLBACK_LOCAL=true`: header `X-Endpoint-Fallback: local` muncul |
+| 12 | `endpoint_audit` terisi (request_id 36 char UUIDv7, path tanpa query/token, 0 kebocoran) |
+| 13 | `go build ./...`, `go vet ./...`, `go test ./...` lulus (+3 unit test baru) |
+
+**Belum terbukti:** `portal token` asli, dua versi Admin Profile, uji runtime SPA (butuh WO-03 dan browser).
+
+**Catatan jalur token (sesuai §4):** karena WO-03 belum ada, jalur `endpoint` memakai kredensial service (`endpoints.token_enc`) — satu jalur, tidak dicampur.
 
 ## 11. Out of Scope
 

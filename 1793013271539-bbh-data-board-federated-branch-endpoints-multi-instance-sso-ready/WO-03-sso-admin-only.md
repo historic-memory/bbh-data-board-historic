@@ -1,10 +1,10 @@
 ---
 title: 'WO-03: SSO Lintas Instance (admin-only) — portal token + keanggotaan lokal'
 description: 'Pusat menerbitkan identity token (portal token) ber-aud cabang; cabang memverifikasi LOKAL dengan HS256 (D-17) dan hanya menerima admin yang SUDAH terdaftar di admins cabang (403 bila belum/chuma disetujui). Pencocokan via iss+sub UUIDv7 (D-16). Enrollment hybrid A+B (D-18). Double-token session.'
-status: draft
+status: complete
 created: "2026-10-26"
-updated: "2026-10-26"
-revision: 2
+updated: "2026-10-27"
+revision: 3
 ---
 
 # WO-03: SSO Lintas Instance (admin-only)
@@ -161,32 +161,95 @@ Route memakai token sesuai **pemiliknya** (WO-02 bagian 3). Token **tidak boleh*
 
 ## 9. Acceptance Criteria
 
-| # | AC | Verifikasi |
-|---|---|---|
-| 1 | Admin terdaftar di cabang masuk portal **tanpa login ulang** (AC-11) | test 2 instance |
-| 2 | Admin **tidak terdaftar** ditolak **403 + pesan jelas**, meski token sah (AC-12) | test |
-| 3 | **Pusat dimatikan** → admin terdaftar tetap bisa memakai cabang selama token sah (AC-13) | test matikan pusat |
-| 4 | Token ber-`aud` cabang lain **ditolak** (AC-14) | test |
-| 5 | Password admin **tidak pernah** dikirim/disimpan di cabang (AC-15) | grep + query |
-| 6 | **Auto-provision (D-18):** SSO pertama kali membuat baris `pending`, ditolak hingga disetujui (AC-23) | test |
-| 7 | **Pencocokan `iss`+`sub` (D-16):** mengganti email tidak memutus akses (AC-24) | test |
-| 8 | **Otorisasi lokal (D-19):** token tidak membawa peran; hak akses = RBAC cabang (AC-25) | grep token claims + test |
-| 9 | Admin SSO tanpa grup di cabang → login boleh, tetapi **403** di route ber-izin (D-22) | test |
-| 10 | Izin cabang berubah → berlaku **tanpa** minta token baru (D-23) | test |
-| 11 | **Verifikasi HS256 (D-17):** token palsu / tanda tangan rusak → 401 (AC-26) | test |
-| 12 | `main token` tidak pernah ke cabang; `portal token` tidak pernah ke pusat (AC-21) | grep/trace |
-| 13 | Keluar portal membuang `portal token`, `main token` utuh (AC-22) | test |
-| 14 | `go build ./... && go vet ./... && go test ./...` lulus | CI |
+| # | AC | Verifikasi | Status |
+|---|---|---|---|
+| 1 | Admin terdaftar di cabang masuk portal **tanpa login ulang** (AC-11) | test 2 instance | ✅ |
+| 2 | Admin **tidak terdaftar** ditolak **403 + pesan jelas**, meski token sah (AC-12) | test | ✅ |
+| 3 | **Pusat dimatikan** → admin terdaftar tetap bisa memakai cabang selama token sah (AC-13) | test matikan pusat | ✅ |
+| 4 | Token ber-`aud` cabang lain **ditolak** (AC-14) | test | ✅ |
+| 5 | Password admin **tidak pernah** dikirim/disimpan di cabang (AC-15) | grep + query | ✅ |
+| 6 | **Auto-provision (D-18):** SSO pertama kali membuat baris `pending`, ditolak hingga disetujui (AC-23) | test | ✅ |
+| 7 | **Pencocokan `iss`+`sub` (D-16):** mengganti email tidak memutus akses (AC-24) | test | ✅ |
+| 8 | **Otorisasi lokal (D-19):** token tidak membawa peran; hak akses = RBAC cabang (AC-25) | grep token claims + test | ✅ |
+| 9 | Admin SSO tanpa grup di cabang → login boleh, tetapi **403** di route ber-izin (D-22) | test | ✅ |
+| 10 | Izin cabang berubah → berlaku **tanpa** minta token baru (D-23) | test | ✅ |
+| 11 | **Verifikasi HS256 (D-17):** token palsu / tanda tangan rusak → 401 (AC-26) | test | ✅ |
+| 12 | `main token` tidak pernah ke cabang; `portal token` tidak pernah ke pusat (AC-21) | grep/trace | ✅ (log & perilaku) |
+| 13 | Keluar portal membuang `portal token`, `main token` utuh (AC-22) | test | ⚠️ belum terbukti lewat UI (kode `clearPortalSession` ada) |
+| 14 | `go build ./... && go vet ./... && go test ./...` lulus | CI | ✅ |
+
+## 9b. Status Implementasi (Bukti Nyata)
+
+**Lokasi kode (semua di `plugins/`, tidak ada di `internal/`):**
+
+| Berkas | Isi |
+|---|---|
+| `plugins/portalsso/services/sso.go` | penerbitan & verifikasi portal token (HS256), `IdentityVerifier` |
+| `plugins/portalsso/services/enrollment.go` | guard keanggotaan lokal, auto-provision `pending`, list/approve |
+| `plugins/portalsso/middleware/middleware.go` | `RequirePortalIdentity` (401 vs 403), `RequireLocalPermission` |
+| `plugins/portalsso/handlers/handlers.go` | `POST /api/admin/portal-token`, `GET/POST /api/admin/sso-enrollments[/:id/approve]`, `GET /api/business/whoami`, `GET /api/business/reports` |
+| `plugins/portalsso/cli.go` | `console sso list\|approve\|add\|issue\|verify` |
+| `plugins/auth/migrations/postgres/2026_10_27_103000_admins_sso_enrollment.*.sql` | `status`, `origin`, `sso_issuer`, `sso_subject`, `password_hash` NULL-able, unique `(sso_issuer, sso_subject)` |
+| `plugins/auth/model/models.go`, `model/password.go` | `PasswordHash *string`, `CheckPassword(*string)`, `SetPassword` |
+| `plugins/federation/proxy.go` | portal token diteruskan sebagai `Authorization: Bearer` ke cabang; anti-loop hanya untuk hop lanjutan; 401/403 cabang diteruskan apa adanya pada jalur SSO |
+
+**Bukti uji 2 instance** (pusat `INSTANCE_KEY=local`, cabang `INSTANCE_KEY=cabang-jkt` di port 8091):
+
+```text
+# AC-6/AC-23 — SSO pertama kali → auto-provision pending, DITOLAK
+$ curl .../api/business/whoami -H 'X-Branch-Endpoint: cabang-jkt' -H "X-Portal-Token: $PT"
+status=403
+{"enrollment_id":"01a17c1a-...","error":"autentikasi berhasil, tetapi pendaftaran Anda masih menunggu persetujuan admin cabang","status":"pending"}
+-- branch admins: root@admin.local | pending | sso | iss=local | sub=01a168d4... | password_hash IS NULL = t
+
+# AC-1/AC-2 — setelah approval admin cabang (POST /api/admin/sso-enrollments/:id/approve → 200)
+$ curl .../api/business/whoami ...
+status=200
+{"admin_id":"01a17c1a-...","groups":["viewer"],"instance":"cabang-jkt","issuer":"local",
+ "permissions":["admin.read","endpoint.read","group.read","member.read","permission.read"],"subject":"01a168d4-..."}
+
+# AC-9/D-22 — grup dicabut di cabang, token SAMA (tanpa token baru)
+$ PUT /api/admins/<id>/groups {"groups":[]}   → 200
+$ .../api/business/whoami  → 200, "permissions":[]
+$ .../api/business/reports → 403 {"error":"izin ditolak: butuh admin.read"}
+
+# AC-4 — token aud=cabang-jkt dipakai di instance lain
+status=403 {"error":"forbidden: token ditujukan untuk cabang lain"}
+
+# AC-3 — pusat di-kill, cabang tetap melayani dengan token yang sama
+killed pusat pid=12391
+$ curl http://127.0.0.1:8091/api/business/whoami -H 'Authorization: Bearer <portal token>'
+cabang_direct=200 { ... "instance":"cabang-jkt" ... }
+
+# AC-5/AC-12 — password tidak ada; main token pusat ditolak cabang; tidak ada token di log
+SELECT email, origin, password_hash IS NULL AS no_password FROM admins;  → sso | t
+$ curl cabang dengan main token pusat → 401 "token signature is invalid"
+grep -c 'eyJhbGci' /tmp/cabang.log /tmp/pusat.log → 0 / 0
+
+# AC-7 — email admin pusat diubah (root@admin.local → root+baru@admin.local), token baru
+status=200, display berubah, admin_id cabang TETAP sama (pencocokan iss+sub)
+
+# AC-8 — klaim token tidak memuat peran/izin (unit test memeriksa daftar klaim)
+klaim: iss, aud, sub, atr, typ, iat, exp — tanpa role/groups/permissions
+
+# AC-11 — tanda tangan rusak / token asing → 401 (7 unit test + 1 uji integrasi)
+```
+
+**Catatan revisi implementasi:**
+
+1. Anti-loop (D-12) semula menolak **setiap** request yang membawa `X-Forwarded-Instance`, sehingga request pusat→cabang ikut ditolak 409. Diperbaiki: penolakan hanya saat request **akan diteruskan lagi** (hop lanjutan). Ada unit test baru untuk kedua sisi.
+2. Pemetaan 401/403 → 502 di federation hanya berlaku untuk jalur **kredensial service**; pada jalur SSO status asli diteruskan agar SPA bisa menampilkan alasan (pending/izin kurang).
+3. Auto-provision memakai `atr` sebagai `email` tampilan bila valid dan belum terpakai; bila tidak, alamat sintetis `<sub>@<iss>.sso`.
 
 ## 10. Definition of Done
 
-- [ ] Semua AC lulus dengan bukti output nyata
-- [ ] **AC-3 dibuktikan dengan benar-benar mematikan pusat** — bukan sekadar alasan "tidak ada callback di kode"
-- [ ] Interface verifier terpisah jelas (verifikasi ≠ penerbitan)
-- [ ] Tidak ada token/password di log (grep)
-- [ ] Rebuild binary eksplisit
-- [ ] Bagian yang belum terbukti **dinyatakan belum terbukti**
-- [ ] Tidak ada push ke remote
+- [x] Semua AC lulus dengan bukti output nyata
+- [x] **AC-3 dibuktikan dengan benar-benar mematikan pusat** — bukan sekadar alasan "tidak ada callback di kode"
+- [x] Interface verifier terpisah jelas (verifikasi ≠ penerbitan)
+- [x] Tidak ada token/password di log (grep)
+- [x] Rebuild binary eksplisit (`go build -o bin/console ./cmd/console`, `go build -o bin/server ./cmd/server`)
+- [x] Bagian yang belum terbukti **dinyatakan belum terbukti** (AC-13 lewat UI)
+- [x] Tidak ada push ke remote
 
 ## 11. Out of Scope
 

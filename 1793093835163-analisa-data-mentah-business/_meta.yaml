@@ -29,7 +29,7 @@ files:
     - id: 01a17d01-609d-7f6f-b631-b991e090397c
       path: WO-06-importer-csv.md
       type: file
-      status: draft
+      status: complete
     - id: 01a17d01-609d-7645-9069-aabaaa21cb3c
       path: WO-07-swagger-docs.md
       type: file

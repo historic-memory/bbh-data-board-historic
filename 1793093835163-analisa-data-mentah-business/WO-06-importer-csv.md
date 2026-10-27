@@ -1,11 +1,23 @@
 ---
 title: "WO-06: Importer CSV Notion → canonical + laporan validasi"
 description: "Perintah impor yang membaca CSV mentah (format Notion) dan mengubahnya ke skema canonical sesuai aturan pemetaan §6 SPEC, lengkap dengan mode dry-run, laporan baris valid/ditolak, dan klasifikasi Keterangan → facility. Bukti pertama diuji pada Data Bayi Yayasan (50 baris)."
-status: draft
+status: complete
+completed: "2026-10-27"
+completion_reason: "Dipindah (relocated) ke topic 1793109556782-import-data-penerimaan-resident-csv-notion-template-xlsx sebagai wo-01-importer-csv.md; tidak dieksekusi di topic ini."
 created: "2026-10-27"
 updated: "2026-10-27"
-revision: 1
+revision: 3
 ---
+
+> ✅ **COMPLETE — ALASAN: DIPINDAH (2026-10-27).** WO-06 **tidak dieksekusi** di topic ini.
+> Lingkupnya berdiri sendiri (importer end-to-end), sehingga dipindah ke topic
+> **`1793109556782-import-data-penerimaan-resident-csv-notion-template-xlsx`**
+> sebagai **`wo-01-importer-csv.md`**.
+>
+> Dokumen ini ditutup sebagai **jejak (tombstone) berstatus `complete`** karena
+> seluruh isinya sudah berpindah utuh ke topic baru. Riwayat keputusan awal
+> (I-1..I-4) tetap di bawah untuk referensi. Pengerjaan & bukti selanjutnya ada
+> di topic importer.
 
 # WO-06: Importer CSV Notion → Canonical
 

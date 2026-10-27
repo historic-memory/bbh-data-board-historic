@@ -41,7 +41,11 @@ files:
     - id: 01a17c72-c9a0-7cca-aaad-d15c8c066db0
       path: WO-07-swagger-parity-rebuild-console.md
       type: file
-      status: progress
+      status: complete
+    - id: 01a17c84-9dec-722a-9b33-2c85fee148b8
+      path: WO-08-build-sh-reproducible.md
+      type: file
+      status: draft
     - id: 01a177ec-c013-7221-8502-c5aa011599f8
       path: work-order.md
       type: file

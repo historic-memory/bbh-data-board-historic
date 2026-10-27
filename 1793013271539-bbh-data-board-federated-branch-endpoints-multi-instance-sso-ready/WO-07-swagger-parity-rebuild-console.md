@@ -1,10 +1,10 @@
 ---
 title: 'WO-07: Paritas swagger (route tanpa anotasi), koreksi angka bukti, dan rebuild bin/console'
 description: 'Verifikasi Manager atas WO-06 menemukan 4 sisa: (1) PATCH /api/admin/endpoints/{key} berjalan tetapi tidak ada di swagger karena handler Update hanya dianotasi [put]; (2) GET /api/business/reports berjalan tetapi tidak ada di swagger karena handler WhoAmI hanya dianotasi [woami]; (3) angka route di WO-05 §6a tidak dapat direproduksi (klaim endpoints 15 / sso-enrollments 2, kenyataan tag endpoints 8 / sso 4); (4) DoD rebuild binary belum dipenuhi untuk bin/console (sha256 beda dari build HEAD).'
-status: progress
+status: complete
 created: "2026-10-27"
 updated: "2026-10-27"
-revision: 2
+revision: 3
 ---
 
 # WO-07: Paritas swagger, koreksi bukti, rebuild `bin/console`
@@ -192,8 +192,48 @@ Konsekuensi: siapa pun menjalankan `build.sh` akan **menimpa** `docs/swagger` de
 
 **Perbaikan yang diminta:** selaraskan perintah di `build.sh:29` dengan flag yang menghasilkan artefak final (`swag init -g cmd/server/main.go -o ./docs/swagger --parseDependency --parseInternal`), atau buang flag tersebut dan regenerasi artefak final dengan perintah `build.sh`. Pilih satu sebagai sumber kebenaran.
 
-### 8.4 Status
+### 8.4 Verifikasi S-5 (build.sh) — Manager, 2026-10-27
 
-WO-07 **belum `complete`**: AC-5 dan AC-1..AC-4, AC-6 lulus, tetapi S-5 (§8.3) belum dikerjakan. Semua perbaikan lain sudah terbukti.
+Commit `b6c425c` (perintah swag) + `790acf6` (yaml.v3 direct).
 
-Sisa pekerjaan dokumen (wewenang Manager): simpan koreksi `WO-05 §6a` ke closed storage (`historic save`), perbarui `work-order.md` dan `_meta.yaml`.
+| Aspek | Hasil verifikasi |
+|---|---|
+| Perintah di `build.sh` memuat kedua flag | ✅ `swag init -g cmd/server/main.go -o ./docs/swagger --parseDependency --parseInternal` |
+| Alasan tabrakan nyata | ✅ `ErrorResponse` didefinisikan di **3** paket (`auth`, `endpoint`, `portalsso`). Plain → nama campur (`handlers.MessageResponse` + `plugins_auth_handlers.ErrorResponse`); final → konsisten (`plugins_auth_handlers.*`) |
+| Struktur API identik plain vs final | ✅ `paths` 27, operasi 41, `definitions` 29 di keduanya |
+| Byte-identity saat regenerate | ✅ di container: `docs.go`, `swagger.json`, `swagger.yaml` **IDENTIK** (`docs.go` hanya beda nama `package` bila `-o` memakai nama direktori lain) |
+| Idempotensi | ✅ `go.mod` tidak berubah setelah `bash build.sh`; `git status` bersih kecuali `bin/` |
+
+**S-5 selesai dan terbukti.**
+
+### 8.5 Temuan baru → S-6: `build.sh` tidak efektif di host
+
+Saat menjalankan `bash build.sh` di **host**, generasi swagger **gagal diam-diam**:
+
+```
+Found swag CLI - regenerating docs...
+failed to parse file /snap/go/11382/src/math/rand/v2/rand.go, error: method must have no type parameters
+swag init returned non-zero status (continuing)
+```
+
+| Uji | Hasil |
+|---|---|
+| `swag init ... --parseDependency --parseInternal` di host | `exit=1` (GOROOT host = `/snap/go/11382`, swag gagal parse stdlib generik) |
+| `swag init` **tanpa** flag di host | berhasil, tetapi penamaan definisi campur (yang justru ingin dihindari) |
+| `swag init ... --parseDependency --parseInternal` di container | `exit=0`, byte-identik |
+| Dampak ke `docs/swagger` setelah `bash build.sh` host | **sha256 tidak berubah** — no-op, karena `|| echo "... continuing"` menelan kegagalan |
+
+Artinya: dengan `build.sh` versi sekarang, di host **tidak ada** yang memberi tahu bahwa swagger tidak di-regenerate. Komentar non-fatal memang disengaja, tetapi konsekuensinya dokumentasi bisa tertinggal tanpa peringatan.
+
+**Caveat tambahan (reproducibility binari antar-lingkungan):** `go build` di host (GOROOT `/snap/go/11382`) dan di container (`/usr/local/go`) menghasilkan binari **berbeda** meski `go version` sama:
+
+```
+container: 667448a34a6e7746  (stamp vcs.revision=790acf6)
+host     : 6bd87df46fe58933  (stamp vcs.revision=790acf6)
+```
+
+Jadi `bin/` hanya reproducible bila dibangun di **satu** lingkungan kanonik (container). `bin/` untracked, jadi tidak memengaruhi commit — tetapi klaim "sha256 cocok" hanya bermakna bila kedua sisi dibangun di lingkungan yang sama **dan** setelah commit.
+
+### 8.6 Status
+
+WO-07 **`complete`** — S-1..S-5 terverifikasi; AC-6 (build/vet/test/gofmt) lulus. Temuan S-6 (host no-op + binari antar-lingkungan) dipindah ke `WO-08`.

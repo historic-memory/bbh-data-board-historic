@@ -40,7 +40,8 @@ Arah baru: **federasi instance** — satu aplikasi, banyak instance, satu DB lok
 | 4 | [`WO-04-rbac-groups-permissions.md`](rev 1) | **RBAC: groups & permissions** — ganti `is_root` dengan `permissions` ↔ `group_permissions` ↔ `groups` ↔ `admin_groups` ↔ `admins`; izin efektif = union grup aktif; guard `RequirePermission`; **fail-closed**; grup bertingkat `root`(`*`) / `admin`(baca+tulis) / `viewer`(baca, **default**, tanpa audit); **grup default otomatis** ke admin baru; audit hanya `root`; migrasi `is_root=true` → grup `root` lalu kolom dihapus; CLI + API grup; anti-lockout | complete |
 | 5 | [`WO-05-housekeeping-docs-env.md`](rev 3) | **Housekeeping pasca-federasi** — regenerasi swagger (`is_root` basi, route baru hilang), dokumentasikan `INSTANCE_KEY`/`SSO_SHARED_SECRET`/`FEDERATION_FALLBACK_LOCAL` di `.env.example`, **guard fail-closed** `SSO_SHARED_SECRET` ≠ `APP_KEY` (normalisasi base64, tidak mencetak kunci; kosong → SSO nonaktif + log), **bukti AC-13 lewat UI (wajib)**, lalu drop 3 DB sisa | complete |
 | 6 | [`WO-06-patch-wo-05.md`](rev 3) | **Penambal WO-05** — (1) ✅ guard byte-level ditutup (`base64:QUJD` vs `ABC`, termasuk varian padding `AAAA==` vs `AAAA`); (2) ✅ komentar `.env.example` dikoreksi (kosong = SSO nonaktif, server tetap start); (3) ✅ bukti T-1..T-4 & AC-13 diarsip di WO-05 §6a. Semua 7 AC terbukti oleh Manager; 4 sisa dipindah ke WO-07 | complete |
-| 7 | [`WO-07-swagger-parity-rebuild-console.md`](rev 2) | **Paritas swagger & rebuild** — ✅ `PATCH /api/admin/endpoints/{key}` (handler `Patch` sendiri) dan `GET /api/business/reports` (handler `BusinessReports`) kini terdokumentasi; ✅ angka bukti dikoreksi dari artefak (`paths` 27, operasi 41, `endpoints` 9, `sso` 5); ✅ `is_root` 0/0/0; ✅ `bin/console`+`bin/server` identik dengan build `c3dc6f4` (setelah rebuild pasca-commit oleh Manager). **Sisa S-5:** `build.sh:24` memakai `swag init` tanpa `--parseDependency --parseInternal` → penamaan definisi berbeda dari artefak | progress |
+| 7 | [`WO-07-swagger-parity-rebuild-console.md`](rev 3) | **Paritas swagger & rebuild** — ✅ `PATCH /api/admin/endpoints/{key}` (handler `Patch` sendiri) dan `GET /api/business/reports` (handler `BusinessReports`) terdokumentasi; ✅ angka bukti dikoreksi dari artefak (`paths` 27, operasi 41, `endpoints` 9, `sso` 5); ✅ `is_root` 0/0/0; ✅ `bin/console`+`bin/server` identik dengan build `c3dc6f4` (rebuild pasca-commit); ✅ S-5 `build.sh` diselaraskan ke `--parseDependency --parseInternal` + idempoten (`yaml.v3` direct). Semua AC terbukti | complete |
+| 8 | [`WO-08-build-sh-reproducible.md`](rev 1) | **`build.sh` efektif & reproducible** — `bash build.sh` di host gagal men-generate swagger (swag `--parseDependency` tidak bisa parse stdlib pada GOROOT `/snap/...`, exit=1) tetapi ditelan `\|\| echo ... continuing` → `docs/swagger` tidak berubah tanpa peringatan; binari host vs container berbeda (sha `6bd87df4` vs `667448a3`, stamp sama). Diminta: jangan gagal diam-diam, dokumentasikan lingkungan kanonik (container) | draft |
 
 ## Status Akhir (diverifikasi Manager 2026-10-27)
 
@@ -120,7 +121,16 @@ Arah baru: **federasi instance** — satu aplikasi, banyak instance, satu DB lok
 | 6. build/vet/test/gofmt | ✅ 10 paket `ok`, `GOFMT_CLEAN` |
 | S-5 (baru) | ⚠️ `build.sh:24` memakai `swag init` tanpa `--parseDependency --parseInternal` → `paths`/operasi sama tapi **nama definisi berbeda** (`handlers.*` vs `plugins_auth_handlers.*`) |
 
-**Pelajaran:** binari Go menyematkan `vcs.revision`. Rebuild **harus setelah commit**, dan pembanding hash harus dibuat setelah commit — bukan dua binari pra-commit yang dibandingkan satu sama lain.
+**Verifikasi S-5 (commit `b6c425c` + `790acf6`):** ✅ perintah sudah memakai kedua flag; `ErrorResponse` memang bentrok di 3 paket; struktur plain vs final identik (`paths` 27, ops 41, defs 29); regenerate di container byte-identik (`docs.go`/`swagger.json`/`swagger.yaml`); `go.mod` tidak berubah setelah `bash build.sh` (idempoten).
+
+**Temuan baru → `WO-08`:**
+
+| # | Temuan |
+|---|---|
+| S-6a | `bash build.sh` di host = no-op swagger (swag `--parseDependency` gagal pada GOROOT `/snap/go/...`, exit=1, ditelan `\|\| echo ... continuing`); `sha256 docs/swagger/*` tidak berubah |
+| S-6b | Binari host vs container berbeda (`6bd87df4` vs `667448a3`, stamp `vcs.revision` sama) — klaim "sha cocok" hanya bermakna dalam satu lingkungan kanonik |
+
+**Pelajaran:** binari Go menyematkan `vcs.revision`. Rebuild **harus setelah commit**, dan pembanding hash harus dibuat setelah commit — bukan dua binari pra-commit yang dibandingkan satu sama lain. Tambahan: host & container menghasilkan binari berbeda, jadi pembanding harus dari lingkungan yang sama.
 
 ## Urutan Eksekusi & Dependency
 ```

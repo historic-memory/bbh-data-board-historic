@@ -1,7 +1,7 @@
 ---
 title: "WO-03: Permission resident.* di plugin auth"
 description: "Migrasi tambahan di plugin `auth` untuk seed permission resident.read / resident.write / resident.delete dan memetakannya ke grup sistem root, admin, viewer. Prasyarat wajib sebelum route ber-guard berfungsi (fail-closed)."
-status: draft
+status: complete
 created: "2026-10-27"
 updated: "2026-10-27"
 revision: 1
@@ -62,3 +62,21 @@ Hapus baris `group_permissions` untuk ketiga key, lalu hapus baris `permissions`
 | AC-6 | Tidak ada `INSERT` di kode Go. |
 | AC-7 | `go build`/`vet`/`test`/`gofmt` lulus. |
 | AC-8 | Dibuktikan: admin grup `viewer` bisa **GET**, tapi **POST** → 403 (uji minimal via curl setelah WO-04). |
+
+## Status Eksekusi (complete)
+**Status: complete** — commit kode `e464765` (`feat(auth): WO-03 seed resident.read/write/delete permissions`). Tidak ada push.
+
+Artefak: `plugins/auth/migrations/postgres/2026_10_27_130000_add_resident_permissions.{up,down}.sql`.
+
+| # | AC | Hasil |
+|---|---|---|
+| AC-1 | 3 permission ter-seed | ✅ `resident.read/write/delete` (3 baris) |
+| AC-2 | admin read+write; viewer read | ✅ mapping = admin→read,write; viewer→read (3 baris `group_permissions`) |
+| AC-3 | root tetap `*` | ✅ `root` masih memegang `*` (tanpa baris tambahan) |
+| AC-4 | Idempoten | ✅ re-run body UP → `INSERT 0 0`; total tetap 3 perm / 3 mapping |
+| AC-5 | down bersihkan tanpa sentuh lain | ✅ `down` → 0 permission `resident.%`; tabel lain tak berubah |
+| AC-6 | Tidak ada INSERT di Go | ✅ `grep INSERT INTO permissions --include=*.go plugins` → NONE |
+| AC-7 | build/vet/test/gofmt | ✅ lulus di container `app` |
+| AC-8 | GET ok / POST 403 (viewer) | ⏳ butuh route ber-guard WO-04 (curl) |
+
+Catatan: `migrate down --plugin auth` versi ini (`current=6`→`5`) menghapus 3 permission; `up` memulihkan.`

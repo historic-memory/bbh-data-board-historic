@@ -17,7 +17,7 @@ files:
     - id: 01a17d01-609d-7de6-8d9f-13ade46cc618
       path: WO-03-permission-auth.md
       type: file
-      status: draft
+      status: complete
     - id: 01a17d01-609d-7cfa-9c94-e66e429f2833
       path: WO-04-api-admin-crud.md
       type: file

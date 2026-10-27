@@ -1,7 +1,7 @@
 ---
 title: "WO-02: Migrasi Skema Canonical — tabel data core + referensi"
 description: "Migrasi versioned untuk 8 tabel canonical (residents, mothers, birth_records, admissions, resident_status_history, facilities, facility_aliases, resident_documents) + 5 tabel referensi (ref_religions, ref_blood_types, ref_delivery_methods, ref_attendant_types, ref_statuses) beserta seed nilai baku. Turunan §4 SPEC. Tidak ada tabel transfer_partners (D-6: tujuan transfer cukup di note)."
-status: draft
+status: complete
 created: "2026-10-27"
 updated: "2026-10-27"
 revision: 1
@@ -84,3 +84,30 @@ plugins/resident/migrations/postgres/
 | AC-10 | Keputusan D-1/D-8/D-10 yang dipakai dicatat di laporan WO. |
 | AC-11 | `plugins/resident/schema/fields.yaml` dibuat dan konsisten dengan kolom migrasi (ada uji/lint bila tidak di-generate). |
 | AC-12 | `resident_code` UNIQUE global; nilai kosong tersimpan `NULL`, bukan string kosong. |
+
+## Status Eksekusi (complete)
+**Status: complete** — commit kode `7c32174` (`feat(resident): WO-02 canonical schema migration + fields.yaml`). Tidak ada push.
+
+Artefak:
+- `plugins/resident/schema/fields.yaml` — **64 field** pada 8 tabel + 8 grup enum + peta kolom template (P-13).
+- `plugins/resident/schema/schema.go` — `go:embed` loader (`Load/MustLoad/LookupField/TableNames/Raw`).
+- `plugins/resident/migrations/postgres/2026_10_27_120100_create_resident_core_tables.{up,down}.sql`.
+
+| # | AC | Hasil |
+|---|---|---|
+| AC-1 | 1 pasang migrasi, idempoten | ✅ `migrate up` → current=1; `down` → current=0; `up` ulang OK |
+| AC-2 | 8 tabel; tanpa `ref_*`/`transfer_partners` | ✅ `information_schema` = 8 tabel; query `ref_*`/`transfer_partners`/`guardians` = 0 baris |
+| AC-3 | Enum via `CHECK` | ✅ `INSERT gender='X'` & `religion_code='PASTAFARIAN'` → ditolak `check constraint` |
+| AC-4 | FK + `birth_records.resident_id` UNIQUE | ✅ FK sesuai §4/§8; `resident_id ... UNIQUE` |
+| AC-5 | `resident_code` & `nik` UNIQUE (nik partial) | ✅ dup `BBH-26-P-001` → `unique constraint` |
+| AC-6 | alias unik case/space-insensitive | ✅ `'RS. Premagana'` vs `'  rs. premagana  '` → ditolak (`uq_facility_aliases_alias`) |
+| AC-7 | Nol DDL/seed di Go | ✅ tidak ada `CREATE TABLE`/`INSERT` DDL di `.go` (hanya regex di `schema_test.go`) |
+| AC-8 | `down` bersihkan semua | ✅ 8 tabel → 0 setelah down |
+| AC-9 | build/vet/test/gofmt | ✅ lulus di container `app` |
+| AC-10 | Keputusan dicatat | ✅ lihat catatan di bawah |
+| AC-11 | fields.yaml konsisten migrasi | ✅ `schema_test.go` (`TestFieldsMatchMigration`) lulus |
+| AC-12 | UNIQUE global; kosong = NULL | ✅ 2 baris `resident_code IS NULL` diterima; duplikat ditolak |
+
+**Penyimpangan sadar (dicatat):** PK memakai `TEXT` UUIDv7 (app-generated) — **bukan** literal `UUID` di draft WO — agar konsisten dengan plugin `auth` (`TEXT PRIMARY KEY`, tanpa `gen_random_uuid()`/ekstensi). `changed_by` juga `TEXT` (menyamai `admins.id`).
+
+**D-1/D-8/D-10 yang dipakai:** `NOT NULL` pada `residents.full_name/gender/birth_date/branch_key` (D-1); `resident_code UNIQUE` dgn `NULL` (D-8); `nik`/`bpjs_no` plaintext tanpa enkripsi (D-10).

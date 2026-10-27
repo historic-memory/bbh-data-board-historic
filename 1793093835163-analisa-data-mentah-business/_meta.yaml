@@ -13,7 +13,7 @@ files:
     - id: 01a17d01-609c-77bd-b0e1-90ff7e8f4580
       path: WO-02-migrasi-skema-canonical.md
       type: file
-      status: draft
+      status: complete
     - id: 01a17d01-609d-7de6-8d9f-13ade46cc618
       path: WO-03-permission-auth.md
       type: file

@@ -91,7 +91,7 @@ Implementasi inti selesai di `plugins/resident/services/code.go` (package-level,
 |---|---|---|
 | AC-1 | Format `BBH-<YY>-<P\|L>-<NNN>` | ✅ `TestFormatResidentCode` |
 | AC-2 | Urut per gender & tahun | ✅ prefix per (year,gender) |
-| AC-3 | Aman konkurensi | ⏳ `pg_advisory_xact_lock` + UNIQUE; uji paralel `code_db_test.go` **SKIP** (tabel `residents` belum ada) |
+| AC-3 | Aman konkurensi | ✅ `pg_advisory_xact_lock` + UNIQUE; **uji paralel 200 goroutine PASS, nol duplikat** (aktif setelah WO-02: `code_db_test.go`) |
 | AC-4 | Tidak mengisi gap | ✅ `MAX(RIGHT(code,3))+1` |
 | AC-5 | >999 → error | ✅ `ErrCodeExhausted` |
 | AC-6 | Duplikat→409 / format invalid→400 | ⏳ butuh API (WO-04) |
@@ -100,4 +100,4 @@ Implementasi inti selesai di `plugins/resident/services/code.go` (package-level,
 | AC-9 | Hook prefix cabang | ✅ `GenerateResidentCodeWithBranch(..., branch, ...)` |
 | AC-10 | build/vet/test/gofmt + unit test | ✅ lulus di container `app` |
 
-**Sisa bukti (blocked):** uji konkurensi DB & NULL/409 memerlukan tabel (WO-02) dan API/CLI (WO-04/05). `code_db_test.go` auto-aktif begitu tabel ada.
+**Sisa bukti (blocked):** uji NULL/409/400 tingkat API & impor memerlukan WO-04/WO-06. Uji konkurensi DB (AC-3) sudah **lulus** setelah WO-02 (tabel `residents` ada).

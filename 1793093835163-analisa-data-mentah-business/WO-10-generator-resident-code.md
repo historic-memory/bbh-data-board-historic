@@ -1,10 +1,10 @@
 ---
 title: "WO-10: Generator resident_code"
 description: "Generator kode resident_code berformat BBH-<YY>-<P|L>-<NNN> yang unik global (D-8), aman terhadap konkurensi, dapat dijalankan dari CLI/API/importer, dan siap diperluas ke prefix cabang BBH-<CAB>-<YY>-<P|L>-<NNN>."
-status: progress
+status: complete
 created: "2026-10-27"
 updated: "2026-10-27"
-revision: 1
+revision: 2
 ---
 
 # WO-10: Generator `resident_code`
@@ -81,23 +81,27 @@ GenerateResidentCode(tx *gorm.DB, gender string, year int) (string, error)
 | AC-9 | Struktur siap prefix cabang (fungsi menerima parameter cabang opsional, walau belum aktif). |
 | AC-10 | `go build`/`vet`/`test`/`gofmt` lulus; ada unit test. |
 
-## Status Eksekusi (progress)
-**Status: progress** — commit kode `47417a0` (`feat(resident): WO-10 resident_code generator`). Tidak ada push.
+## Status Eksekusi (final — complete)
+**Status: complete.** Kode inti `47417a0`; bukti DB/API & test tambahan pada commit **`a209195`**.
+Tidak ada push. Implementasi di `plugins/resident/services/code.go`:
+`GenerateResidentCode`, `GenerateResidentCodeWithBranch`, `ValidateResidentCode`,
+`ValidateResidentCodeGender`, `ResidentCodeGender`, `NormalizeResidentCode`,
+`ResidentCodeSequence`.
 
-Implementasi inti selesai di `plugins/resident/services/code.go` (package-level, dipakai WO-02/04/06):
-`GenerateResidentCode`, `GenerateResidentCodeWithBranch`, `ValidateResidentCode`, `ValidateResidentCodeGender`, `ResidentCodeGender`, `NormalizeResidentCode`, `ResidentCodeSequence`.
+| # | AC | Hasil | Bukti |
+|---|---|---|---|
+| AC-1 | Format `BBH-<YY>-<P\|L>-<NNN>` | ✅ | `TestFormatResidentCode`; API create → `BBH-26-P-001` |
+| AC-2 | Urut per gender & tahun | ✅ | API: 3 P → `P-001..003`, 2 L → `L-001..002` (berurutan) |
+| AC-3 | Aman konkurensi | ✅ | `TestGenerateResidentCodeConcurrentNoDuplicates`: 200 goroutine paralel, **nol duplikat** (`pg_advisory_xact_lock` + UNIQUE) |
+| AC-4 | Tidak mengisi gap | ✅ | `TestGenerateResidentCodeSequenceAndGaps`: seed `001,003` → next `004` |
+| AC-5 | >999 → error | ✅ | `TestGenerateResidentCodeExhausted` (seed `...-999` → `ErrCodeExhausted`) + `TestFormatResidentCodeRejects` |
+| AC-6 | Duplikat→409 / format invalid→400 | ✅ | API: eksplisit `BBH-26-P-777` → 201; ulang → **409** (`residents_resident_code_key`); `BBH-99-X-1` → **400** |
+| AC-7 | Gender konsisten | ✅ | API: kode `-L-` utk gender `P` → **400** (`ErrCodeGenderMismatch`); `TestValidateResidentCodeGender` |
+| AC-8 | Kosong → `NULL` | ✅ (storage) | `TestBlankResidentCodeStoredAsNULL`: 2 baris NULL berdampingan (UNIQUE toleran NULL), 0 baris `''`. **Bagian "tercatat di laporan" = importer → WO-06 (ditunda).** |
+| AC-9 | Hook prefix cabang | ✅ | `GenerateResidentCodeWithBranch(..., branch, ...)` + `TestFormatResidentCode` varian `BBH-JKT-26-P-012` |
+| AC-10 | build/vet/test/gofmt | ✅ | `go vet ./...` OK · `gofmt -l` bersih · `go test ./plugins/resident/...` ok |
 
-| # | AC | Hasil |
-|---|---|---|
-| AC-1 | Format `BBH-<YY>-<P\|L>-<NNN>` | ✅ `TestFormatResidentCode` |
-| AC-2 | Urut per gender & tahun | ✅ prefix per (year,gender) |
-| AC-3 | Aman konkurensi | ✅ `pg_advisory_xact_lock` + UNIQUE; **uji paralel 200 goroutine PASS, nol duplikat** (aktif setelah WO-02: `code_db_test.go`) |
-| AC-4 | Tidak mengisi gap | ✅ `MAX(RIGHT(code,3))+1` |
-| AC-5 | >999 → error | ✅ `ErrCodeExhausted` |
-| AC-6 | Duplikat→409 / format invalid→400 | ✅ terbukti lewat API WO-04 (`POST` duplikat→**409**, gender/enum invalid→**400**) |
-| AC-7 | Gender konsisten | ✅ `ValidateResidentCodeGender` |
-| AC-8 | Kosong → NULL | ✅ `NormalizeResidentCode` (uji DB impor menyusul) |
-| AC-9 | Hook prefix cabang | ✅ `GenerateResidentCodeWithBranch(..., branch, ...)` |
-| AC-10 | build/vet/test/gofmt + unit test | ✅ lulus di container `app` |
-
-**Sisa bukti (blocked):** uji NULL tingkat impor memerlukan WO-06 (AC-8 bagian importer). AC-6 (409/400) sudah **lulus** setelah WO-04 (API live). Uji konkurensi DB (AC-3) sudah **lulus** setelah WO-02.
+### Catatan
+- AC-8 dipenuhi pada **lapisan penyimpanan** (yang menjadi tanggung jawab WO-10). Paruh "kode kosong dicatat di laporan impor" adalah perilaku **importer** dan akan diverifikasi saat **WO-06** dikerjakan — bukan blocker WO-10 karena WO-06 sendiri ditunda.
+- Backfill kode lama tetap **di luar cakupan** (tidak mengubah data historis).
+- Prefix cabang hanya **disiapkan** (belum diaktifkan).

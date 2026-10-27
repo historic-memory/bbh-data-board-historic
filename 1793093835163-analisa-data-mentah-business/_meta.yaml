@@ -6,10 +6,42 @@ files:
       path: SPEC.md
       type: spec
       status: draft
+    - id: 01a17d01-609c-7622-878a-9dce0731bbf4
+      path: WO-01-plugin-skeleton.md
+      type: file
+      status: draft
+    - id: 01a17d01-609c-77bd-b0e1-90ff7e8f4580
+      path: WO-02-migrasi-skema-canonical.md
+      type: file
+      status: draft
+    - id: 01a17d01-609d-7de6-8d9f-13ade46cc618
+      path: WO-03-permission-auth.md
+      type: file
+      status: draft
+    - id: 01a17d01-609d-7cfa-9c94-e66e429f2833
+      path: WO-04-api-admin-crud.md
+      type: file
+      status: draft
+    - id: 01a17d01-609d-7267-b466-c08edda40c15
+      path: WO-05-cli-resident.md
+      type: file
+      status: draft
+    - id: 01a17d01-609d-7f6f-b631-b991e090397c
+      path: WO-06-importer-csv.md
+      type: file
+      status: draft
+    - id: 01a17d01-609d-7645-9069-aabaaa21cb3c
+      path: WO-07-swagger-docs.md
+      type: file
+      status: draft
     - id: 01a17cb8-d9ac-7864-b376-950ff7458b27
       path: notes.md
       type: file
       status: progress
+    - id: 01a17d01-609e-7c10-9dd7-217bde28062e
+      path: work-order.md
+      type: file
+      status: draft
 assets:
     - path: Data Bayi Yayasan 1b590f1a8a518093ac5bd1d366590b33_all.csv
       type: csv

@@ -34,14 +34,16 @@ revision: 1
 | P-7 | **Skema via migrasi versioned.** Tidak ada `CREATE TABLE` di kode Go. | Konsisten dengan plugin existing. |
 | P-8 | **Nama kolom Bahasa Inggris**, nilai enum Bahasa Indonesia (bila istilah domain). | Konsisten lintas plugin; nilai domain tetap dikenali pengguna. |
 | P-9 | **Data derived tidak disimpan.** | `age` dihitung dari `birth_date`; tidak ada kolom `umur`. |
-| P-10 | **Branch adalah dimensi**, bukan tabel di DB cabang. | DB cabang = satu branch; DB pusat memegang daftar branch. |
+| P-10 | **Branch adalah dimensi** = `endpoint`/`INSTANCE_KEY`, **bukan tabel baru**. | Tidak ada tabel `branches`; `residents.branch_key` merujuk `endpoints.key`. |
+| P-11 | **Semua data core dibungkus satu plugin `resident`.** | Fitur baru wajib plugin (`plugins/<id>/`), bukan `internal/`. |
+| P-12 | **Tabel referensi `ref_*` tinggal di dalam plugin `resident` dulu.** | Pindah ke plugin `reference` hanya bila muncul konsumen kedua. |
 
 ## 3. ERD
 
 ```mermaid
 erDiagram
-    BRANCHES ||--o{ RESIDENTS : "menampung"
-    BRANCHES ||--o{ FACILITIES : "memiliki"
+    ENDPOINTS ||--o{ RESIDENTS : "branch_key"
+    ENDPOINTS ||--o{ FACILITIES : "branch_key"
     MOTHERS ||--o{ RESIDENTS : "ibu dari"
     RESIDENTS ||--|| BIRTH_RECORDS : "kondisi lahir"
     RESIDENTS ||--o{ ADMISSIONS : "riwayat masuk"
@@ -55,12 +57,11 @@ erDiagram
     REF_ATTENDANT_TYPES ||--o{ BIRTH_RECORDS : ""
     REF_STATUSES ||--o{ RESIDENT_STATUS_HISTORY : ""
 
-    BRANCHES {
-        uuid id PK
-        string code UK
-        string name
-        string region
-        boolean is_active
+    ENDPOINTS {
+        bigint id PK
+        string key UK
+        string label
+        boolean is_local
     }
     MOTHERS {
         uuid id PK
@@ -72,7 +73,7 @@ erDiagram
     RESIDENTS {
         uuid id PK
         string resident_code UK
-        uuid branch_id FK
+        string branch_key FK
         uuid mother_id FK
         string full_name
         string gender
@@ -115,7 +116,7 @@ erDiagram
     }
     FACILITIES {
         uuid id PK
-        uuid branch_id FK
+        string branch_key FK
         string name UK
         string facility_type
         boolean is_active
@@ -159,18 +160,20 @@ erDiagram
 
 ## 4. Definisi Tabel
 
-### 4.1 `branches` — daftar cabang
+### 4.1 Cabang — memakai `endpoints` (TIDAK ada tabel `branches`)
 
-| Kolom | Tipe | Null | Keterangan |
-|---|---|---|---|
-| `id` | UUID (v7) | no | PK |
-| `code` | TEXT | no | **UNIQUE**. Kode singkat cabang, mis. `DPS`, `SMG`, `JKT` |
-| `name` | TEXT | no | Nama resmi cabang |
-| `region` | TEXT | yes | Wilayah/kota |
-| `is_active` | BOOLEAN | no | default `true` |
-| `created_at`/`updated_at` | TIMESTAMPTZ | no | Audit |
+Cabang **tidak** punya tabel sendiri. Identitas cabang memakai mekanisme yang sudah ada:
 
-> Catatan: pada model **federasi**, `branches` hidup di DB pusat (daftar instance cabang). Tabel lain (`residents`, dst.) hidup di DB cabang.
+| Sumber | Peran |
+|---|---|
+| `endpoints.key` (plugin `endpoint`, tabel sudah ada) | Kunci cabang, mis. `local`, `cabang-dps` |
+| `endpoints.label` | Nama tampilan cabang |
+| `endpoints.is_local` | Penanda instance sendiri |
+| env `INSTANCE_KEY` | Fallback/nilai default saat seed/impor |
+
+`residents.branch_key` dan `facilities.branch_key` bertipe **TEXT** (bukan FK ke tabel baru), nilainya merujuk `endpoints.key`. Tidak ada FK constraint lintas-plugin (menghindari kopling migrasi). Validasi dilakukan di service.
+
+**Alasan:** menambah tabel `branches` = dua sumber kebenaran untuk entitas yang sama (D-11 di SPEC federasi: setiap instance identik, "pusat" bukan role kode).
 
 ### 4.2 `mothers` — ibu / orang tua
 
@@ -191,7 +194,7 @@ erDiagram
 |---|---|---|---|
 | `id` | UUID (v7) | no | PK internal |
 | `resident_code` | TEXT | no | **UNIQUE**. Kode baku, lihat §5 |
-| `branch_id` | UUID | no | FK → `branches` (di DB cabang boleh konstan) |
+| `branch_key` | TEXT | no | Kunci cabang → `endpoints.key`; default dari env `INSTANCE_KEY` |
 | `mother_id` | UUID | yes | FK → `mothers` |
 | `full_name` | TEXT | no | Nama bayi (trim; sumber punya spasi ekor) |
 | `gender` | TEXT | no | enum `L` / `P` |
@@ -253,7 +256,7 @@ erDiagram
 | Kolom | Tipe | Null | Keterangan |
 |---|---|---|---|
 | `id` | UUID (v7) | no | PK |
-| `branch_id` | UUID | yes | FK → `branches` |
+| `branch_key` | TEXT | yes | Kunci cabang → `endpoints.key` |
 | `name` | TEXT | no | **UNIQUE**. Nama baku, mis. `RS Premagana` |
 | `facility_type` | TEXT | yes | enum: `hospital` \| `clinic` \| `midwife_practice` \| `foundation` \| `other` |
 | `is_active` | BOOLEAN | no | default `true` |
@@ -387,7 +390,7 @@ Gabungan `residents` + `birth_records` + `mothers` + status terkini + cabang —
 
 | Tabel | Constraint / Index |
 |---|---|
-| `residents` | UNIQUE `resident_code`; UNIQUE `nik` (partial, WHERE nik IS NOT NULL); INDEX `(branch_id)`; INDEX `(full_name)`; INDEX `(birth_date)` |
+| `residents` | UNIQUE `resident_code`; UNIQUE `nik` (partial, WHERE nik IS NOT NULL); INDEX `(branch_key)`; INDEX `(full_name)`; INDEX `(birth_date)` |
 | `mothers` | UNIQUE `nik` (partial); INDEX `(full_name)` |
 | `birth_records` | UNIQUE `resident_id` |
 | `resident_status_history` | INDEX `(resident_id, effective_at DESC)` |
@@ -418,6 +421,9 @@ Gabungan `residents` + `birth_records` + `mothers` + status terkini + cabang —
 | **D-8** | Unik `resident_code` | Global / per cabang | **Menunggu** |
 | **D-9** | Aset dokumen | Tetap Google Drive / pindah `internal/storage` | **Menunggu** |
 | **D-10** | PII at-rest | Plaintext / enkripsi kolom / tabel terpisah | **Menunggu** |
+| **D-11** | Identitas cabang | tabel `branches` baru / pakai `endpoints.key` | ✅ **DIPUTUSKAN: pakai `endpoints.key`** (§4.1) |
+| **D-12** | Tabel referensi `ref_*` | plugin `resident` / plugin `reference` | ✅ **DIPUTUSKAN: di dalam plugin `resident`** dulu |
+| **D-13** | Nama plugin | `core` / `business` / `resident` | ✅ **DIPUTUSKAN: `plugins/resident`** |
 
 ## 11. Pertanyaan Data (butuh jawaban user)
 
@@ -443,6 +449,8 @@ Gabungan `residents` + `birth_records` + `mothers` + status terkini + cabang —
 | AC-8 | Setiap tabel mendeklarasikan PK yang jelas (UUIDv7 untuk entitas, kode untuk referensi). |
 | AC-9 | Field PII ditandai eksplisit beserta rencana penanganannya (§9). |
 | AC-10 | Keputusan yang belum final dicatat di §10 dengan opsi dan usulan — tidak diklaim final. |
+| AC-11 | Seluruh tabel §4 berada dalam **satu plugin `resident`**; tidak ada kode fitur di `internal/`; identitas cabang memakai `endpoints.key`, bukan tabel `branches` baru. |
+| AC-12 | Permission `resident.*` di-seed lewat **migrasi plugin `auth`** (bukan DDL bootstrap). |
 
 ## 13. Di Luar Ruang Lingkup
 
@@ -451,3 +459,32 @@ Gabungan `residents` + `birth_records` + `mothers` + status terkini + cabang —
 - Pipeline impor / AI-ETL → topic `1793096602507`.
 - UI/SPA.
 - Data `members` (federasi member) — di luar lingkup.
+
+## 14. Batas Plugin (D-11, D-12, D-13)
+
+Seluruh data core di SPEC ini dibungkus **satu plugin baru: `plugins/resident`**.
+
+```
+plugins/resident/
+├── plugin.go                 # ID() = "resident"; RegisterRoutes; ConsoleCommands
+├── cli.go                    # resident list | show | add | update | ...
+├── handlers/handlers.go      # admin API, guard RequirePermission
+├── migrations/postgres/      # tabel canonical + referensi (up/down)
+├── model/models.go           # GORM model
+├── model/view.go             # view turunan (§7)
+└── services/service.go       # logika + validasi (branch_key, enum, kode RM)
+```
+
+**Di dalam plugin `resident`:** `residents`, `mothers`, `birth_records`, `admissions`, `resident_status_history`, `facilities`, `facility_aliases`, `transfer_partners`, `resident_documents`, dan semua `ref_*`.
+
+**Di luar plugin (dependency):**
+| Komponen | Pemilik | Catatan |
+|---|---|---|
+| `endpoints` (identitas cabang) | plugin `endpoint` | `branch_key` merujuk `endpoints.key` (tanpa FK lintas-plugin) |
+| `admins` (untuk `changed_by`) | plugin `auth` | FK ke `admins.id` |
+| Permission `resident.*` | plugin `auth` | **butuh migrasi terpisah di plugin `auth`** |
+| Registrasi plugin | `cmd/server/main.go` + `cmd/console` | manual, seperti plugin existing |
+
+**Jebakan wajib dicatat:** route ber-guard `RequirePermission` akan **403 semua** bila permission belum di-seed. Jadi migrasi plugin `auth` (seed `resident.read/write/delete` + masukkan ke grup `root`/`admin`/`viewer`) adalah **prasyarat**, bukan opsional.
+
+**Domain lain menyusul sebagai plugin terpisah:** `finance`, `visit`, `need` — masing-masing plugin mandiri agar migrasi & lifecycle-nya independen.

@@ -81,6 +81,8 @@ created: "2026-10-27"
 
 ## Referensi
 - **`SPEC.md`** di topic ini = desain ERD + definisi tabel (belum implementasi).
-  - 10 tabel + 5 tabel referensi, 10 keputusan terbuka (D-1..D-10), 7 pertanyaan data.
-  - Lihat spesifik baris pertama: Tujuan, Prinsip (P-1..P-10), ERD (mermaid), Definisi Tabel, Aturan resident_code, Pemetaan kolom sumber, View, Constraint, PII, Keputusan Terbuka, AC desain.
+  - 10 tabel + 5 tabel referensi, 13 keputusan (D-1..D-13), 7 pertanyaan data.
+- **`work-order.md`** = master index 7 WO implementasi plugin `resident`.
+  - `WO-01-plugin-skeleton.md`, `WO-02-migrasi-skema-canonical.md`, `WO-03-permission-auth.md`, `WO-04-api-admin-crud.md`, `WO-05-cli-resident.md`, `WO-06-importer-csv.md`, `WO-07-swagger-docs.md`.
+- Keputusan dikunci: **D-11** pakai `endpoints.key` (tanpa tabel `branches`); **D-12** `ref_*` di plugin `resident`; **D-13** nama plugin `resident`.
 

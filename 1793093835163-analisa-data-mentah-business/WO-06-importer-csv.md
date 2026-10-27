@@ -16,6 +16,20 @@ revision: 1
 ## Tujuan
 Membaca CSV ekspor Notion dan memetakannya ke tabel canonical **dengan normalisasi eksplisit**, disertai **laporan** dan mode `--dry-run` (tidak menulis DB).
 
+## Keputusan Awal & Status (2026-10-27)
+
+> **STATUS: DITUNDA (deferred).** Owner memutuskan fokus ke **WO-07 & WO-08** lebih dulu;
+> importer dikerjakan belakangan. Keputusan di bawah **dikunci** untuk eksekusi nanti.
+
+| # | Keputusan | Nilai |
+|---|---|---|
+| I-1 | **Bentuk importer** | **HTTP API saja** (bukan CLI). Endpoint admin, kemungkinan multipart upload + JSON hasil laporan. |
+| I-2 | **Alur** | **Staging/temp table dulu**: baris mentah ditampung, baru dilakukan **pengecekan idempotensi** & promosi ke tabel canonical. |
+| I-3 | **Kunci idempotensi** | **`resident_code` bila ada; jika kosong → `nik`** (fallback). |
+| I-4 | **Cakupan format** | Fokus **raw CSV** dulu; mode `--format template` (XLSX) ditunda sampai WO-08 selesai. |
+
+Konsekuensi: AC-11/AC-12 (mode template) **blocked** sampai WO-08 tersedia; AC lain bisa dikerjakan saat WO-06 dijalankan.
+
 ## Cakupan
 
 Perintah baru (bisa sebagai subcommand CLI atau service terpisah — **putuskan di awal & catat**):

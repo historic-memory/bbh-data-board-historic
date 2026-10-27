@@ -54,9 +54,9 @@ revision: 1
 | 3 | `WO-03-permission-auth.md` | Migrasi plugin `auth`: seed permission `resident.read/write/delete` + pemetaan ke grup `root`/`admin`/`viewer` | WO-02 | complete |
 | 4 | `WO-04-api-admin-crud.md` | Model GORM + service (validasi `branch_key`, enum, kode RM) + admin API CRUD ber-guard permission | WO-03 | complete |
 | 5 | `WO-05-http-api-bruno.md` | HTTP API admin (hardening kontrak) + koleksi **Bruno** di `api-tests/` untuk verifikasi 14 route `/api/admin/*` (tag smoke/read/mutation/auth; secret via `.env` gitignored) | WO-04 | complete |
-| 6 | `WO-06-importer-csv.md` | Importer CSV Notion → canonical sesuai §6 SPEC + laporan validasi + dry-run; **dua mode** `--format raw|template` | WO-04 | draft |
+| 6 | `WO-06-importer-csv.md` | Importer CSV Notion → canonical + laporan validasi + dry-run; **dua mode** `--format raw|template` | WO-04 | ditunda (deferred) — keputusan: HTTP API + staging table; fokus WO-07/08 dulu |
 | 7 | `WO-07-swagger-docs.md` | Anotasi swagger, regenerasi `docs/swagger`, dokumentasi `.env.example` (`INSTANCE_KEY`) & README | WO-06 | draft |
-| 8 | `WO-08-template-generator.md` | Generator template XLSX + CSV dari `schema/fields.yaml`: sheet PETUNJUK/DATA/REFERENSI/CONTOH, dropdown enum, `template_version` | WO-02 | draft |
+| 8 | `WO-08-template-generator.md` | Generator template XLSX + CSV dari `schema/fields.yaml`: sheet PETUNJUK/DATA/REFERENSI/CONTOH, dropdown enum, `template_version` — **via HTTP API** `GET /api/admin/resident-template` | WO-02 | complete |
 | 9 | `WO-09-validasi-umpan-balik.md` | Validator template → file umpan-balik (XLSX/CSV) dengan kolom `hasil_validasi` + `alasan_ditolak` per baris | WO-08 | draft |
 | 10 | `WO-10-generator-resident-code.md` | Generator kode `resident_code` (`BBH-<YY>-<P\|L>-<NNN>`), urut per gender, aman-konkuren, siap perluas prefix cabang (D-8) | WO-04 | progress |
 

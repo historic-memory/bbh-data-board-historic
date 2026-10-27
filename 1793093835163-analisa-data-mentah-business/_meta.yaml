@@ -37,7 +37,7 @@ files:
     - id: 01a17d0c-d56a-7f45-b88c-b12239b49bc5
       path: WO-08-template-generator.md
       type: file
-      status: draft
+      status: complete
     - id: 01a17d0c-d56a-71f5-bb9e-16b8d0b045a1
       path: WO-09-validasi-umpan-balik.md
       type: file

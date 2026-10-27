@@ -58,7 +58,7 @@ revision: 1
 | 7 | `WO-07-swagger-docs.md` | Anotasi swagger, regenerasi `docs/swagger`, dokumentasi `.env.example` (`INSTANCE_KEY`) & README | WO-06 | draft |
 | 8 | `WO-08-template-generator.md` | Generator template XLSX + CSV dari `schema/fields.yaml`: sheet PETUNJUK/DATA/REFERENSI/CONTOH, dropdown enum, `template_version` | WO-02 | draft |
 | 9 | `WO-09-validasi-umpan-balik.md` | Validator template → file umpan-balik (XLSX/CSV) dengan kolom `hasil_validasi` + `alasan_ditolak` per baris | WO-08 | draft |
-| 10 | `WO-10-generator-resident-code.md` | Generator kode `resident_code` (`BBH-<YY>-<P\|L>-<NNN>`), urut per gender, aman-konkuren, siap perluas prefix cabang (D-8) | WO-04 | draft |
+| 10 | `WO-10-generator-resident-code.md` | Generator kode `resident_code` (`BBH-<YY>-<P\|L>-<NNN>`), urut per gender, aman-konkuren, siap perluas prefix cabang (D-8) | WO-04 | progress |
 
 ## Definisi Selesai (semua WO)
 - `go build ./...` / `go vet ./...` / `go test ./...` lulus di container `app`.

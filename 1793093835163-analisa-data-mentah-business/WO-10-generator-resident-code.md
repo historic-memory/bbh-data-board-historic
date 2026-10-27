@@ -1,7 +1,7 @@
 ---
 title: "WO-10: Generator resident_code"
 description: "Generator kode resident_code berformat BBH-<YY>-<P|L>-<NNN> yang unik global (D-8), aman terhadap konkurensi, dapat dijalankan dari CLI/API/importer, dan siap diperluas ke prefix cabang BBH-<CAB>-<YY>-<P|L>-<NNN>."
-status: draft
+status: progress
 created: "2026-10-27"
 updated: "2026-10-27"
 revision: 1
@@ -80,3 +80,24 @@ GenerateResidentCode(tx *gorm.DB, gender string, year int) (string, error)
 | AC-8 | Kode kosong tersimpan `NULL`, tidak string kosong. |
 | AC-9 | Struktur siap prefix cabang (fungsi menerima parameter cabang opsional, walau belum aktif). |
 | AC-10 | `go build`/`vet`/`test`/`gofmt` lulus; ada unit test. |
+
+## Status Eksekusi (progress)
+**Status: progress** — commit kode `47417a0` (`feat(resident): WO-10 resident_code generator`). Tidak ada push.
+
+Implementasi inti selesai di `plugins/resident/services/code.go` (package-level, dipakai WO-02/04/06):
+`GenerateResidentCode`, `GenerateResidentCodeWithBranch`, `ValidateResidentCode`, `ValidateResidentCodeGender`, `ResidentCodeGender`, `NormalizeResidentCode`, `ResidentCodeSequence`.
+
+| # | AC | Hasil |
+|---|---|---|
+| AC-1 | Format `BBH-<YY>-<P\|L>-<NNN>` | ✅ `TestFormatResidentCode` |
+| AC-2 | Urut per gender & tahun | ✅ prefix per (year,gender) |
+| AC-3 | Aman konkurensi | ⏳ `pg_advisory_xact_lock` + UNIQUE; uji paralel `code_db_test.go` **SKIP** (tabel `residents` belum ada) |
+| AC-4 | Tidak mengisi gap | ✅ `MAX(RIGHT(code,3))+1` |
+| AC-5 | >999 → error | ✅ `ErrCodeExhausted` |
+| AC-6 | Duplikat→409 / format invalid→400 | ⏳ butuh API (WO-04) |
+| AC-7 | Gender konsisten | ✅ `ValidateResidentCodeGender` |
+| AC-8 | Kosong → NULL | ✅ `NormalizeResidentCode` (uji DB impor menyusul) |
+| AC-9 | Hook prefix cabang | ✅ `GenerateResidentCodeWithBranch(..., branch, ...)` |
+| AC-10 | build/vet/test/gofmt + unit test | ✅ lulus di container `app` |
+
+**Sisa bukti (blocked):** uji konkurensi DB & NULL/409 memerlukan tabel (WO-02) dan API/CLI (WO-04/05). `code_db_test.go` auto-aktif begitu tabel ada.

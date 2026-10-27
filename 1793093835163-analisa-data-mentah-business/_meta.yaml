@@ -23,9 +23,9 @@ files:
       type: file
       status: complete
     - id: 01a17d01-609d-7267-b466-c08edda40c15
-      path: WO-05-cli-resident.md
+      path: WO-05-http-api-bruno.md
       type: file
-      status: draft
+      status: complete
     - id: 01a17d01-609d-7f6f-b631-b991e090397c
       path: WO-06-importer-csv.md
       type: file

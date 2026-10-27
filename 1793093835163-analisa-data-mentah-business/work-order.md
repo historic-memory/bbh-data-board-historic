@@ -53,7 +53,7 @@ revision: 1
 | 2 | `WO-02-migrasi-skema-canonical.md` | Migrasi 8 tabel canonical + `schema/fields.yaml`; enum statis via CHECK (tanpa tabel `ref_*`) | WO-01 | complete |
 | 3 | `WO-03-permission-auth.md` | Migrasi plugin `auth`: seed permission `resident.read/write/delete` + pemetaan ke grup `root`/`admin`/`viewer` | WO-02 | complete |
 | 4 | `WO-04-api-admin-crud.md` | Model GORM + service (validasi `branch_key`, enum, kode RM) + admin API CRUD ber-guard permission | WO-03 | complete |
-| 5 | `WO-05-cli-resident.md` | CLI `resident list/show/add/update/status/documents` + validasi & output tabel | WO-04 | draft |
+| 5 | `WO-05-http-api-bruno.md` | HTTP API admin (hardening kontrak) + koleksi **Bruno** di `api-tests/` untuk verifikasi 14 route `/api/admin/*` (tag smoke/read/mutation/auth; secret via `.env` gitignored) | WO-04 | complete |
 | 6 | `WO-06-importer-csv.md` | Importer CSV Notion → canonical sesuai §6 SPEC + laporan validasi + dry-run; **dua mode** `--format raw|template` | WO-04 | draft |
 | 7 | `WO-07-swagger-docs.md` | Anotasi swagger, regenerasi `docs/swagger`, dokumentasi `.env.example` (`INSTANCE_KEY`) & README | WO-06 | draft |
 | 8 | `WO-08-template-generator.md` | Generator template XLSX + CSV dari `schema/fields.yaml`: sheet PETUNJUK/DATA/REFERENSI/CONTOH, dropdown enum, `template_version` | WO-02 | draft |

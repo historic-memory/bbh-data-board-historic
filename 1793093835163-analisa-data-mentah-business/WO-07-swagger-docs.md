@@ -1,16 +1,18 @@
 ---
 title: "WO-07: Swagger, dokumentasi env & README plugin resident"
 description: "Anotasi swagger untuk seluruh route /api/admin/residents dan terkait, regenerasi docs/swagger hingga paritas (route nyata = route terdokumentasi), dokumentasikan INSTANCE_KEY di .env.example, serta tambahkan catatan plugin resident di README."
-status: draft
+status: complete
 created: "2026-10-27"
 updated: "2026-10-27"
-revision: 1
+revision: 2
 ---
 
 # WO-07: Swagger, Dokumentasi Env & README
 
 **SPEC acuan:** `SPEC.md` (§14), pelajaran WO-07 topic federasi (paritas swagger)
-**Prasyarat:** WO-06
+**Prasyarat:** ~~WO-06~~ → **USANG**. WO-06 (importer) ditunda (HTTP API + tabel
+staging, dikerjakan belakangan). WO ini mendokumentasikan API yang **sudah ada**:
+CRUD resident dari WO-04 + endpoint template dari WO-08.
 
 ## Cakupan
 
@@ -52,3 +54,71 @@ revision: 1
 | AC-6 | Regenerasi swagger byte-identik. |
 | AC-7 | Dibangun di container `app`, bukan host. |
 | AC-8 | `go build`/`vet`/`test`/`gofmt` lulus. |
+
+## Hasil (2026-10-27) — status: complete
+
+**Commit kode:** `0c9a090`
+`docs(resident): regenerate swagger for admin routes + document INSTANCE_KEY/README (WO-07)`
+
+### Perubahan
+- `plugins/resident/handlers/handlers.go`: menambah import
+  `github.com/rolldone/donisgo/plugins/resident/model` + 4 blank var
+  (`_ = model.ResidentFull{}` dst.) agar `swag init` dapat me-resolve tipe
+  `model.*` yang dikutip di anotasi. Sebelumnya muncul
+  `ParseComment error ... cannot find type definition: model.ResidentFull`.
+- `.env.example`: melengkapi komentar `INSTANCE_KEY` (default `branch_key` plugin
+  resident, fallback `"local"`, branch eksplisit wajib ada di `endpoints.key`).
+- `README.md`: bagian "Plugin `resident` — inti data BBH" (tabel kanonik,
+  perintah migrasi, unduh template XLSX/CSV, rencana impor WO-06, kontrak Bruno).
+- `docs/swagger/{docs.go,swagger.json,swagger.yaml}` diregenerasi di container
+  `app`. **Catatan:** `docs/` di-gitignore (`.gitignore:21`) → artefak tidak
+  di-commit, hanya dihasilkan di workspace.
+
+### Angka paritas (dapat direproduksi)
+Verifikasi: `swag init -g cmd/server/main.go -o ./docs/swagger --parseDependency --parseInternal` (container `app`).
+
+| Metrik | Nilai |
+|---|---|
+| `paths` total | 35 |
+| path resident-relevan | 8 |
+| operasi resident (method+path) | 15 |
+| operasi tag `residents` | 12 |
+| `grep -c "resident" docs/swagger/swagger.json` | 87 |
+
+### Bukti silang (nol selisih, dua arah)
+- Route nyata dari `plugins/resident/plugin.go` `RegisterRoutes` → **15 operasi / 8 path**.
+- Swagger `paths` resident-relevan → **15 operasi / 8 path**.
+- `ONLY in swagger (not in code): []` dan `ONLY in code (missing docs): []` → `PARITY: OK`.
+
+Daftar operasi (method path): GET/POST `/api/admin/residents`;
+GET/PUT/PATCH/DELETE `/api/admin/residents/{id}`; GET/POST
+`/api/admin/residents/{id}/status`; GET/POST `/api/admin/residents/{id}/documents`;
+GET `/api/admin/mothers`; GET/POST `/api/admin/facilities`; PUT
+`/api/admin/facilities/{id}`; GET `/api/admin/resident-template`.
+
+### AC-4 — `.env.example` (baris ditambah di blok INSTANCE_KEY)
+```
+# Plugin `resident` (data core BBH) juga memakai nilai ini sebagai branch_key
+# DEFAULT (D-11: cabang = endpoints.key, tanpa tabel branches). Bila payload
+# create/update tidak mengirim branch_key — atau mengirim string kosong — maka
+# resident dicatat dengan branch_key = INSTANCE_KEY. Bila INSTANCE_KEY kosong,
+# fallback ke "local". branch_key yang dikirim eksplisit WAJIB terdaftar di
+# endpoints.key, jika tidak request ditolak 400 (ErrUnknownBranch).
+```
+Komentar diverifikasi cocok dengan kode: `services.resolveInstanceKey()`
+(`INSTANCE_KEY` → `"local"`) dan `services.resolveBranchKey()` (kosong → instance key;
+tidak dikenal → `ErrUnknownBranch`/400).
+
+### AC-6 — regenerasi byte-identik (sha256)
+Regenerasi ulang menghasilkan hash identik (diff kosong):
+```
+f1436b54d534669fa7701cc684bea07d5663901599a78c1e6b8aca74cc49e9c5  docs/swagger/swagger.json
+9791843b0e9c50a39ccb431758de3768455863082534d71ad0df3efcc592b17e  docs/swagger/swagger.yaml
+073bae99c8bb6418cfb3bea066819767aa811c42ae4ff8615cd5920d335a8faf  docs/swagger/docs.go
+```
+`build.sh` (container `app`): `Swagger docs: tidak ada perubahan isi (byte-identik).` → `BUILD OK`, exit 0.
+
+### AC-7 / AC-8
+- Semua dijalankan di container `app` (bukan host).
+- `go build ./...` OK · `go vet ./...` OK · `gofmt -l` bersih ·
+  `go test ./plugins/resident/...` ok (schema + services) · `build.sh` exit 0.

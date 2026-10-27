@@ -33,7 +33,7 @@ files:
     - id: 01a17d01-609d-7645-9069-aabaaa21cb3c
       path: WO-07-swagger-docs.md
       type: file
-      status: draft
+      status: complete
     - id: 01a17d0c-d56a-7f45-b88c-b12239b49bc5
       path: WO-08-template-generator.md
       type: file

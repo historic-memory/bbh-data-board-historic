@@ -49,7 +49,7 @@ revision: 1
 
 | # | File | Scope | Prasyarat | Status |
 |---|---|---|---|---|
-| 1 | `WO-01-plugin-skeleton.md` | Kerangka plugin `resident` + registrasi `server`/`console` + CLI/route stub + test kosong | — | draft |
+| 1 | `WO-01-plugin-skeleton.md` | Kerangka plugin `resident` + registrasi `server`/`console` + CLI/route stub + test kosong | — | complete |
 | 2 | `WO-02-migrasi-skema-canonical.md` | Migrasi 8 tabel canonical + `schema/fields.yaml`; enum statis via CHECK (tanpa tabel `ref_*`) | WO-01 | draft |
 | 3 | `WO-03-permission-auth.md` | Migrasi plugin `auth`: seed permission `resident.read/write/delete` + pemetaan ke grup `root`/`admin`/`viewer` | WO-02 | draft |
 | 4 | `WO-04-api-admin-crud.md` | Model GORM + service (validasi `branch_key`, enum, kode RM) + admin API CRUD ber-guard permission | WO-03 | draft |

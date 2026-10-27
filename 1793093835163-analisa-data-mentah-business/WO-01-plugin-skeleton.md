@@ -1,7 +1,7 @@
 ---
 title: "WO-01: Plugin Skeleton — kerangka plugins/resident"
 description: "Membuat kerangka plugin `resident` (plugin.go, cli stub, route stub, folder migrations/model/handlers/services), mendaftarkannya di cmd/server & cmd/console, memastikan aplikasi tetap build & boot tanpa error. Belum ada tabel maupun logika domain."
-status: draft
+status: complete
 created: "2026-10-27"
 updated: "2026-10-27"
 revision: 1
@@ -71,3 +71,19 @@ Menyediakan **kerangka plugin kosong** yang sudah terdaftar & ter-boot, sehingga
 | AC-6 | `RegisterServices` **tidak** melakukan DDL apa pun. |
 | AC-7 | Tidak ada perubahan pada plugin lain kecuali baris registrasi. |
 | AC-8 | Tidak ada kode fitur di `internal/`. |
+
+## Status Eksekusi
+**Status: complete** — commit kode `6da7740` (`feat(resident): WO-01 plugin skeleton`). Tidak ada push.
+
+| # | AC | Hasil verifikasi (container `app`) |
+|---|---|---|
+| AC-1 | 7 entri plugin | `plugin.go`, `cli.go`, `handlers/handlers.go`, `migrations/postgres/.gitkeep`, `model/models.go`, `model/view.go`, `services/service.go` |
+| AC-2 | Terdaftar di server/console; `ID()="resident"` | impor + entri slice di `cmd/server/main.go` & `cmd/console/main.go` |
+| AC-3 | build/vet/gofmt | `go build ./...` OK, `go vet ./...` OK, `gofmt -l` kosong |
+| AC-4 | Boot + `/healthz` | server listen `:8080`; `GET /healthz` = `HTTP 200` |
+| AC-5 | `resident version` | `resident plugin 0.1.0` |
+| AC-6 | Tanpa DDL | `RegisterServices` hanya `p.db = deps.DB` |
+| AC-7 | Hanya baris registrasi | diff terbatas pada `cmd/server/main.go` & `cmd/console/main.go` |
+| AC-8 | Tanpa kode di `internal/` | tidak ada perubahan `internal/` |
+
+Catatan: route stub `GET/POST /api/admin/residents` mengembalikan `501` (sengaja belum ber-guard; guard menyusul WO-03/WO-04 untuk menghindari 403 fail-closed).

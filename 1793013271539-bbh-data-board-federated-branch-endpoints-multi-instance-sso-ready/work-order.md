@@ -41,7 +41,7 @@ Arah baru: **federasi instance** — satu aplikasi, banyak instance, satu DB lok
 | 5 | [`WO-05-housekeeping-docs-env.md`](rev 3) | **Housekeeping pasca-federasi** — regenerasi swagger (`is_root` basi, route baru hilang), dokumentasikan `INSTANCE_KEY`/`SSO_SHARED_SECRET`/`FEDERATION_FALLBACK_LOCAL` di `.env.example`, **guard fail-closed** `SSO_SHARED_SECRET` ≠ `APP_KEY` (normalisasi base64, tidak mencetak kunci; kosong → SSO nonaktif + log), **bukti AC-13 lewat UI (wajib)**, lalu drop 3 DB sisa | complete |
 | 6 | [`WO-06-patch-wo-05.md`](rev 3) | **Penambal WO-05** — (1) ✅ guard byte-level ditutup (`base64:QUJD` vs `ABC`, termasuk varian padding `AAAA==` vs `AAAA`); (2) ✅ komentar `.env.example` dikoreksi (kosong = SSO nonaktif, server tetap start); (3) ✅ bukti T-1..T-4 & AC-13 diarsip di WO-05 §6a. Semua 7 AC terbukti oleh Manager; 4 sisa dipindah ke WO-07 | complete |
 | 7 | [`WO-07-swagger-parity-rebuild-console.md`](rev 3) | **Paritas swagger & rebuild** — ✅ `PATCH /api/admin/endpoints/{key}` (handler `Patch` sendiri) dan `GET /api/business/reports` (handler `BusinessReports`) terdokumentasi; ✅ angka bukti dikoreksi dari artefak (`paths` 27, operasi 41, `endpoints` 9, `sso` 5); ✅ `is_root` 0/0/0; ✅ `bin/console`+`bin/server` identik dengan build `c3dc6f4` (rebuild pasca-commit); ✅ S-5 `build.sh` diselaraskan ke `--parseDependency --parseInternal` + idempoten (`yaml.v3` direct). Semua AC terbukti | complete |
-| 8 | [`WO-08-build-sh-reproducible.md`](rev 1) | **`build.sh` efektif & reproducible** — `bash build.sh` di host gagal men-generate swagger (swag `--parseDependency` tidak bisa parse stdlib pada GOROOT `/snap/...`, exit=1) tetapi ditelan `\|\| echo ... continuing` → `docs/swagger` tidak berubah tanpa peringatan; binari host vs container berbeda (sha `6bd87df4` vs `667448a3`, stamp sama). Diminta: jangan gagal diam-diam, dokumentasikan lingkungan kanonik (container) | draft |
+| 8 | [`WO-08-build-sh-reproducible.md`](rev 2) | **`build.sh` efektif & reproducible** — ✅ kegagalan swag tidak lagi tersembunyi (WARNING + `exit 1`, build `server` tetap jalan); ✅ deteksi dini GOROOT snap; ✅ lingkungan kanonik (container `app`) tertulis di header `build.sh` + `README.md`; ✅ `--verify-docs` cetak manifest sha256; ✅ `--bogus` → exit 2; ✅ `swag` hilang dari PATH → exit 1. Artefak `docs/swagger` tetap byte-identik | complete |
 
 ## Status Akhir (diverifikasi Manager 2026-10-27)
 
@@ -129,6 +129,19 @@ Arah baru: **federasi instance** — satu aplikasi, banyak instance, satu DB lok
 |---|---|
 | S-6a | `bash build.sh` di host = no-op swagger (swag `--parseDependency` gagal pada GOROOT `/snap/go/...`, exit=1, ditelan `\|\| echo ... continuing`); `sha256 docs/swagger/*` tidak berubah |
 | S-6b | Binari host vs container berbeda (`6bd87df4` vs `667448a3`, stamp `vcs.revision` sama) — klaim "sha cocok" hanya bermakna dalam satu lingkungan kanonik |
+
+**Verifikasi WO-08 (commit `4ccbd79` + `df11cea`):**
+
+| AC | Hasil |
+|---|---|
+| 1. Host gagal → non-zero + WARNING | ✅ `EXIT=1`, 2 blok WARNING, `Build server completed` tetap jalan, `sha256` docs tidak berubah |
+| 2. Container → exit 0 + byte-identik | ✅ `EXIT=0`, "tidak ada perubahan isi (byte-identik)" |
+| 3. Lingkungan kanonik tertulis | ✅ header `build.sh` + `README.md` |
+| 4. Gate | ✅ `BUILD_OK` / `VET_OK` / 10 paket `ok` / `GOFMT_CLEAN` |
+| Jalur tambahan | ✅ `--verify-docs` manifest; `--bogus` exit 2; `swag` hilang → exit 1 |
+| Stamp binari | ✅ `vcs.revision=df11cea` (= HEAD) |
+
+S-6a & S-6b **tertutup**. Artefak `docs/swagger` tetap byte-identik dengan WO-07.
 
 **Pelajaran:** binari Go menyematkan `vcs.revision`. Rebuild **harus setelah commit**, dan pembanding hash harus dibuat setelah commit — bukan dua binari pra-commit yang dibandingkan satu sama lain. Tambahan: host & container menghasilkan binari berbeda, jadi pembanding harus dari lingkungan yang sama.
 

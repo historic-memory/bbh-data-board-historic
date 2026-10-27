@@ -45,7 +45,7 @@ files:
     - id: 01a17c84-9dec-722a-9b33-2c85fee148b8
       path: WO-08-build-sh-reproducible.md
       type: file
-      status: draft
+      status: complete
     - id: 01a177ec-c013-7221-8502-c5aa011599f8
       path: work-order.md
       type: file

@@ -1,10 +1,10 @@
 ---
 title: 'WO-08: build.sh tidak efektif di host (generasi swagger gagal diam-diam) dan binari tidak reproducible antar-lingkungan'
 description: 'Verifikasi Manager atas WO-07 S-5 menemukan dua celah reproducibility: (1) `bash build.sh` di host gagal men-generate swagger karena swag --parseDependency tidak bisa mem-parse stdlib pada GOROOT /snap/go/11382, tetapi kegagalan ditelan `|| echo ... continuing` sehingga docs/swagger tidak berubah tanpa peringatan; (2) go build di host (snap GOROOT) dan di container (/usr/local/go) menghasilkan binari berbeda (sha 6bd87df4 vs 667448a3) meski stamp vcs.revision sama — klaim "sha cocok" hanya bermakna dalam satu lingkungan kanonik.'
-status: draft
+status: complete
 created: "2026-10-27"
 updated: "2026-10-27"
-revision: 1
+revision: 2
 ---
 
 # WO-08: `build.sh` efektif & reproducible
@@ -81,3 +81,36 @@ host     : 6bd87df46fe58933   (vcs.revision=790acf6)
 - Mengubah flag swag (sudah final di WO-07 S-5)
 - Mengubah `bin/` menjadi tracked (tetap gitignored)
 - Menambah endpoint atau mengubah anotasi handler
+
+## 7. Hasil Verifikasi Manager (independen, 2026-10-27)
+
+Commit diperiksa: `4ccbd79` (`build.sh`, +120/-14) dan `df11cea` (`README.md`, +11/-1).
+
+### 7.1 Status AC
+
+| # | AC | Verifikasi Manager | Hasil |
+|---|---|---|---|
+| 1 | Host gagal → non-zero + WARNING | `bash build.sh` di host (PATH + `/home/donny/go/bin`) → `EXIT=1`; log memuat 2 blok WARNING (GOROOT snap di awal + "swagger TIDAK di-regenerate" di akhir) + `BUILD SELESAI DENGAN PERINGATAN`; `Build server completed` tetap muncul; `sha256` 3 artefak **tidak berubah** (`054e6d28` / `4e9a8b13` / `c478d9a2`) | ✅ |
+| 2 | Container → exit 0 + byte-identik | `bash build.sh` di container → `EXIT=0`, `Swagger docs: tidak ada perubahan isi (byte-identik)`, `BUILD OK`; ketiga hash sama dengan baseline | ✅ |
+| 3 | Lingkungan kanonik tertulis | header `build.sh` (blok "LINGKUNGAN KANONIK (WAJIB)") + `README.md` seksi *Local development* (menggantikan contoh `swag init` lama) | ✅ |
+| 4 | Gate | `BUILD_OK`, `VET_OK`, 10 paket `ok`, `GOFMT_CLEAN` | ✅ |
+
+### 7.2 Jalur tambahan yang diuji (tidak diminta eksplisit, tapi penting)
+
+| Uji | Hasil |
+|---|---|
+| `bash build.sh --verify-docs` | ✅ mencetak manifest `sha256sum docs/swagger/*` (3 baris) |
+| `bash build.sh --bogus` | ✅ `exit=2` + pesan argumen tidak dikenal |
+| `swag` hilang dari PATH (container, `PATH` tanpa `/go/bin`) | ✅ `exit=1`, `WARNING: swag CLI tidak ditemukan di PATH`, `BUILD SELESAI DENGAN PERINGATAN` |
+| `go mod tidy` mengotori working tree | ✅ tidak terjadi — `git status` bersih kecuali `?? bin/` |
+| Stamp binari | ✅ `vcs.revision=df11cea` (= HEAD) setelah rebuild di container |
+
+Catatan positif: kegagalan `swag` **tidak memblokir** build `server` (biner tetap dihasilkan) tetapi exit akhir non-zero — ini kombinasi yang tepat: operator tidak terhalang, CI tetap tahu dokumentasi tertinggal.
+
+### 7.3 Catatan kecil (bukan blocker)
+
+`-h|--help` mencetak `sed -n '2,30p'` dari header skrip. Setelah header bertambah panjang (blok lingkungan kanonik), bantuan bisa terpotong di tengah. Tidak memengaruhi build; cukup dicek bila header diedit lagi.
+
+### 7.4 Status
+
+WO-08 **`complete`** — S-6a (kegagalan tersembunyi) dan S-6b (lingkungan kanonik) tertutup dan terbukti dengan output perintah nyata. Artefak `docs/swagger` tetap byte-identik dengan yang diverifikasi di WO-07, sehingga perbaikan ini berlaku mundur tanpa membatalkan verifikasi sebelumnya.

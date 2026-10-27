@@ -114,7 +114,8 @@ Konsekuensi:
 | **D-21** | **`is_root` digantikan grup sistem `root`** yang memegang satu permission `*` (semua izin). Migrasi memindahkan setiap baris `is_root = true` menjadi keanggotaan grup `root`, lalu **kolom `is_root` dihapus** setelah kode tidak lagi membacanya. Guard `RequireRootAdmin` diganti `RequirePermission("*")`. | Satu sumber kebenaran; menghilangkan dua model izin yang berjalan bersamaan. |
 | **D-22** | **Tidak ada izin implisit.** Admin tanpa grup = **tidak punya izin apa pun** (boleh login, tetapi setiap route yang butuh izin → **403**). **Tidak ada "default allow"**. | Aman secara bawaan (fail-closed); salah konfigurasi berakibat menolak, bukan membuka. |
 | **D-23** | **Izin di-resolve per request dari DB**, tidak pernah disimpan di dalam token. Perubahan grup berlaku **segera** tanpa perlu login ulang. | Mencabut izin harus langsung efektif; token hanya identitas (D-19). |
-| **D-24** | **Daftar permission awal** (key stabil, dipakai kode): `*`, `admin.read`, `admin.write`, `admin.delete`, `group.read`, `group.write`, `permission.read`, `member.read`, `member.write`, `member.delete`, `endpoint.read`, `endpoint.write`, `endpoint.test`, `audit.read`. Grup sistem awal: `root` (`*`), `admin`, `viewer` (read-only). | Key harus stabil karena dirujuk di kode & dokumentasi; grup sistem mencegah admin terkunci total. |
+| **D-24** | **Daftar permission awal** (key stabil, dipakai kode): `*`, `admin.read`, `admin.write`, `admin.delete`, `group.read`, `group.write`, `permission.read`, `member.read`, `member.write`, `member.delete`, `endpoint.read`, `endpoint.write`, `endpoint.test`, `audit.read`. | Key harus stabil karena dirujuk di kode & dokumentasi. |
+| **D-25** | **Grup sistem awal, bertingkat baca→tulis:** `viewer` (semua `*.read` **kecuali** `audit.read`), `admin` (`*.read` + `*.write` + `endpoint.test`, **tanpa** `*.delete` dan **tanpa** `group.write`), `root` (`*`). **`viewer` ditandai `is_default = TRUE`** dan **otomatis diberikan** saat admin baru dibuat (CLI `create-admin` & API). **Audit log tetap terbatas**: hanya pemegang `audit.read`/`*` (jadi `viewer` & `admin` tidak bisa). | Memberi perilaku bawaan yang diharapkan — **admin baru bisa melihat, tidak bisa mengubah** — tanpa merusak fail-closed (D-22): grup tetap bisa dicabut, dan tanpa grup sama sekali tetap tidak punya akses. Audit dibatasi karena memuat jejak aktivitas lintas instance. |
 
 ## 3. Ruang Lingkup
 
@@ -151,8 +152,10 @@ Konsekuensi:
 - Tabel `permissions`, `groups`, `admin_groups`, `group_permissions` lewat migrasi versioned.
 - **Izin efektif** = union izin dari grup aktif yang diikuti admin (D-20).
 - Guard berbasis permission: `RequirePermission("admin.write")`, dst.; `RequireRootAdmin` → `RequirePermission("*")` (D-21).
-- Grup sistem awal: `root` (`*`), `admin`, `viewer`; migrasi `is_root=true` → grup `root`; kolom `is_root` dihapus (D-21).
-- CLI: `auth group create|list|assign|unassign`, `auth permission list`.
+- Grup sistem awal: `root` (`*`), `admin` (baca+tulis, tanpa hapus/`group.write`), `viewer` (baca saja, **tanpa** `audit.read`, ditandai **default**).
+- **Grup default (D-25):** admin baru otomatis masuk grup `viewer` → bisa melihat, belum bisa mengubah. Ditambahkan lewat CLI `create-admin` maupun API, dalam **transaksi yang sama** dengan pembuatan admin.
+- **Audit terbatas:** hanya `audit.read`/`*` (root). `viewer` & `admin` **tidak** melihat audit.
+- CLI: `auth group create|list|assign|unassign|show`, `auth permission list`.
 - API admin: baca/tulis grup & keanggotaan grup (butuh izin `group.*`).
 - **Fail-closed:** tanpa grup → tanpa izin (D-22).
 
@@ -246,6 +249,9 @@ CREATE INDEX idx_endpoint_audit_key_time ON endpoint_audit (endpoint_key, create
 | AC-29 | **Migrasi `is_root` (D-21):** setiap admin `is_root=true` menjadi anggota grup `root`; setelah migrasi, perilaku root **identik** seperti sebelumnya (tidak ada yang kehilangan akses). |
 | AC-30 | **Izin tidak di token (D-23):** mencabut grup berlaku **tanpa login ulang** — request berikutnya langsung 403. |
 | AC-31 | **Grup nonaktif diabaikan:** grup dengan `is_active=false` tidak menyumbang izin apa pun. |
+| AC-32 | **Grup default (D-25):** admin baru dibuat lewat CLI **dan** API **otomatis** menjadi anggota `viewer`; ia bisa `GET` daftar admin/member/endpoint tetapi **403** saat mencoba mengubah. |
+| AC-33 | **Pemisahan baca/tulis:** pemegang `viewer` tidak dapat melakukan `POST`/`PUT`/`PATCH`/`DELETE`; pemegang `admin` dapat mengubah tetapi **tidak** dapat menghapus maupun mengubah keanggotaan grup. |
+| AC-34 | **Audit terbatas:** `viewer` dan `admin` **tidak** dapat membaca audit; hanya `root`/`audit.read`. |
 
 ## 6. Risiko & Mitigasi
 

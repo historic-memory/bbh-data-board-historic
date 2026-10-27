@@ -33,6 +33,7 @@ Satu admin boleh punya **banyak** grup; satu grup boleh punya **banyak** permiss
 | P-3 | **Satu sumber kebenaran** (D-21) | `is_root` **dihapus**, bukan dipertahankan berdampingan. |
 | P-4 | **Grup nonaktif tidak menyumbang izin** (AC-31) | `groups.is_active = false` → seluruh izinnya gugur. |
 | P-5 | **Jangan sampai terkunci total** | Aksi yang menghilangkan admin `*` terakhir **harus ditolak**. |
+| P-6 | **Bawaan ramah (D-25)** | Admin baru otomatis masuk grup `is_default` (`viewer`) → bisa melihat, belum bisa mengubah. Tidak melanggar fail-closed: grup tetap bisa dicabut. |
 
 ## 3. Skema (migrasi versioned, `CREATE TABLE` nol di Go)
 
@@ -50,12 +51,15 @@ CREATE TABLE groups (
     name        TEXT NOT NULL,
     description TEXT,
     is_system   BOOLEAN NOT NULL DEFAULT FALSE,   -- tidak boleh dihapus
+    is_default  BOOLEAN NOT NULL DEFAULT FALSE,   -- diberikan otomatis ke admin baru (D-25)
     is_active   BOOLEAN NOT NULL DEFAULT TRUE,
     created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     deleted_at  TIMESTAMPTZ NULL
 );
 CREATE INDEX idx_groups_deleted_at ON groups(deleted_at);
+-- Hanya boleh ada satu grup default
+CREATE UNIQUE INDEX uq_groups_one_default ON groups (is_default) WHERE is_default;
 
 CREATE TABLE group_permissions (
     group_id       TEXT NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
@@ -96,16 +100,26 @@ ON CONFLICT (key) DO NOTHING;
 
 ### Seed grup sistem (id deterministik, bukan random)
 
+**Tingkat izin (D-25):**
+
+| Grup | Izin | Ringkas |
+|---|---|---|
+| `viewer` (**default**) | semua `*.read` **kecuali** `audit.read` | boleh lihat, tidak boleh ubah |
+| `admin` | `*.read` + `*.write` + `endpoint.test` | boleh ubah, **tidak** boleh hapus / atur grup / lihat audit |
+| `root` | `*` | semua |
+
 ```sql
-INSERT INTO groups (id, key, name, description, is_system) VALUES
-    ('01930000-0000-7000-8000-000000000001','root',  'Root',          'Semua izin', TRUE),
-    ('01930000-0000-7000-8000-000000000002','admin', 'Administrator', 'Kelola admin & data', TRUE),
-    ('01930000-0000-7000-8000-000000000003','viewer','Viewer',        'Hanya baca', TRUE)
+INSERT INTO groups (id, key, name, description, is_system, is_default) VALUES
+    ('01930000-0000-7000-8000-000000000001','root',  'Root',          'Semua izin',              TRUE, FALSE),
+    ('01930000-0000-7000-8000-000000000002','admin', 'Administrator', 'Ubah data, tanpa hapus',  TRUE, FALSE),
+    ('01930000-0000-7000-8000-000000000003','viewer','Viewer',        'Hanya baca (default)',    TRUE, TRUE)
 ON CONFLICT (key) DO NOTHING;
 
 INSERT INTO group_permissions (group_id, permission_key) VALUES
+    -- root: semua
     ('01930000-0000-7000-8000-000000000001','*'),
 
+    -- admin: baca + tulis, TANPA delete, TANPA group.write, TANPA audit.read
     ('01930000-0000-7000-8000-000000000002','admin.read'),
     ('01930000-0000-7000-8000-000000000002','admin.write'),
     ('01930000-0000-7000-8000-000000000002','group.read'),
@@ -115,16 +129,31 @@ INSERT INTO group_permissions (group_id, permission_key) VALUES
     ('01930000-0000-7000-8000-000000000002','endpoint.read'),
     ('01930000-0000-7000-8000-000000000002','endpoint.write'),
     ('01930000-0000-7000-8000-000000000002','endpoint.test'),
-    ('01930000-0000-7000-8000-000000000002','audit.read'),
 
+    -- viewer (DEFAULT): hanya baca, TANPA audit.read
     ('01930000-0000-7000-8000-000000000003','admin.read'),
     ('01930000-0000-7000-8000-000000000003','group.read'),
     ('01930000-0000-7000-8000-000000000003','permission.read'),
     ('01930000-0000-7000-8000-000000000003','member.read'),
-    ('01930000-0000-7000-8000-000000000003','endpoint.read'),
-    ('01930000-0000-7000-8000-000000000003','audit.read')
+    ('01930000-0000-7000-8000-000000000003','endpoint.read')
 ON CONFLICT DO NOTHING;
 ```
+
+> ⚠️ **`audit.read` sengaja tidak diberikan ke `viewer` maupun `admin`.** Audit memuat jejak request lintas instance (endpoint, path, status, durasi) — cukup diketahui pemegang akses penuh (D-25, AC-34).
+
+### Grup default (D-25)
+
+Saat admin dibuat — **CLI maupun API** — keanggotaan grup default ditambahkan **dalam transaksi yang sama**:
+
+```sql
+INSERT INTO admin_groups (admin_id, group_id)
+SELECT $1, g.id FROM groups g
+WHERE g.is_default = TRUE AND g.is_active AND g.deleted_at IS NULL;
+```
+
+**Alasan:** tanpa ini, admin baru tidak punya izin apa pun (fail-closed D-22) dan langsung bingung karena tidak bisa melihat apa-apa. Dengan ini perilaku bawaannya: **bisa melihat, belum bisa mengubah** — tepat seperti yang diharapkan untuk admin non-root.
+
+**Yang tetap berlaku:** grup default **bukan** hak istimewa — ia bisa dicabut per admin tanpa mengubah yang lain. Tanpa grup sama sekali → tetap tanpa akses.
 
 ### Migrasi data `is_root` → grup `root` (D-21, AC-29)
 
@@ -190,8 +219,11 @@ Pengelompokan route (contoh, selaras D-24):
 | `POST/PUT/PATCH /api/members*` | `member.write` |
 | `DELETE /api/members/:id` | `member.delete` |
 | `/api/groups*`, `/api/permissions*` | `group.read` / `group.write` / `permission.read` |
+| `GET /api/endpoints*` | `endpoint.read` |
+| `POST/PUT/DELETE /api/endpoints*`, `POST .../test` | `endpoint.write` / `endpoint.test` |
+| `GET /api/audit*` | `audit.read` (root saja secara bawaan) |
 
-> ⚠️ Route `/api/admins` **sekarang** dijaga `RequireRootAdmin` untuk **semua** method. Setelah WO ini, `GET /api/admins` terbuka untuk `admin.read` — pastikan ini memang diinginkan, dan **jangan** sampai `admin.write` bisa memberi izin lebih tinggi dari yang dimiliki pelaku.
+> ✅ **Keputusan (D-25):** `GET /api/admins` dibuka untuk `admin.read` — **memang disengaja**. Grup `viewer` (default) memegang `admin.read` tetapi **tidak** memegang `admin.write`, sehingga admin non-root **bisa melihat daftar, tidak bisa mengubah**. Yang tetap dijaga: `admin.write` **tidak boleh** memberi izin melebihi milik pelaku (aturan anti-eskalasi di bawah).
 
 ### Aturan anti-eskalasi
 
@@ -217,12 +249,15 @@ Pesan error harus menyebutkan sebabnya ("ini admin terakhir dengan akses penuh")
 auth group list
 auth group create --key gudang --name "Gudang" --permissions endpoint.read,audit.read
 auth group update --key gudang --activate|--deactivate
+auth group update --key gudang --set-default      # memindahkan grup default
 auth group assign   --admin <email|id> --group gudang
 auth group unassign --admin <email|id> --group gudang
 auth group show     --key gudang          # daftar permission-nya
 auth permission list
 auth admin groups --admin <email|id>      # daftar grup admin
 ```
+
+**Perilaku `create-admin` (D-25):** setelah admin dibuat, otomatis ditambahkan ke grup `is_default = TRUE`. Tambahkan flag `--no-default-group` bila memang ingin admin tanpa grup (untuk pengujian fail-closed).
 
 ## 8. API
 
@@ -248,8 +283,12 @@ auth admin groups --admin <email|id>      # daftar grup admin
 | 5 | Grup `is_active=false` → izinnya **tidak dihitung** (AC-31) | test |
 | 6 | Grup sistem (`root`) **tidak bisa** dihapus / dinonaktifkan | test |
 | 7 | Tidak bisa melepas admin `*` terakhir | test |
-| 8 | Semua route lama berpindah dari `RequireRootAdmin` ke `RequirePermission` | grep: `RequireRootAdmin` = 0 hasil |
-| 9 | `go build ./... && go vet ./... && go test ./...` lulus | CI |
+| 8 | **Grup default (D-25):** admin baru via CLI **dan** API otomatis jadi `viewer`; bisa `GET`, **403** saat `POST/PUT/DELETE` (AC-32) | test |
+| 9 | **Pemisahan baca/tulis (AC-33):** `viewer` tidak bisa ubah; `admin` bisa ubah tetapi **tidak** bisa hapus & tidak bisa `PUT /api/admins/:id/groups` | test |
+| 10 | **Audit terbatas (AC-34):** `viewer` & `admin` → **403** di `GET /api/audit*`; hanya `root` | test |
+| 11 | Hanya satu grup `is_default` (unique index menolak yang kedua) | test |
+| 12 | Semua route lama berpindah dari `RequireRootAdmin` ke `RequirePermission` | grep: `RequireRootAdmin` = 0 hasil |
+| 13 | `go build ./... && go vet ./... && go test ./...` lulus | CI |
 
 ## 10. Definition of Done
 

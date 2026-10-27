@@ -37,7 +37,7 @@ Arah baru: **federasi instance** — satu aplikasi, banyak instance, satu DB lok
 | 1 | [`WO-01-endpoint-registry.md`](rev 2) | **Endpoint Registry** (admin-only, D-8); `endpoints` (+`is_active`+partial index unique) + `endpoint_audit`; migrasi versioned; plugin CLI (`add/list/rm/test/use/active`); admin API (partial PUT tanpa reset `status`, audit semua request lintas endpoint) | draft |
 | 2 | [`WO-02-captive-portal-routing.md`](rev 1) | **Captive Portal & Routing**; pemilihan portal → proxy routing per request (`X-Branch-Endpoint`, anti-loop `X-Forwarded-Instance`), pemilik route eksplisit (**List Portal & login selalu `local`**), dua token (**main token**/**portal token**), error klasifikasi, fallback hanya bila dikonfigurasi + penanda, audit request lintas instance | drafted |
 | 3 | [`WO-03-sso-admin-only.md`](rev 2) | **SSO Lintas Instance (admin-only)** — DIPERLUKAN; token pusat (`aud`=target branch, `iss`, `sub`=UUIDv7, `typ=portal`, `exp` pendek) **tanpa klaim peran**; verifikasi **LOKAL HS256** (D-17) tanpa callback; guard keanggotaan lokal via **`iss`+`sub`** (D-16) → **403** bila belum/`pending`; **enrollment hybrid A+B** (D-18); **otorisasi = RBAC cabang** (D-19); butuh migrasi kolom `admins`; dua-token session | drafted |
-| 4 | [`WO-04-rbac-groups-permissions.md`](rev 1) | **RBAC: groups & permissions** — ganti `is_root` dengan `permissions` ↔ `group_permissions` ↔ `groups` ↔ `admin_groups` ↔ `admins`; izin efektif = union grup aktif; guard `RequirePermission`; **fail-closed**; grup sistem `root`/`admin`/`viewer`; migrasi `is_root=true` → grup `root` lalu kolom dihapus; CLI + API grup; anti-lockout | drafted |
+| 4 | [`WO-04-rbac-groups-permissions.md`](rev 1) | **RBAC: groups & permissions** — ganti `is_root` dengan `permissions` ↔ `group_permissions` ↔ `groups` ↔ `admin_groups` ↔ `admins`; izin efektif = union grup aktif; guard `RequirePermission`; **fail-closed**; grup bertingkat `root`(`*`) / `admin`(baca+tulis) / `viewer`(baca, **default**, tanpa audit); **grup default otomatis** ke admin baru; audit hanya `root`; migrasi `is_root=true` → grup `root` lalu kolom dihapus; CLI + API grup; anti-lockout | drafted |
 
 ## Urutan Eksekusi & Dependency
 ```
@@ -84,7 +84,7 @@ Catatan: migrator baru harus kompatibel dengan `migrations` yang sudah terisi at
 | 1 | Enrollment admin cabang | **D-18: Hybrid A+B** — manual oleh admin cabang **dan** auto-provision baris `pending` yang **wajib disetujui** (tanpa auto-approve) |
 | 2 | Identitas pencocokan | **D-16: `iss` + `sub` (UUIDv7)** — bukan email; email hanya atribut tampilan (`atr`) |
 | 3 | Kunci verifikasi SSO | **D-17: HS256 shared secret** — di balik interface verifier, dapat diupgrade ke RS256/JWKS |
-| 4 | Peran / `is_root` | **D-19..D-24: otorisasi LOKAL + RBAC grup** | Token tanpa klaim peran; `is_root` diganti grup `root` ber-permission `*`; fail-closed |
+| 4 | Peran / `is_root` | **D-19..D-25: otorisasi LOKAL + RBAC grup** | Token tanpa klaim peran; `is_root` diganti grup `root` ber-permission `*`; grup bertingkat `viewer`(default)/`admin`/`root`; fail-closed tapi bawaan "bisa lihat, belum bisa ubah" |
 
 **Konsekuensi skema:** `admins` perlu migrasi tambahan (`status`, `origin`, `sso_issuer`, `sso_subject`, `password_hash` nullable, unique index `iss`+`sub`) — lihat `WO-03-sso-admin-only.md` §5. Tabel RBAC (`permissions`, `groups`, `group_permissions`, `admin_groups`) — lihat `WO-04-rbac-groups-permissions.md` §3.
 

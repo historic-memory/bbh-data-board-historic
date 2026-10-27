@@ -33,6 +33,12 @@ dan mandiri, ia dipindah ke topic terpisah.
 |---|---|---|---|---|
 | 1 | `wo-01-importer-csv.md` | Importer CSV (raw) + template (XLSX/CSV): staging, idempotensi (`resident_code`→`nik`), promosi canonical, laporan, dry-run — **via HTTP API** | WO-04/08/09 (topic resident, complete) | draft |
 
+### Keputusan terkunci (Review Manager, 2026-10-27)
+Detail di `wo-01-importer-csv.md` §"Keputusan Terkunci":
+- **L-1** Tabel staging `resident_import_batch` + `resident_import_row` (TTL 30 hari) — DDL migrasi, bukan Go.
+- **L-2** Idempotensi: primer `resident_code`, fallback `nik`; promosi upsert `DO NOTHING` (tidak menimpa) → baris lama `skipped`.
+- **L-3** Kontrak `POST /api/admin/resident-import`: reuse validator WO-09; `?strict=1`→422; header `X-Import-*`.
+
 ## Definisi Selesai
 - `go build ./...` / `go vet ./...` / `go test ./...` lulus di container `app`; `gofmt -l` kosong.
 - Migrasi staging `up`/`down` terbukti jalan pada DB bersih.

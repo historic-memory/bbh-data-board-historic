@@ -4,7 +4,7 @@ description: "Perintah impor yang membaca CSV mentah (format Notion) atau templa
 status: draft
 created: "2026-10-27"
 updated: "2026-10-27"
-revision: 1
+revision: 2
 ---
 
 # WO-01: Importer CSV/Template → Canonical
@@ -38,17 +38,99 @@ canonical **dengan normalisasi eksplisit**, disertai **laporan** dan mode
 | I-5 | **Vertikal terkait** | Validasi **tidak** digandakan: gunakan hasil/aturan WO-09 (`resident-template/validate`); importer fokus pada **staging + idempotensi + promosi**. |
 | I-6 | **Kode kosong** | Bila kolom `resident_code` kosong: **tidak** auto-generate secara default (disimpan `NULL`), **tercatat di laporan**. Flag `--generate-missing` mengaktifkan generator (WO-10). (Menyelesaikan paruh importer dari AC-8 WO-10.) |
 
+## Keputusan Terkunci — Review Manager (2026-10-27)
+
+Tiga hal berikut **dikunci** sebelum eksekusi (menghindari bolak-balik). Semua
+bernilai final kecuali dibuka ulang lewat revisi WO.
+
+### L-1 — Tabel staging (DDL → migrasi plugin `resident`, AC-9)
+Nama & skema (Go **tidak** membuat tabel; DDL hanya di
+`plugins/resident/migrations/postgres/`):
+
+```
+resident_import_batch                     -- header per-upload
+  id              uuid PK (uuidv7)
+  source_file     text          -- nama file asli
+  source_hash     text          -- sha256 isi file (audit + dedup batch)
+  mode            text          -- raw | template
+  template_version int          -- dari file (mode template), NULL bila raw
+  branch_key      text          -- dari ?branch / INSTANCE_KEY
+  total_rows      int
+  valid_rows      int
+  rejected_rows   int
+  imported_rows   int
+  skipped_rows    int
+  dry_run         bool
+  created_by      text          -- dari claims
+  created_at      timestamptz
+
+resident_import_row                       -- detail per-baris
+  id              uuid PK (uuidv7)
+  batch_id        uuid FK → resident_import_batch(id) ON DELETE CASCADE
+  row_no          int           -- nomor baris di sumber
+  raw_payload     jsonb         -- baris mentah (audit)
+  norm_payload    jsonb         -- setelah normalisasi
+  status          text          -- pending | valid | invalid | imported | skipped
+  reason          text          -- alasan bila invalid/skipped
+  resident_id     uuid NULL     -- FK ke residents bila berhasil dipromosikan
+  created_at      timestamptz
+
+-- index: (batch_id, status), unique (batch_id, row_no)
+```
+
+**TTL / pembersihan:** retensi default **30 hari**. Purge batch `created_at <
+now() - 30d` via flag `?purge_after=30d` (opsional) atau chore terjadwal. Batch
+`dry_run` boleh langsung dibersihkan setelah laporan dibuat (opsional).
+→ Memenuhi **AC-9** (tidak ada DDL di Go) & **AC-13** (staging + idempotensi).
+
+### L-2 — Kunci idempotensi (menang–kalah) & promosi
+- **Primer = `resident_code`** (bila terisi). **`nik` hanya dipakai bila
+  `resident_code` kosong** (fallback, sesuai I-3).
+- Bila **keduanya ada** → yang menang **`resident_code`**; `nik` diabaikan untuk
+  keperluan pencocokan.
+- **Promosi = upsert `DO NOTHING`** — **tidak menimpa** data existing. Baris
+  yang sudah ada → status `skipped`, dicatat di laporan (`skipped_rows` + alasan
+  "already exists").
+- Impor ulang sumber sama → `imported_rows` tambahan **0**, semua `skipped`.
+  → Memenuhi **AC-8** & **AC-13**.
+
+### L-3 — Kontrak respons `POST /api/admin/resident-import` (samakan WO-09)
+- **Reuse validator WO-09** (`resident-template/validate`): aturan validasi
+  **tidak diduplikasi** (sesuai I-5).
+- Status HTTP & header sejajar pola WO-09:
+
+```
+POST /api/admin/resident-import
+  ?format=raw|template|auto
+  ?branch=KEY
+  ?dry_run=1
+  ?on_error=skip|abort
+  ?generate_missing=1
+  ?strict=1                 # ada baris invalid → HTTP 422 (default: 200 + laporan)
+
+Respons  : JSON laporan (ringkasan + baris ditolak) + opsi unduh report.json/md
+Header   : X-Import-Total / X-Import-Valid / X-Import-Rejected
+           X-Import-Imported / X-Import-Skipped / X-Import-Batch-Id
+HTTP     : 200 (ok / ada reject tapi non-strict)
+           422 (strict=1 & ada baris invalid)
+           400 (file/template_version/mode tidak valid)
+           401/403 (authz — permission `resident.write`)
+```
+→ Memenuhi **AC-4**, **AC-11**, **AC-12** (kontrak konsisten dengan WO-09).
+
 ## Cakupan
 
-Endpoint (bentuk final diputuskan saat eksekusi):
+Endpoint final (kontrak **dikunci di L-3**):
 ```
 POST /api/admin/resident-import          (multipart file + ?format=raw|template|auto)
   ?branch=KEY            # default INSTANCE_KEY
   ?dry_run=1             # tidak menulis DB, hanya laporan
   ?on_error=skip|abort   # default skip
   ?generate_missing=1    # aktifkan generator resident_code (WO-10)
+  ?strict=1              # ada baris invalid → 422
 ```
-Respons: JSON laporan (ringkasan + baris ditolak) + opsi unduh `report.json`/`report.md`.
+Respons: JSON laporan (ringkasan + baris ditolak) + header `X-Import-*` + opsi
+unduh `report.json`/`report.md`.
 
 ### Dua mode format (P-14)
 | Mode | Sumber | Perlakuan |

@@ -110,4 +110,6 @@ Artefak:
 
 **Penyimpangan sadar (dicatat):** PK memakai `TEXT` UUIDv7 (app-generated) — **bukan** literal `UUID` di draft WO — agar konsisten dengan plugin `auth` (`TEXT PRIMARY KEY`, tanpa `gen_random_uuid()`/ekstensi). `changed_by` juga `TEXT` (menyamai `admins.id`).
 
+**ID = UUIDv7 app-generated (DIKUNCI).** Semua `id`/`*_id` di-generate di Go via `internal/uuid.NewString()` (`model.NewID()`, `plugins/resident/model/id.go`); tabel **tanpa** `DEFAULT`/`gen_random_uuid()`. Alasan: Postgres 16 tidak punya `uuidv7()`, dan `gen_random_uuid()` = UUIDv4. Perbaikan test yang sebelumnya memakai `gen_random_uuid()` → commit `0cec374`.
+
 **D-1/D-8/D-10 yang dipakai:** `NOT NULL` pada `residents.full_name/gender/birth_date/branch_key` (D-1); `resident_code UNIQUE` dgn `NULL` (D-8); `nik`/`bpjs_no` plaintext tanpa enkripsi (D-10).

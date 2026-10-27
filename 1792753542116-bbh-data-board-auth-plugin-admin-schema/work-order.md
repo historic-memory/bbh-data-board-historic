@@ -1,7 +1,7 @@
 ---
 title: WO-01 — Auth Plugin (Admin & Member, JWT API + CLI)
 description: Implementasi plugin auth — migration UUIDv7, model Go, HTTP API JWT, middleware guard, dan CLI management admin/member, dipecah menjadi checkpoint sebagai goal.
-status: draft
+status: complete
 created: "2026-10-23"
 updated: "2026-10-23"
 tags:
@@ -191,6 +191,40 @@ docker compose exec app bin/console auth delete-admin --id <uuid>
 
 **Bukti:** tabel hasil AC PASS/FAIL + transkrip ringkas alur end-to-end.
 
+### CP-2 — Migration UUIDv7 untuk `admins` & `members` ✅ PASS (2026-10-23)
+- Migration pair dibuat via `docker compose exec app go run ./cmd/console migrate make --plugin auth create_auth_tables`.
+- File final: `plugins/auth/migrations/postgres/2026_10_23_113516_create_auth_tables.{up,down}.sql`; up schema `admins` + `members` memiliki `id TEXT PRIMARY KEY` tanpa default, unique email, flags, timestamps, soft-delete dan index `deleted_at`; down menghapus `members` lalu `admins`.
+- Scaffold migration kosong `2026_10_23_113116_init` sempat ter-apply sebelum migration final karena path ownership; rollback no-op dilakukan dan bookkeeping yatim dibersihkan sebelum testing final. Final migration hanya menyisakan version 1, current=1, dirty=false, pending=0.
+- `migrate up --plugin auth` → sukses; `psql \d admins` dan `\d members` mengonfirmasi skema tepat.
+- `migrate down --plugin auth` → `rolled back version 1 -> current=0`; `migrate up` ulang sukses.
+
+### CP-3 — Model, Repository, UUIDv7, bcrypt ✅ PASS (2026-10-23)
+- Models di `plugins/auth/model/`: `Admin`/`Member`, `TableName()`, `BeforeCreate` UUIDv7; `gorm.DeletedAt`, `password_hash` JSON-hidden.
+- Password utility memakai bcrypt default cost, minimal 8 karakter; unit tests `TestAdminBeforeCreateGeneratesUUIDv7`, `TestMemberBeforeCreateGeneratesUUIDv7`, `TestBeforeCreateKeepsExistingID`, `TestHashPasswordProducesBcryptHash`, `TestHashPasswordRejectsShortPassword`, `TestValidatePassword`, `TestAdminSetPassword`, `TestMemberSetPassword` lulus.
+- `docker compose exec app go test ./plugins/auth/... ./internal/...` → `ok`.
+
+### CP-4 — HTTP API login/logout/me/change-password ✅ PASS (2026-10-23)
+- Endpoint admin/member tersedia sesuai SPEC. Login root/member valid 200; password salah 401; profile 200; no token 401; tipe token silang 401; logout 200; password change 200 tanpa password lama, password lama 401 dan password baru 200.
+- Profil dan CRUD DTO eksplisit; tidak mengandung hash. Service menggunakan GORM logger silent karena verifikasi awal menemukan SQL logger mencetak `password_hash`; setelah perbaikan command membuat akun tanpa hash di stdout/log.
+
+### CP-5 — Middleware Guard & Otorisasi Root ✅ PASS (2026-10-23)
+- Bearer JWT guard memvalidasi subject dan tipe, kemudian cek record/active di DB; guard root membaca `is_root` dari DB per request.
+- Bukti: no-token `/api/admin/me` 401; non-root `/api/admins` 403; non-root `/api/members` 200; root `/api/admins` 200. Promosi root lalu akses 200, demosi lalu token sama mendapat 403 segera.
+
+### CP-6 — HTTP API CRUD Admin & Member ✅ PASS (2026-10-23)
+- CRUD collection/item admin & member terpasang (GET/POST/PUT/PATCH/DELETE); admin/root authorization sesuai SPEC. Soft-delete menghalangi login.
+- Smoke test: create admin/member 201, duplicate 409, invalid 400, missing id 404, list/detail/update/delete lulus; password hash tidak muncul di response.
+- Swagger regenerated (`docs/swagger/{docs.go,swagger.json,swagger.yaml}`): 12 API paths login/logout/me/password/CRUD terdaftar, BearerAuth didefinisikan; `/doc.json` berisi routes dan `password_hash` tidak ada.
+
+### CP-7 — CLI Management ✅ PASS (2026-10-23)
+- Commands: create/update/delete/change-password admin serta create/update/delete/change-password-member. Password via prompt no-echo jika flag kosong; create root pertama teruji. Semua command tidak mencetak plaintext/hash.
+- create/update/active/delete/password admin dan member diuji; akun inactive/soft-deleted login 401; password lama 401, password baru 200. ID tidak ditemukan menghasilkan exit code non-zero (1).
+
+### CP-8 — E2E, Docs, Handover ✅ PASS (2026-10-23)
+- Alur root CLI create → login → `/api/admin/me` → CRUD → change password dan login baru diverifikasi; role matrix & skenario member juga diuji.
+- Stack `docker compose down && docker compose up -d`; migration `current=1 dirty=false pending=0`; data bertahan (3 admins, 3 members pada saat cek). Login root setelah restart 200.
+- `docker compose exec app go build ./...` sukses; `docker compose exec app go test ./...` seluruh test lulus.
+
 ## Pemetaan Checkpoint ke SPEC
 | SPEC AC | Checkpoint |
 |---|---|
@@ -214,10 +248,21 @@ docker compose exec app bin/console auth delete-admin --id <uuid>
 | Migration discovery tidak menemukan `auth` | Pastikan plugin terdaftar di console sebelum `migrate list/up` |
 
 ## Definition of Done
-- [ ] CP-1 sampai CP-8 semuanya PASS dengan bukti yang tercatat.
-- [ ] Semua SPEC AC (AC-1..AC-17) terverifikasi atau pengecualian disetujui & dicatat.
-- [ ] Tidak ada `AutoMigrate` runtime; schema murni dari migration SQL.
-- [ ] `id` selalu UUID v7 aplikasi (`TEXT` PK), tanpa default DB.
-- [ ] `password_hash` tidak pernah keluar via API, CLI, atau log.
-- [ ] `change-password` berjalan tanpa meminta password lama.
-- [ ] Tidak ada perubahan di luar scope plugin `auth`, registrasi `cmd/`, dan migration plugin.
+- [x] CP-1 sampai CP-8 semuanya PASS dengan bukti yang tercatat.
+- [x] Semua SPEC AC (AC-1..AC-17) terverifikasi atau pengecualian disetujui & dicatat.
+- [x] Tidak ada `AutoMigrate` runtime; schema murni dari migration SQL.
+- [x] `id` selalu UUID v7 aplikasi (`TEXT` PK), tanpa default DB.
+- [x] `password_hash` tidak pernah keluar via API, CLI, atau log.
+- [x] `change-password` berjalan tanpa meminta password lama.
+- [x] Tidak ada perubahan di luar scope plugin `auth`, registrasi `cmd/`, dan migration plugin.
+
+## Progres & Bukti Verifikasi
+
+### CP-1 — Scaffold Plugin & Registrasi ✅ PASS (2026-10-23)
+- Scaffold dibuat via `docker compose exec app go run ./cmd/console plugin new --id auth --template crud` → `plugins.auth.scaffold.created at plugins/auth`.
+- File scaffold: `plugins/auth/{plugin.go,events.go,handlers/,services/,migrations/postgres/2026_10_23_113116_init.{up,down}.sql}`.
+- Registrasi: `cmd/server/main.go` → `plugins.RegisterPlugins([]plugins.Plugin{authplugin.New()})` di hook `RegisterPlugins`; `cmd/console/main.go` → `console.RegisterAdditionalPlugins([]plugins.Plugin{authplugin.New()})`.
+- Scaffold `ConsoleCommands` diganti dari command `auth:hello` menjadi **command group `auth`** (subcommand isi di CP-7) agar memenuhi kriteria group command.
+- `docker compose exec app go build ./...` → sukses (tanpa error).
+- `docker compose exec app go run ./cmd/console auth --help` → tampil group `Manage auth plugin admins & members`.
+- Catatan teknis: file hasil scaffold dibuat container sebagai root — di-`chown 1000:1000` agar dapat diedit dari host.

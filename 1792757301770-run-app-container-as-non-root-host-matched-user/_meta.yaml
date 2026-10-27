@@ -1,0 +1,13 @@
+id: "1792757301770"
+title: Run app container as non-root host-matched user
+created: "2026-10-23"
+files:
+    - id: 01a168ad-cbdb-7c12-919f-8d0dbd54df6d
+      path: SPEC.md
+      type: spec
+      status: complete
+    - id: 01a168ad-cbdc-7e89-8465-526bc8c31c54
+      path: work-order.md
+      type: file
+      status: complete
+assets: []

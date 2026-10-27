@@ -9,5 +9,5 @@ files:
     - id: 01a16870-5ebe-7251-bf8a-33bda940e01f
       path: work-order.md
       type: file
-      status: draft
+      status: complete
 assets: []

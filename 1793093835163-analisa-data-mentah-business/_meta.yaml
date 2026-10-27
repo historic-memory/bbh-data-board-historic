@@ -6,4 +6,6 @@ files:
       path: notes.md
       type: file
       status: progress
-assets: []
+assets:
+    - path: Data Bayi Yayasan 1b590f1a8a518093ac5bd1d366590b33_all.csv
+      type: csv

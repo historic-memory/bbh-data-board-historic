@@ -20,7 +20,35 @@ revision: 2
 | 1 | **WO-05 dikerjakan SEKARANG** dengan urutan **T-1 → T-2 → T-4 → T-3** (biaya & risiko naik bertahap) |
 | 2 | **T-4: FAIL-CLOSED** — `SSO_SHARED_SECRET` sama dengan `APP_KEY` → **tolak start**. Bukan sekadar peringatan. |
 | 3 | **Diizinkan menambah `SSO_SHARED_SECRET` baru ke `.env`** (gitignored) dengan nilai terpisah: `openssl rand -base64 32` |
-| 4 | **Drop `bbh_branch`** (data uji). Buat ulang murah bila perlu demo lagi. |
+| 4 | **Drop `bbh_branch`** (data uji) — **tetapi SETELAH T-3 selesai**, karena T-3 membutuhkan instance cabang hidup |
+| 5 | **AC-13 WAJIB DIBUKTIKAN lewat UI** (bukan ditulis "belum terbukti"). Ini satu-satunya bagian federasi yang sisi penggunanya belum pernah diuji |
+| 6 | **Drop juga `bbh_cbg_jktbaru` dan `bbh_cbg_smg`** — sisa topic multi-DB yang sudah di-destroy; tidak dipakai fitur federasi |
+
+### Yang DIMAKSUD dan TIDAK dimaksud WO-05
+
+| ✅ Termasuk WO-05 | ❌ Bukan WO-05 |
+|---|---|
+| Regenerasi swagger | Menguji ulang seluruh alur SSO |
+| Lengkapi `.env.example` | Memperbaiki bug fungsional |
+| Guard kunci `SSO_SHARED_SECRET` | Menambah fitur federasi |
+| **Bukti AC-13 di UI** (satu-satunya uji nyata) | Uji beban / keamanan menyeluruh |
+
+**T-1, T-2, T-4 = dokumentasi & kode — tidak butuh SSO menyala.** Hanya **T-3** yang butuh instance cabang + browser.
+
+### Yang SUDAH terbukti dari uji Dev Agent (tidak perlu diulang)
+
+403 pending · approve→200 · cabut grup berlaku seketika · `aud` salah→403 · pusat mati cabang tetap 200 · main token ditolak cabang · ganti email tidak memutus akses · akun nonaktif→403 · anti-loop 409 · token di log 0.
+
+**Yang belum:** AC-13 — `clearPortalSession()` ada di `client.ts:91` tetapi belum pernah **dijalankan**; tidak ada bukti `localStorage` benar-benar berubah. Tidak bisa dibuktikan lewat `curl`/unit test Go.
+
+### Urutan DB (penting)
+
+```
+T-3 (uji AC-13 lewat UI) ── butuh ──► instance cabang ── butuh ──► bbh_branch
+        └── setelah T-3 selesai ──► DROP bbh_branch, bbh_cbg_jktbaru, bbh_cbg_smg
+```
+
+**Jangan drop lebih dulu** — T-3 akan terhalang.
 
 ### Koreksi catatan verifikasi
 

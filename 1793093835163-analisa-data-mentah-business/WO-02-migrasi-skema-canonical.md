@@ -1,6 +1,6 @@
 ---
 title: "WO-02: Migrasi Skema Canonical — tabel data core + referensi"
-description: "Migrasi versioned untuk 9 tabel canonical (residents, mothers, birth_records, admissions, resident_status_history, facilities, facility_aliases, transfer_partners, resident_documents) + 5 tabel referensi (ref_religions, ref_blood_types, ref_delivery_methods, ref_attendant_types, ref_statuses) beserta seed nilai baku. Turunan §4 SPEC."
+description: "Migrasi versioned untuk 8 tabel canonical (residents, mothers, birth_records, admissions, resident_status_history, facilities, facility_aliases, resident_documents) + 5 tabel referensi (ref_religions, ref_blood_types, ref_delivery_methods, ref_attendant_types, ref_statuses) beserta seed nilai baku. Turunan §4 SPEC. Tidak ada tabel transfer_partners (D-6: tujuan transfer cukup di note)."
 status: draft
 created: "2026-10-27"
 updated: "2026-10-27"
@@ -47,13 +47,14 @@ plugins/resident/migrations/postgres/
   - INDEX: `(branch_key)`, `(full_name)`, `(birth_date)`
 - `birth_records` — `id UUID PK`, `resident_id UUID NOT NULL UNIQUE REFERENCES residents(id) ON DELETE CASCADE`, `birth_weight_gram INT`, `birth_length_cm INT`, `child_order INT`, `delivery_method_code TEXT REFERENCES ref_delivery_methods(code)`, `attendant_type_code TEXT REFERENCES ref_attendant_types(code)`, `facility_id UUID NULL REFERENCES facilities(id)`, `attendant_detail TEXT`
 - `admissions` — `id UUID PK`, `resident_id UUID NOT NULL REFERENCES residents(id) ON DELETE CASCADE`, `admitted_at DATE NOT NULL`, `exited_at DATE`, `note TEXT`; INDEX `(resident_id, admitted_at DESC)`
-- `resident_status_history` — `id UUID PK`, `resident_id UUID NOT NULL REFERENCES residents(id) ON DELETE CASCADE`, `status_code TEXT NOT NULL REFERENCES ref_statuses(code)`, `effective_at DATE NOT NULL`, `transfer_partner_id UUID NULL REFERENCES transfer_partners(id)`, `note TEXT`, `changed_by UUID NULL` (tanpa FK lintas-plugin; validasi di service), `created_at`; INDEX `(resident_id, effective_at DESC)`
+- `resident_status_history` — `id UUID PK`, `resident_id UUID NOT NULL REFERENCES residents(id) ON DELETE CASCADE`, `status_code TEXT NOT NULL REFERENCES ref_statuses(code)`, `effective_at DATE NOT NULL`, `note TEXT` (menampung tujuan transfer, mis. "transfer ke JCH" — D-6), `changed_by UUID NULL` (tanpa FK lintas-plugin; validasi di service), `created_at`; INDEX `(resident_id, effective_at DESC)`
 - `facilities` — `id UUID PK`, `branch_key TEXT`, `name TEXT NOT NULL UNIQUE`, `facility_type TEXT CHECK (facility_type IN ('hospital','clinic','midwife_practice','foundation','other'))`, `is_active BOOLEAN NOT NULL DEFAULT TRUE`
 - `facility_aliases` — `id UUID PK`, `facility_id UUID NOT NULL REFERENCES facilities(id) ON DELETE CASCADE`, `alias TEXT NOT NULL`; UNIQUE INDEX pada `LOWER(TRIM(alias))`
-- `transfer_partners` — `id UUID PK`, `code TEXT NOT NULL UNIQUE`, `name TEXT NOT NULL`, `is_active BOOLEAN NOT NULL DEFAULT TRUE`; seed `JCH`
 - `resident_documents` — `id UUID PK`, `resident_id UUID NOT NULL REFERENCES residents(id) ON DELETE CASCADE`, `doc_type TEXT NOT NULL CHECK (doc_type IN ('drive_folder','media','other'))`, `url TEXT NOT NULL`, `label TEXT`; INDEX `(resident_id, doc_type)`
 
-> **Urutan pembuatan tabel** wajib memperhitungkan FK: `ref_*` & `transfer_partners` & `facilities` → `mothers` → `residents` → `birth_records`/`admissions`/`resident_status_history`/`resident_documents` → `facility_aliases`.
+> **TIDAK ADA** tabel `transfer_partners` (D-6): tujuan transfer cukup di `resident_status_history.note`.
+
+> **Urutan pembuatan tabel** wajib memperhitungkan FK: `ref_*` & `facilities` → `mothers` → `residents` → `birth_records`/`admissions`/`resident_status_history`/`resident_documents` → `facility_aliases`.
 
 ## Keputusan yang Sudah Dikunci
 | # | Keputusan | Implikasi migrasi |
@@ -77,7 +78,7 @@ plugins/resident/migrations/postgres/
 | # | AC |
 |---|---|
 | AC-1 | 2 pasang migrasi (up/down) ada dan idempoten pada DB bersih. |
-| AC-2 | 9 tabel canonical + 5 tabel referensi terbentuk. |
+| AC-2 | 8 tabel canonical + 5 tabel referensi terbentuk. |
 | AC-3 | Semua tabel referensi ter-seed nilai baku sesuai daftar di atas. |
 | AC-4 | FK terpasang sesuai §4/§8 SPEC; `birth_records.resident_id` UNIQUE (1:1). |
 | AC-5 | `resident_code` & `nik` UNIQUE (nik partial). |

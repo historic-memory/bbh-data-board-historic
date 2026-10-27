@@ -35,7 +35,7 @@ Default: file umpan-balik ditulis di sebelah berkas sumber dengan suffix `_hasil
 | Kode RM tidak sesuai pola | `resident_code: harus berformat BBH-<YY>-<P\|L>-<NNN>` |
 | `resident_code` duplikat | `resident_code: duplikat dengan baris 12` |
 | `template_version` tidak dikenal | `template_version: 0 ditemukan, versi yang didukung: 1` (level file) |
-| Status transfer tanpa tujuan | `status: TRANSFER wajib mengisi lembaga tujuan` |
+| Status TRANSFER tanpa catatan | `status: TRANSFER sebaiknya disertai keterangan tujuan (mis. "transfer ke JCH")` — **peringatan**, bukan penolakan |
 
 ### 2. Format file umpan-balik
 - Menyalin **seluruh baris sumber** dan menambahkan dua kolom di akhir:
@@ -67,7 +67,7 @@ Default: file umpan-balik ditulis di sebelah berkas sumber dengan suffix `_hasil
 | AC-1 | `resident template validate` menghasilkan file umpan-balik. |
 | AC-2 | File memuat kolom `hasil_validasi` & `alasan_ditolak` per baris. |
 | AC-3 | Baris invalid **tetap ada** di file umpan-balik. |
-| AC-4 | Minimal 6 kategori kesalahan terdeteksi dengan pesan spesifik (bukan generik). |
+| AC-4 | Minimal 6 kategori kesalahan terdeteksi dengan pesan spesifik (bukan generik); peringatan (mis. TRANSFER tanpa catatan) dibedakan dari penolakan. |
 | AC-5 | `total = valid + ditolak` terbukti. |
 | AC-6 | `template_version` tidak dikenal → ditolak di level file. |
 | AC-7 | Aturan validasi dibaca dari `schema/fields.yaml`, bukan hard-code. |

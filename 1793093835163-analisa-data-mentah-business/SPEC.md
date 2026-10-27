@@ -52,7 +52,6 @@ erDiagram
     RESIDENTS ||--o{ RESIDENT_STATUS_HISTORY : "riwayat status"
     RESIDENTS ||--o{ RESIDENT_DOCUMENTS : "dokumen"
     FACILITIES ||--o{ BIRTH_RECORDS : "fasilitas persalinan"
-    TRANSFER_PARTNERS ||--o{ RESIDENT_STATUS_HISTORY : "tujuan transfer"
     REF_RELIGIONS ||--o{ RESIDENTS : ""
     REF_BLOOD_TYPES ||--o{ RESIDENTS : ""
     REF_DELIVERY_METHODS ||--o{ BIRTH_RECORDS : ""
@@ -111,7 +110,6 @@ erDiagram
         uuid resident_id FK
         string status_code FK
         date effective_at
-        uuid transfer_partner_id FK
         string note
         uuid changed_by FK
         timestamptz created_at
@@ -121,12 +119,6 @@ erDiagram
         string branch_key FK
         string name UK
         string facility_type
-        boolean is_active
-    }
-    TRANSFER_PARTNERS {
-        uuid id PK
-        string code UK
-        string name
         boolean is_active
     }
     RESIDENT_DOCUMENTS {
@@ -246,12 +238,12 @@ Cabang **tidak** punya tabel sendiri. Identitas cabang memakai mekanisme yang su
 | `resident_id` | UUID | no | FK → `residents` |
 | `status_code` | TEXT | no | FK → `ref_statuses` |
 | `effective_at` | DATE | no | Tanggal status berlaku |
-| `transfer_partner_id` | UUID | yes | FK → `transfer_partners` (wajib bila status = transfer) |
-| `note` | TEXT | yes | Catatan |
+| `note` | TEXT | yes | Catatan bebas (mis. tujuan transfer, "transfer ke JCH") |
 | `changed_by` | UUID | yes | FK → `admins` (audit) |
 | `created_at` | TIMESTAMPTZ | no | Waktu pencatatan |
 
 > Status **terkini** = baris dengan `effective_at` terbesar per resident. Lihat view §7.3.
+> **Disederhanakan (D-6):** tujuan transfer (mis. "JCH") **tidak** jadi tabel tersendiri — cukup disimpan di `note`. Bila kelak perlu lembaga/entitas transfer, tambah tabel di WO terpisah.
 
 ### 4.7 `facilities` — fasilitas kesehatan/persalinan
 
@@ -265,18 +257,7 @@ Cabang **tidak** punya tabel sendiri. Identitas cabang memakai mekanisme yang su
 
 > Tabel ini menjawab temuan: `RS Premagana` muncul 3 penulisan (`RS. Premagana`, `Rumah Sakit Umum Premagana`, `RS Premagana`) → **satu baris baku + alias** (lihat §6).
 
-### 4.8 `transfer_partners` — mitra/lembaga tujuan transfer
-
-| Kolom | Tipe | Null | Keterangan |
-|---|---|---|---|
-| `id` | UUID (v7) | no | PK |
-| `code` | TEXT | no | **UNIQUE**, mis. `JCH` |
-| `name` | TEXT | no | Nama lembaga |
-| `is_active` | BOOLEAN | no | default `true` |
-
-> Menampung nilai `Transfer ke JCH`. **Makna "JCH" masih perlu konfirmasi** (lihat §10).
-
-### 4.9 `facility_aliases` — alias nama fasilitas
+### 4.8 `facility_aliases` — alias nama fasilitas
 
 | Kolom | Tipe | Null | Keterangan |
 |---|---|---|---|
@@ -284,7 +265,7 @@ Cabang **tidak** punya tabel sendiri. Identitas cabang memakai mekanisme yang su
 | `facility_id` | UUID | no | FK → `facilities` |
 | `alias` | TEXT | no | **UNIQUE** (case/space-insensitive), mis. `RS. Premagana` |
 
-### 4.10 `resident_documents` — dokumen & media
+### 4.9 `resident_documents` — dokumen & media
 
 | Kolom | Tipe | Null | Keterangan |
 |---|---|---|---|
@@ -296,7 +277,7 @@ Cabang **tidak** punya tabel sendiri. Identitas cabang memakai mekanisme yang su
 
 > Dipisah dari `residents` karena relasi 1—N. **Keputusan "tetap Drive atau pindah storage internal" masih terbuka** (§10).
 
-### 4.11 Tabel referensi (nilai baku)
+### 4.10 Tabel referensi (nilai baku)
 
 | Tabel | PK | Isi awal |
 |---|---|---|
@@ -353,7 +334,7 @@ Temuan sumber: 31/50 terisi, semua unik. `P` sekuens 001–019 (**gap 010**), `L
 | Panjang Badan (cm) | `birth_records.birth_length_cm` | regex angka; `"-"` → NULL |
 | Persalinan | `birth_records.delivery_method_code` | padankan `ref_delivery_methods` |
 | Place | **dibuang** | 100% kosong, duplikat `Tempat Lahir` |
-| Status di yayasan | `resident_status_history.status_code` | padankan `ref_statuses` + isi `transfer_partner_id` bila transfer |
+| Status di yayasan | `resident_status_history.status_code` | padankan `ref_statuses`; tujuan transfer (mis. "JCH") disimpan di `note` (D-6) |
 | Tanggal Lahir | `residents.birth_date` | parse `"19 November 2021"` → DATE |
 | Tanggal Masuk Yayasan | `admissions.admitted_at` | parse `"28/02/2022"` (DD/MM/YYYY) → DATE |
 | Tempat Lahir | `residents.birth_place` | `trim()` |
@@ -421,7 +402,7 @@ Gabungan `residents` + `birth_records` + `mothers` + status terkini + cabang —
 | **D-3** | Enum → tabel referensi atau enum kode | Tabel referensi / enum statis | Usulan: tabel referensi (cabang bisa menambah). **Menunggu** |
 | **D-4** | Wali selain ibu | `mothers` saja / tambah `guardians` + `relation` | **Menunggu** |
 | **D-5** | `SpOG` / nama bidan | `attendant_detail` di `birth_records` / entitas tenaga medis | Usulan: `attendant_detail`. **Menunggu** |
-| **D-6** | "JCH" | Tabel `transfer_partners` / enum status saja | **Arti belum diketahui.** Bukti: kolom `Status di yayasan` bernilai `Transfer ke JCH` (9/50 baris). Usulan: **`transfer_partners`** (code `JCH`, `name` diisi menyusul) — bukan enum, agar lembaga lain bisa ditambah. **Menunggu arti JCH** |
+| **D-6** | "JCH" / tujuan transfer | Tabel transfer / catatan bebas | ✅ **DIPUTUSKAN: cukup `note` bebas.** Tidak ada tabel `transfer_partners`. Status `TRANSFER` + `note` (mis. "transfer ke JCH"). Bila kelak perlu entitas lembaga, tambah di WO terpisah. |
 | **D-7** | Nama field | Inggris / Indonesia | ✅ **DIPUTUSKAN: nama field Bahasa Inggris** (DB/API). Nilai enum tetap istilah domain (mis. `DIRAWAT`). Header template Excel tetap berbahasa Indonesia namun tetap field canonical → dipetakan di `schema/fields.yaml` |
 | **D-8** | Unik `resident_code` | Global / per cabang | ✅ **DIPUTUSKAN: UNIQUE GLOBAL.** Kosong -> `NULL` (bukan string kosong). Butuh **generator kode** (WO-10). Siapkan ruang prefix cabang (`BBH-<CAB>-<YY>-<P\|L>-<NNN>`) untuk masa depan. |
 | **D-9** | Aset dokumen | Tetap Google Drive / pindah `internal/storage` | ✅ **DIPUTUSKAN: link (Google Drive)** disimpan di `resident_documents.url` |
@@ -438,7 +419,7 @@ Gabungan `residents` + `birth_records` + `mothers` + status terkini + cabang —
 ## 11. Pertanyaan Data (butuh jawaban user)
 
 1. CSV ini representasi **cabang mana**? 5 cabang tersebar di mana?
-2. **"JCH"** kepanjangan/lembaga apa? Bedanya dengan "Dirawat di yayasan"?
+2. **"JCH"** itu apa? _(diperlakukan sebagai catatan bebas per D-6 — tidak menghalangi implementasi)_
 3. Apakah ada bayi yang **keluar lalu masuk kembali**? (validasi perlunya `admissions` sebagai riwayat)
 4. Apakah bayi bisa **pindah cabang**? (menentukan apakah `branch_id` di resident perlu riwayat)
 5. Apakah ada **data cabang lain** (format berbeda) untuk membuktikan variasi enum?
@@ -485,7 +466,7 @@ plugins/resident/
 └── services/service.go       # logika + validasi (branch_key, enum, kode RM)
 ```
 
-**Di dalam plugin `resident`:** `residents`, `mothers`, `birth_records`, `admissions`, `resident_status_history`, `facilities`, `facility_aliases`, `transfer_partners`, `resident_documents`, dan semua `ref_*`.
+**Di dalam plugin `resident`:** `residents`, `mothers`, `birth_records`, `admissions`, `resident_status_history`, `facilities`, `facility_aliases`, `resident_documents`, dan semua `ref_*`.
 
 **Di luar plugin (dependency):**
 | Komponen | Pemilik | Catatan |

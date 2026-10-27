@@ -34,6 +34,14 @@ files:
       path: WO-07-swagger-docs.md
       type: file
       status: draft
+    - id: 01a17d0c-d56a-7f45-b88c-b12239b49bc5
+      path: WO-08-template-generator.md
+      type: file
+      status: draft
+    - id: 01a17d0c-d56a-71f5-bb9e-16b8d0b045a1
+      path: WO-09-validasi-umpan-balik.md
+      type: file
+      status: draft
     - id: 01a17cb8-d9ac-7864-b376-950ff7458b27
       path: notes.md
       type: file

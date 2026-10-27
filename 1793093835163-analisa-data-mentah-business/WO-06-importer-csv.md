@@ -20,8 +20,15 @@ Membaca CSV ekspor Notion dan memetakannya ke tabel canonical **dengan normalisa
 
 Perintah baru (bisa sebagai subcommand CLI atau service terpisah — **putuskan di awal & catat**):
 ```
-resident import csv <path> [--branch KEY] [--dry-run] [--report PATH] [--on-error skip|abort]
+resident import csv   <path> [--branch KEY] [--dry-run] [--report PATH] [--on-error skip|abort]
+resident import xlsx  <path> [--branch KEY] [--dry-run] [--report PATH] [--on-error skip|abort]
 ```
+
+### Dua mode format (P-14)
+| Mode | Sumber | Perlakuan |
+|---|---|---|
+| `--format raw` (default untuk `csv`) | Ekspor Notion / data mentah | Normalisasi penuh (§6.1/§6.2 di bawah) |
+| `--format template` (default untuk `xlsx`) | Template BBH hasil WO-08 | Sudah canonical: validasi enum/wajib/langgal **tanpa transformasi berat**; **wajib cek `template_version`** |
 
 ### Normalisasi wajib (implementasi §6.1/§6.2 SPEC)
 | Sumber | Transformasi |
@@ -76,3 +83,5 @@ resident import csv <path> [--branch KEY] [--dry-run] [--report PATH] [--on-erro
 | AC-8 | Impor **idempoten**. |
 | AC-9 | Tidak ada DDL di kode Go. |
 | AC-10 | `go build`/`vet`/`test`/`gofmt` lulus; ada unit test untuk normalizer. |
+| AC-11 | Mode `--format template` membaca XLSX template (WO-08), memvalidasi `template_version`, dan **tidak** menerapkan transformasi raw. |
+| AC-12 | `template_version` tak dikenal → impor ditolak dengan pesan jelas. |

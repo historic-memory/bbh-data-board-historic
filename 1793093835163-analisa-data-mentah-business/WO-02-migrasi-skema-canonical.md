@@ -17,6 +17,12 @@ Membuat seluruh tabel canonical + referensi lewat **migrasi versioned** (up & do
 
 ## Cakupan Migrasi
 
+### 0. Definisi field (sumber kebenaran, P-13)
+
+Buat `plugins/resident/schema/fields.yaml` — daftar field canonical (nama, tipe, wajib, enum, label, kolom sumber Notion bila ada). Berkas ini menjadi acuan **migrasi, template (WO-08), dropdown referensi, dan validator (WO-06/09)**. Migrasi yang ditulis harus konsisten dengan berkas ini.
+
+> Bila praktis, migrasi boleh di-*generate* dari `fields.yaml`; bila tidak, minimal ada uji/lint yang memastikan migrasi ⊇ daftar field di `fields.yaml`.
+
 Pola file (meniru `plugins/endpoint/migrations/postgres/`):
 ```
 plugins/resident/migrations/postgres/
@@ -59,6 +65,7 @@ plugins/resident/migrations/postgres/
 > Bila D-10 belum diputuskan dan user ingin **fail-safe**, WO ini boleh **menunda** kolom `residents.nik`, `residents.bpjs_no`, `mothers.nik` ke WO terpisah. Catat pilihan yang diambil.
 
 ## Bukti yang Harus Dilaporkan
+- `plugins/resident/schema/fields.yaml` ada; jumlah field tercatat.
 - `./bin/console migrate up --plugin resident` pada DB bersih → semua tabel ada (`\dt` atau `information_schema`).
 - `./bin/console migrate down --plugin resident` → semua tabel hilang.
 - `migrate list` menampilkan 2 versi terpasang.
@@ -80,3 +87,4 @@ plugins/resident/migrations/postgres/
 | AC-8 | `migrate down --plugin resident` membersihkan **semua** tabel yang dibuat (urutan aman FK). |
 | AC-9 | `go build ./...`, `go vet`, `go test`, `gofmt -l` lulus. |
 | AC-10 | Keputusan D-1/D-8/D-10 yang dipakai dicatat di laporan WO (atau eksplisit "ditunda"). |
+| AC-11 | `plugins/resident/schema/fields.yaml` dibuat dan konsisten dengan kolom migrasi (ada uji/lint bila tidak di-generate). |

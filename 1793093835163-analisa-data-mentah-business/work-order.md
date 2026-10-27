@@ -19,6 +19,10 @@ revision: 1
 | D-11 | Identitas cabang memakai `endpoints.key` — **tidak ada tabel `branches`** |
 | D-12 | Tabel referensi `ref_*` tinggal di dalam plugin `resident` dulu |
 | D-13 | Nama plugin: **`plugins/resident`** |
+| D-14 | Template impor: **XLSX utama + CSV sekunder** |
+| D-15 | Template v1: **1 baris = 1 bayi**, dokumen 1 kolom |
+| D-16 | Template **di-generate dari definisi field**, bukan statis |
+| D-17 | **`template_version`** tercatat & divalidasi saat impor |
 
 ## Keputusan yang Masih Terbuka (tidak menghalangi WO-01..WO-02)
 | # | Pertanyaan | Dampak bila belum diputuskan |
@@ -38,18 +42,21 @@ revision: 1
 5. **Lingkungan build kanonik = container `app`** (`/usr/local/go` + `/go/bin/swag`).
 6. Setiap WO wajib lulus `go build ./...`, `go vet ./...`, `go test ./...`, `gofmt -l`.
 7. **Tidak ada push** ke remote.
+8. **Satu sumber kebenaran definisi field** (`plugins/resident/schema/fields.yaml`): migrasi, template, dropdown, validator, swagger mengacu ke sana (P-13).
 
 ## Daftar WO
 
 | # | File | Scope | Prasyarat | Status |
 |---|---|---|---|---|
 | 1 | `WO-01-plugin-skeleton.md` | Kerangka plugin `resident` + registrasi `server`/`console` + CLI/route stub + test kosong | — | draft |
-| 2 | `WO-02-migrasi-skema-canonical.md` | Migrasi tabel canonical (9 tabel) + 5 tabel referensi + seed nilai baku | WO-01 | draft |
+| 2 | `WO-02-migrasi-skema-canonical.md` | Migrasi tabel canonical (9 tabel) + 5 tabel referensi + seed nilai baku + `schema/fields.yaml` | WO-01 | draft |
 | 3 | `WO-03-permission-auth.md` | Migrasi plugin `auth`: seed permission `resident.read/write/delete` + pemetaan ke grup `root`/`admin`/`viewer` | WO-02 | draft |
 | 4 | `WO-04-api-admin-crud.md` | Model GORM + service (validasi `branch_key`, enum, kode RM) + admin API CRUD ber-guard permission | WO-03, D-1/D-8/D-10 | draft |
 | 5 | `WO-05-cli-resident.md` | CLI `resident list/show/add/update/status/documents` + validasi & output tabel | WO-04 | draft |
-| 6 | `WO-06-importer-csv.md` | Importer CSV Notion → canonical sesuai §6 SPEC + laporan validasi + dry-run | WO-04 | draft |
+| 6 | `WO-06-importer-csv.md` | Importer CSV Notion → canonical sesuai §6 SPEC + laporan validasi + dry-run; **dua mode** `--format raw|template` | WO-04 | draft |
 | 7 | `WO-07-swagger-docs.md` | Anotasi swagger, regenerasi `docs/swagger`, dokumentasi `.env.example` (`INSTANCE_KEY`) & README | WO-06 | draft |
+| 8 | `WO-08-template-generator.md` | Generator template XLSX + CSV dari `schema/fields.yaml`: sheet PETUNJUK/DATA/REFERENSI/CONTOH, dropdown enum, `template_version` | WO-02 | draft |
+| 9 | `WO-09-validasi-umpan-balik.md` | Validator template → file umpan-balik (XLSX/CSV) dengan kolom `hasil_validasi` + `alasan_ditolak` per baris | WO-08 | draft |
 
 ## Definisi Selesai (semua WO)
 - `go build ./...` / `go vet ./...` / `go test ./...` lulus di container `app`.
@@ -70,3 +77,5 @@ revision: 1
 | R-4 | `resident_code` bukan generator otomatis; 19/50 kosong di sumber | Impor **menerima** kode kosong sebagai `NULL` sementara? → butuh keputusan D-8; generator kode masuk WO terpisah |
 | R-5 | PII (NIK/BPJS) terlanjur tersimpan plaintext | Jangan implementasi kolom PII sebelum D-10 diputuskan, atau siapkan migrasi enkripsi |
 | R-6 | FK `changed_by` ke `admins` lintas-plugin | Tanpa FK constraint (validasi di service), atau FK bila urutan migrasi dijamin |
+| R-7 | Template & validator "drift" (beda definisi field) | **Satu sumber** `schema/fields.yaml` (P-13); template di-generate, bukan statis |
+| R-8 | Tim input pakai template versi lama | `template_version` divalidasi saat impor; versi tak dikenal → tolak dengan pesan jelas |

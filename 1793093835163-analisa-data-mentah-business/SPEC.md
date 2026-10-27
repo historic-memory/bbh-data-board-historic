@@ -37,6 +37,8 @@ revision: 1
 | P-10 | **Branch adalah dimensi** = `endpoint`/`INSTANCE_KEY`, **bukan tabel baru**. | Tidak ada tabel `branches`; `residents.branch_key` merujuk `endpoints.key`. |
 | P-11 | **Semua data core dibungkus satu plugin `resident`.** | Fitur baru wajib plugin (`plugins/<id>/`), bukan `internal/`. |
 | P-12 | **Tabel referensi `ref_*` tinggal di dalam plugin `resident` dulu.** | Pindah ke plugin `reference` hanya bila muncul konsumen kedua. |
+| P-13 | **Satu sumber kebenaran definisi field.** Migrasi, template, dropdown, dan validator di-generate dari definisi field yang sama. | Template & validator tidak bisa "drift"; perubahan skema otomatis tercermin. |
+| P-14 | **Dua jalur masuk, satu validator.** Jalur A = data mentah (AI-ETL); Jalur B = template patuh SOP. Keduanya berujung ke validator yang sama. | Data dari cabang patuh & tidak patuh sama-sama tervalidasi standar. |
 
 ## 3. ERD
 
@@ -424,6 +426,11 @@ Gabungan `residents` + `birth_records` + `mothers` + status terkini + cabang —
 | **D-11** | Identitas cabang | tabel `branches` baru / pakai `endpoints.key` | ✅ **DIPUTUSKAN: pakai `endpoints.key`** (§4.1) |
 | **D-12** | Tabel referensi `ref_*` | plugin `resident` / plugin `reference` | ✅ **DIPUTUSKAN: di dalam plugin `resident`** dulu |
 | **D-13** | Nama plugin | `core` / `business` / `resident` | ✅ **DIPUTUSKAN: `plugins/resident`** |
+| **D-14** | Format template impor | XLSX utama + CSV sekunder / CSV saja | ✅ **DIPUTUSKAN: XLSX utama + CSV sekunder** |
+| **D-15** | Bentuk template v1 | 1 baris = 1 bayi, dokumen 1 kolom | ✅ **DIPUTUSKAN: 1 baris = 1 bayi; sheet DOKUMEN menyusul bila perlu** |
+| **D-16** | Template statis vs di-generate | File statis / di-generate dari definisi field | ✅ **DIPUTUSKAN: di-generate dari definisi field (P-13)** |
+| **D-17** | Versioning template | tanpa versi / `template_version` tercatat | ✅ **DIPUTUSKAN: ada `template_version` di file & divalidasi saat impor** |
+| **D-18** | Audiens template | internal per cabang / pihak luar | Usulan: **internal per cabang**; kolom PII ditandai & dapat dihilangkan untuk versi luar |
 
 ## 11. Pertanyaan Data (butuh jawaban user)
 
@@ -488,3 +495,61 @@ plugins/resident/
 **Jebakan wajib dicatat:** route ber-guard `RequirePermission` akan **403 semua** bila permission belum di-seed. Jadi migrasi plugin `auth` (seed `resident.read/write/delete` + masukkan ke grup `root`/`admin`/`viewer`) adalah **prasyarat**, bukan opsional.
 
 **Domain lain menyusul sebagai plugin terpisah:** `finance`, `visit`, `need` — masing-masing plugin mandiri agar migrasi & lifecycle-nya independen.
+
+## 15. Template Impor (D-14..D-18)
+
+Sistem menyediakan **template XLSX** agar cabang dapat mengisi data **langsung sesuai standar** tanpa transformasi. Template di-**generate** dari definisi field (P-13), bukan file statis.
+
+### 15.1 Dua jalur masuk (P-14)
+
+```
+Jalur A (data mentah)  : CSV Notion / Excel acak  →  AI-ETL (topic LLM)  ─┐
+                                                                         ├─→ Validator → hasil → DB
+Jalur B (patuh SOP)    : Template BBH (XLSX/CSV)  →  validasi langsung   ─┘
+```
+
+Importer harus membedakan kedua jalur (`--format raw` vs `--format template`).
+
+### 15.2 Struktur sheet (XLSX)
+
+| Sheet | Isi |
+|---|---|
+| `PETUNJUK` | Cara isi, field wajib, format tanggal, aturan kode RM, kontak bantuan |
+| `DATA` | **1 baris = 1 bayi**, kolom = field canonical |
+| `REFERENSI` | Daftar nilai enum (sumber dropdown), boleh disembunyikan |
+| `CONTOH` | 3 baris contoh terisi (data fiktif) |
+
+### 15.3 Kolom sheet `DATA`
+
+```
+resident_code | nama_bayi | jenis_kelamin | tanggal_lahir | tempat_lahir | agama | gol_darah
+nik_bayi | bpjs_no | nama_ibu | nik_ibu | no_hp_ibu | berat_lahir_gram | panjang_lahir_cm
+anak_ke | persalinan | ditolong_oleh | fasilitas | detail_tenaga_medis
+tanggal_masuk | status | keterangan | folder_drive
+```
+
+> Berbeda dari kolom Notion: template memakai **nama field canonical** (bukan istilah cabang), tanpa kolom `Place`/`Umur`.
+
+### 15.4 Kontrol kualitas di dalam template
+
+| Kontrol | Cara |
+|---|---|
+| Enum | **Data Validation** (dropdown) dari sheet `REFERENSI` |
+| Tanggal | Format sel tanggal `DD/MM/YYYY`, bukan teks bebas |
+| Angka | `berat_lahir_gram`/`panjang_lahir_cm` = sel numerik (tanpa satuan) |
+| Field wajib | Kolom wajib ditandai di header (`*`) + di `PETUNJUK` |
+| Versioning | Sel `template_version` di sheet `PETUNJUK`, **divalidasi saat impor** |
+
+### 15.5 Umpan balik validasi
+
+Hasil validasi dikembalikan sebagai **file terpisah** (XLSX/CSV) yang menambahkan kolom:
+`hasil_validasi` (`valid`/`ditolak`) + `alasan_ditolak` per baris — **bukan** pesan "gagal" tanpa penjelasan.
+
+### 15.6 Sumber definisi field
+
+Satu berkas definisi (usulan `plugins/resident/schema/fields.yaml`) menjadi sumber untuk:
+1. migrasi tabel (WO-02),
+2. template XLSX/CSV (WO-08),
+3. dropdown referensi,
+4. aturan validasi importer (WO-06),
+5. anotasi swagger (WO-07).

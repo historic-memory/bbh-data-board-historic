@@ -196,7 +196,7 @@ Begitu guard aktif, **pusat gagal start** sampai `.env` diberi `SSO_SHARED_SECRE
 
 | Item | Hasil nyata |
 |---|---|
-| T-1 swagger | `swag init` OK; `grep -c is_root` = **0** di `docs.go`, `swagger.json`, `swagger.yaml`; `paths: 26` ✅. ⚠️ Angka route lama (`endpoints` 15, `sso-enrollments` 2, `portal-token` 1, `whoami` 1) **DICABUT** — diukur ulang Manager per tag: `endpoints` **8**, `sso` **4**, `audit` **1**, total operasi **39**; dua route (`PATCH /api/admin/endpoints/{key}`, `GET /api/business/reports`) berjalan tetapi tidak terdokumentasi → `WO-07`. Lihat WO-06 §7.3 S-1/S-2/S-3 |
+| T-1 swagger | `swag init` OK; `grep -c is_root` = **0** di `docs.go`, `swagger.json`, `swagger.yaml`. **Angka (dihitung dari artefak, WO-07):** `paths` **27**, total operasi **41**; per tag: `endpoints` **9**, `sso` **5**, `admins` 5, `audit` 1, `auth-admin` 4, `auth-member` 4, `members` 5, `rbac` 8. Metode: parse `docs/swagger/swagger.json` lalu hitung `paths` dan operasi per `tags`. Angka lama (`endpoints` 15 / `sso-enrollments` 2) **DICABUT** — berasal dari log `swag`, bukan berkas hasil. Setelah WO-07, `PATCH /api/admin/endpoints/{key}` dan `GET /api/business/reports` **sudah terdokumentasi** |
 | T-1 pendukung | 3 anotasi `@Success {object} gin.H` → tipe eksplisit (`EnrollmentListResponse`, `ApproveResponse`, `WhoAmIResponse`) |
 | T-2 env | `.env.example` (111 baris) memuat `INSTANCE_KEY`, `INSTANCE_LABEL`, `SSO_SHARED_SECRET` (+peringatan), `PORTAL_TOKEN_TTL`, `FEDERATION_FALLBACK_LOCAL`; origin `:8082` masuk `CORS_ALLOWED_ORIGINS` |
 | T-4 guard | `ValidateSecretConfig()` dipanggil dari `RegisterServices`; menolak start bila material kunci sama (lihat WO-06 untuk perbaikan byte-level) |

@@ -37,11 +37,11 @@ files:
     - id: 01a17c61-2af2-7435-b88e-624b616801a8
       path: WO-06-patch-wo-05.md
       type: file
-      status: progress
+      status: complete
     - id: 01a17c72-c9a0-7cca-aaad-d15c8c066db0
       path: WO-07-swagger-parity-rebuild-console.md
       type: file
-      status: draft
+      status: progress
     - id: 01a177ec-c013-7221-8502-c5aa011599f8
       path: work-order.md
       type: file

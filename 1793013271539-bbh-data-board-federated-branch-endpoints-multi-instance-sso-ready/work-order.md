@@ -39,8 +39,8 @@ Arah baru: **federasi instance** — satu aplikasi, banyak instance, satu DB lok
 | 3 | [`WO-03-sso-admin-only.md`](rev 3) | **SSO Lintas Instance (admin-only)** — token pusat (`aud`=target branch, `iss`, `sub`=UUIDv7, `typ=portal`, `exp` pendek) **tanpa klaim peran**; verifikasi **LOKAL HS256** (D-17) tanpa callback; guard keanggotaan lokal via **`iss`+`sub`** (D-16) → **403** bila belum/`pending`; **enrollment hybrid A+B** (D-18); **otorisasi = RBAC cabang** (D-19); migrasi kolom `admins`; dua-token session | complete |
 | 4 | [`WO-04-rbac-groups-permissions.md`](rev 1) | **RBAC: groups & permissions** — ganti `is_root` dengan `permissions` ↔ `group_permissions` ↔ `groups` ↔ `admin_groups` ↔ `admins`; izin efektif = union grup aktif; guard `RequirePermission`; **fail-closed**; grup bertingkat `root`(`*`) / `admin`(baca+tulis) / `viewer`(baca, **default**, tanpa audit); **grup default otomatis** ke admin baru; audit hanya `root`; migrasi `is_root=true` → grup `root` lalu kolom dihapus; CLI + API grup; anti-lockout | complete |
 | 5 | [`WO-05-housekeeping-docs-env.md`](rev 3) | **Housekeeping pasca-federasi** — regenerasi swagger (`is_root` basi, route baru hilang), dokumentasikan `INSTANCE_KEY`/`SSO_SHARED_SECRET`/`FEDERATION_FALLBACK_LOCAL` di `.env.example`, **guard fail-closed** `SSO_SHARED_SECRET` ≠ `APP_KEY` (normalisasi base64, tidak mencetak kunci; kosong → SSO nonaktif + log), **bukti AC-13 lewat UI (wajib)**, lalu drop 3 DB sisa | complete |
-| 6 | [`WO-06-patch-wo-05.md`](rev 2) | **Penambal WO-05** — (1) ✅ guard byte-level ditutup (`base64:QUJD` vs `ABC`, termasuk varian padding `AAAA==` vs `AAAA`); (2) ✅ komentar `.env.example` dikoreksi (kosong = SSO nonaktif, server tetap start); (3) ✅ bukti T-1..T-4 & AC-13 diarsip di WO-05 §6a. **Sisa:** route `PATCH /api/admin/endpoints/{key}` dan `GET /api/business/reports` berjalan tetapi tidak terdokumentasi → dipindah ke WO-07 | progress |
-| 7 | [`WO-07-swagger-parity-rebuild-console.md`](rev 1) | **Paritas swagger & rebuild** — tambah anotasi `@Router ... [patch]` pada handler `Update`; tambah anotasi untuk `business.GET("/reports")`; koreksi angka bukti WO-05 §6a dengan hitungan yang dapat direproduksi (tag `endpoints` 8, `sso` 4, `audit` 1, total operasi 39, `paths` 26); rebuild **eksplisit** `bin/console` + `bin/server` (sha256 `bin/console` saat ini ≠ HEAD) | draft |
+| 6 | [`WO-06-patch-wo-05.md`](rev 3) | **Penambal WO-05** — (1) ✅ guard byte-level ditutup (`base64:QUJD` vs `ABC`, termasuk varian padding `AAAA==` vs `AAAA`); (2) ✅ komentar `.env.example` dikoreksi (kosong = SSO nonaktif, server tetap start); (3) ✅ bukti T-1..T-4 & AC-13 diarsip di WO-05 §6a. Semua 7 AC terbukti oleh Manager; 4 sisa dipindah ke WO-07 | complete |
+| 7 | [`WO-07-swagger-parity-rebuild-console.md`](rev 2) | **Paritas swagger & rebuild** — ✅ `PATCH /api/admin/endpoints/{key}` (handler `Patch` sendiri) dan `GET /api/business/reports` (handler `BusinessReports`) kini terdokumentasi; ✅ angka bukti dikoreksi dari artefak (`paths` 27, operasi 41, `endpoints` 9, `sso` 5); ✅ `is_root` 0/0/0; ✅ `bin/console`+`bin/server` identik dengan build `c3dc6f4` (setelah rebuild pasca-commit oleh Manager). **Sisa S-5:** `build.sh:24` memakai `swag init` tanpa `--parseDependency --parseInternal` → penamaan definisi berbeda dari artefak | progress |
 
 ## Status Akhir (diverifikasi Manager 2026-10-27)
 
@@ -107,6 +107,20 @@ Arah baru: **federasi instance** — satu aplikasi, banyak instance, satu DB lok
 | S-2 | 🔴 `GET /api/business/reports` berjalan tetapi tidak ada di swagger |
 | S-3 | Angka route di WO-05 §6a tidak dapat direproduksi (tag `endpoints` 8, `sso` 4, bukan 15 / 2) |
 | S-4 | `bin/console` basi — `sha256` beda dari build HEAD, mtime lebih tua dari `sso.go` |
+
+## Verifikasi WO-07 (Manager, 2026-10-27)
+
+| AC | Hasil |
+|---|---|
+| 1. `PATCH /api/admin/endpoints/{key}` terdokumentasi | ✅ methods = `delete, get, patch, put`; route pakai `h.Patch` |
+| 2. `/api/business/reports` terdokumentasi | ✅ ada; route pakai `h.BusinessReports` |
+| 3. Angka §6a reproducible | ✅ `paths` 27, operasi 41, `endpoints` 9, `sso` 5 — cocok |
+| 4. `is_root` 0 di 3 berkas | ✅ |
+| 5. Binari == build HEAD | ⚠️ **gagal pada laporan awal** — `bin` di-stamp `vcs.revision=ee5b35a` + `modified=true` (dibuild pra-commit); pembanding Dev dibuat di kondisi sama sehingga `MATCH` menyesatkan. Setelah Manager rebuild pasca-commit: `CONSOLE_IDENTIK`/`SERVER_IDENTIK` ✅ |
+| 6. build/vet/test/gofmt | ✅ 10 paket `ok`, `GOFMT_CLEAN` |
+| S-5 (baru) | ⚠️ `build.sh:24` memakai `swag init` tanpa `--parseDependency --parseInternal` → `paths`/operasi sama tapi **nama definisi berbeda** (`handlers.*` vs `plugins_auth_handlers.*`) |
+
+**Pelajaran:** binari Go menyematkan `vcs.revision`. Rebuild **harus setelah commit**, dan pembanding hash harus dibuat setelah commit — bukan dua binari pra-commit yang dibandingkan satu sama lain.
 
 ## Urutan Eksekusi & Dependency
 ```

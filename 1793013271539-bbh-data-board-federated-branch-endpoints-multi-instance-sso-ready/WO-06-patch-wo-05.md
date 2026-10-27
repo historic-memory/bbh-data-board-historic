@@ -1,10 +1,10 @@
 ---
 title: 'WO-06: Penambal WO-05 — normalisasi base64 guard, komentar env, dan arsip bukti AC-13'
 description: 'Verifikasi Manager atas WO-05 menemukan 3 cacat: (1) normalizeKey hanya strip prefix base64: tanpa decode, padahal MasterKey() men-decode — byte kunci sama bisa lolos guard (AC 5c belum terpenuhi); (2) komentar .env.example salah menyebut "server menolak start" saat kosong, padahal tetap start; (3) bukti AC-13 dan hasil T-1/T-2/T-4 tidak tersimpan di dokumen WO-05 (status complete tapi §3 masih rencana, §5 tanpa blok bukti).'
-status: progress
+status: complete
 created: "2026-10-27"
 updated: "2026-10-27"
-revision: 2
+revision: 3
 ---
 
 # WO-06: Penambal WO-05
@@ -163,3 +163,7 @@ Uji pertama Manager **tidak memvalidasi apa pun**: `docker compose exec -e APP_K
 S-1 dan S-2 adalah route yang **benar-benar berjalan tetapi tidak terdokumentasi** — persis kelas cacat yang WO-05 dimaksudkan untuk menghapus. Karena itu WO-06 **belum** dapat dinyatakan `complete`.
 
 **Status WO-06: `progress` (revision 2).** Sisa pekerjaan dipindahkan ke `WO-07`.
+
+### 7.4 Penutupan (revision 3)
+
+Keempat sisa (S-1..S-4) ditutup lewat `WO-07` (commit `c3dc6f4` + rebuild binari oleh Manager). Verifikasi Manager atas WO-07 mencatat: S-1, S-2, S-3 ✅; S-4 awalnya gagal (binari di-stamp `vcs.revision=ee5b35a` karena dibuild sebelum commit) lalu terpenuhi setelah rebuild pasca-commit. WO-06 sendiri tidak punya pekerjaan terbuka lagi → `complete`.

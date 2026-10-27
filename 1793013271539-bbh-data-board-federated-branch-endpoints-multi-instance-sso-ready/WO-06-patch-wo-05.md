@@ -1,10 +1,10 @@
 ---
 title: 'WO-06: Penambal WO-05 — normalisasi base64 guard, komentar env, dan arsip bukti AC-13'
 description: 'Verifikasi Manager atas WO-05 menemukan 3 cacat: (1) normalizeKey hanya strip prefix base64: tanpa decode, padahal MasterKey() men-decode — byte kunci sama bisa lolos guard (AC 5c belum terpenuhi); (2) komentar .env.example salah menyebut "server menolak start" saat kosong, padahal tetap start; (3) bukti AC-13 dan hasil T-1/T-2/T-4 tidak tersimpan di dokumen WO-05 (status complete tapi §3 masih rencana, §5 tanpa blok bukti).'
-status: draft
+status: progress
 created: "2026-10-27"
 updated: "2026-10-27"
-revision: 1
+revision: 2
 ---
 
 # WO-06: Penambal WO-05
@@ -124,3 +124,42 @@ Dokumen `WO-05-housekeeping-docs-env.md` ditandai `status: complete` dan AC-13 `
 - Mengubah desain guard (hanya melengkapi normalisasi)
 - RS256/JWKS
 - Perubahan frontend
+
+## 7. Hasil Verifikasi Manager (independen, 2026-10-27)
+
+Semua angka di bawah berasal dari perintah yang dijalankan Manager sendiri, bukan dari laporan Dev Agent.
+
+### 7.1 Status AC
+
+| # | AC | Verifikasi Manager | Hasil |
+|---|---|---|---|
+| 1 | `APP_KEY=base64:QUJD` + `SSO_SHARED_SECRET=ABC` → start ditolak | `.env` uji di `/tmp/seccheck` (bukan `.env` repo), `timeout 15 ./server` → `rc=1`, `failed to run server: portalsso: SSO_SHARED_SECRET tidak boleh sama dengan APP_KEY; buat nilai terpisah dengan: openssl rand -base64 32` | ✅ |
+| 2 | `APP_KEY=base64:AAAA==` + `SSO_SHARED_SECRET=AAAA` (padding beda) → ditolak | `rc=1`, pesan identik | ✅ |
+| 3 | Tanpa `SSO_SHARED_SECRET` → server tetap start, SSO nonaktif | `Listening and serving HTTP on :8080`; `curl /healthz` → **200** | ✅ |
+| 4 | Kunci tidak tercetak di log/error | `grep -cE "QUJD\|AAAA" out.log out2.log` → `0`, `0` | ✅ |
+| 5 | Komentar `.env.example` sesuai perilaku | `.env.example` baris ~83-89: "Bila KOSONG, SSO nonaktif tetapi server TETAP start" | ✅ |
+| 6 | WO-05 §3 = hasil + bukti T-1..T-4 terarsip | §3 berganti menjadi "Desain yang diimplementasikan (hasil)"; §6a memuat T-1, T-2, T-4, dan blok AC-13 (`afterLogin` / `afterExitPortal` / `whoami`) | ✅ |
+| 7 | `go build`/`vet`/`test`/`gofmt` lulus | `BUILD_OK`, `VET_OK`, 10 paket `ok`, `GOFMT_CLEAN` | ✅ |
+
+Unit test: `go test ./plugins/portalsso/... -run 'TestValidateSecretConfig|TestSecretReuseErrorDoesNotLeakKey' -v` → **13 sub-tes RUN, PASS**; `TestSecretReuseErrorDoesNotLeakKey` PASS.
+
+**Ketiga cacat WO-05 terbukti tertutup:** Cacat 1 lewat AC-1 & AC-2, Cacat 2 lewat AC-5, Cacat 3 lewat AC-6.
+
+### 7.2 Catatan metode — jebakan saat verifikasi
+
+Uji pertama Manager **tidak memvalidasi apa pun**: `docker compose exec -e APP_KEY=...` tidak berpengaruh karena `godotenv.Overload()` (dipakai `internal/console`) **menimpa** environment proses dengan isi `.env`. Akibatnya server start normal dan sempat disalahartikan sebagai "guard lolos". Verifikasi ulang dilakukan dengan `.env` terpisah di `/tmp/seccheck`.
+
+→ Aturan untuk WO berikutnya: **jangan** menguji konfigurasi lewat `-e` selama file `.env` ada; buat direktori kerja dengan `.env` sendiri.
+
+### 7.3 Sisa yang belum selesai → `WO-07`
+
+| # | Sisa | Bukti |
+|---|---|---|
+| S-1 | 🔴 `PATCH /api/admin/endpoints/{key}` terdaftar di kode tetapi **tidak ada di swagger** | `plugins/endpoint/plugin.go` mendaftarkan `PUT /:key` **dan** `PATCH /:key`; handler `Update` hanya punya satu anotasi `// @Router /api/admin/endpoints/{key} [put]`. `swagger.yaml` hanya memuat `delete/get/put` untuk path itu |
+| S-2 | 🔴 `GET /api/business/reports` terdaftar di kode tetapi **tidak ada di swagger** | `plugins/portalsso/plugin.go:64`; handler `WhoAmI` hanya dianotasi `// @Router /api/business/whoami [get]`; `grep business/reports` di `swagger.yaml` / `swagger.json` = 0 |
+| S-3 | Angka di WO-05 §6a **tidak dapat direproduksi** | Klaim "`endpoints` 15, `sso-enrollments` 2, `portal-token` 1, `whoami` 1". Hitungan Manager per tag: `endpoints` **8**, `sso` **4**, `audit` **1**, total operasi **39**, `paths`: **26** (angka `paths: 26` cocok) |
+| S-4 | DoD "rebuild binary eksplisit" belum dipenuhi untuk `console` | `bin/console` mtime `16:12:41`, `sso.go` mtime `16:15:06`; `sha256` `bin/console` **berbeda** dari hasil `go build -o /tmp/console-check ./cmd/console` pada HEAD |
+
+S-1 dan S-2 adalah route yang **benar-benar berjalan tetapi tidak terdokumentasi** — persis kelas cacat yang WO-05 dimaksudkan untuk menghapus. Karena itu WO-06 **belum** dapat dinyatakan `complete`.
+
+**Status WO-06: `progress` (revision 2).** Sisa pekerjaan dipindahkan ke `WO-07`.

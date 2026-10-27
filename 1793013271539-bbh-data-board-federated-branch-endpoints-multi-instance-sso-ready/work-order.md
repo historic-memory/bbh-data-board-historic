@@ -39,7 +39,8 @@ Arah baru: **federasi instance** — satu aplikasi, banyak instance, satu DB lok
 | 3 | [`WO-03-sso-admin-only.md`](rev 3) | **SSO Lintas Instance (admin-only)** — token pusat (`aud`=target branch, `iss`, `sub`=UUIDv7, `typ=portal`, `exp` pendek) **tanpa klaim peran**; verifikasi **LOKAL HS256** (D-17) tanpa callback; guard keanggotaan lokal via **`iss`+`sub`** (D-16) → **403** bila belum/`pending`; **enrollment hybrid A+B** (D-18); **otorisasi = RBAC cabang** (D-19); migrasi kolom `admins`; dua-token session | complete |
 | 4 | [`WO-04-rbac-groups-permissions.md`](rev 1) | **RBAC: groups & permissions** — ganti `is_root` dengan `permissions` ↔ `group_permissions` ↔ `groups` ↔ `admin_groups` ↔ `admins`; izin efektif = union grup aktif; guard `RequirePermission`; **fail-closed**; grup bertingkat `root`(`*`) / `admin`(baca+tulis) / `viewer`(baca, **default**, tanpa audit); **grup default otomatis** ke admin baru; audit hanya `root`; migrasi `is_root=true` → grup `root` lalu kolom dihapus; CLI + API grup; anti-lockout | complete |
 | 5 | [`WO-05-housekeeping-docs-env.md`](rev 3) | **Housekeeping pasca-federasi** — regenerasi swagger (`is_root` basi, route baru hilang), dokumentasikan `INSTANCE_KEY`/`SSO_SHARED_SECRET`/`FEDERATION_FALLBACK_LOCAL` di `.env.example`, **guard fail-closed** `SSO_SHARED_SECRET` ≠ `APP_KEY` (normalisasi base64, tidak mencetak kunci; kosong → SSO nonaktif + log), **bukti AC-13 lewat UI (wajib)**, lalu drop 3 DB sisa | complete |
-| 6 | [`WO-06-patch-wo-05.md`](rev 1) | **Penambal WO-05** — verifikasi Manager menemukan 3 cacat: (1) 🔴 `normalizeKey` hanya strip prefix tanpa base64-decode → guard bisa diloloskan (AC 5c belum terpenuhi); (2) komentar `.env.example` bertentangan dengan perilaku (kosong = tetap start); (3) bukti T-1..T-4 & AC-13 tidak terarsip di dokumen | draft |
+| 6 | [`WO-06-patch-wo-05.md`](rev 2) | **Penambal WO-05** — (1) ✅ guard byte-level ditutup (`base64:QUJD` vs `ABC`, termasuk varian padding `AAAA==` vs `AAAA`); (2) ✅ komentar `.env.example` dikoreksi (kosong = SSO nonaktif, server tetap start); (3) ✅ bukti T-1..T-4 & AC-13 diarsip di WO-05 §6a. **Sisa:** route `PATCH /api/admin/endpoints/{key}` dan `GET /api/business/reports` berjalan tetapi tidak terdokumentasi → dipindah ke WO-07 | progress |
+| 7 | [`WO-07-swagger-parity-rebuild-console.md`](rev 1) | **Paritas swagger & rebuild** — tambah anotasi `@Router ... [patch]` pada handler `Update`; tambah anotasi untuk `business.GET("/reports")`; koreksi angka bukti WO-05 §6a dengan hitungan yang dapat direproduksi (tag `endpoints` 8, `sso` 4, `audit` 1, total operasi 39, `paths` 26); rebuild **eksplisit** `bin/console` + `bin/server` (sha256 `bin/console` saat ini ≠ HEAD) | draft |
 
 ## Status Akhir (diverifikasi Manager 2026-10-27)
 
@@ -70,7 +71,7 @@ Arah baru: **federasi instance** — satu aplikasi, banyak instance, satu DB lok
 |---|---|
 | Commit `3fc0b5e` (11 file) | ✅ ada |
 | build/vet/test/gofmt lulus | ✅ |
-| T-1 `is_root`=0, route baru ada | ✅ (`endpoints` 15, `sso-enrollments` 2, `portal-token` 1, `whoami` 1) |
+| T-1 `is_root`=0, route baru ada | ✅ `is_root`=0 benar; ⚠️ angka route (`endpoints` 15 / `sso-enrollments` 2) **dicabut** — tidak dapat direproduksi, lihat WO-06 §7.3 S-3 |
 | T-2 `.env.example` 111 baris + 5 var | ✅ |
 | T-3 AC-13 di UI | ✅ perilaku (bukti belum diarsip) |
 | T-4 guard fail-closed | ⚠️ **AC 5c belum** — lihat bawah |
@@ -84,6 +85,28 @@ Arah baru: **federasi instance** — satu aplikasi, banyak instance, satu DB lok
 | 1 | 🔴 `normalizeKey` tidak base64-decode; `MasterKey()` men-decode → byte kunci sama bisa lolos guard (bukti: `base64:QUJD` vs `ABC`) |
 | 2 | Komentar `.env.example:84` bilang "kalau tidak server menolak start" — bertentangan dengan kode (`shared=="" → return nil`) |
 | 3 | Bukti T-1..T-4 & AC-13 tidak diarsip di dokumen; WO-05 §3 masih berbunyi rencana walau `status: complete` |
+
+## Verifikasi WO-06 (Manager, 2026-10-27)
+
+| AC | Hasil |
+|---|---|
+| 1. `APP_KEY=base64:QUJD` + `SSO=ABC` → tolak start | ✅ `rc=1`, `failed to run server: portalsso: SSO_SHARED_SECRET tidak boleh sama dengan APP_KEY...` |
+| 2. `APP_KEY=base64:AAAA==` + `SSO=AAAA` → tolak start | ✅ `rc=1`, pesan identik |
+| 3. Tanpa `SSO_SHARED_SECRET` → tetap start | ✅ `Listening :8080` + `healthz 200` |
+| 4. Kunci tidak bocor ke log | ✅ `grep -cE "QUJD|AAAA" out.log out2.log` → `0 0` |
+| 5. Komentar `.env.example` sesuai perilaku | ✅ |
+| 6. WO-05 §3 = hasil + bukti terarsip | ✅ |
+| 7. `build`/`vet`/`test`/`gofmt` lulus | ✅ 10 paket `ok`, `GOFMT_CLEAN` |
+| Unit test guard | ✅ 13 sub-tes PASS + `TestSecretReuseErrorDoesNotLeakKey` PASS |
+
+**Sisa → `WO-07`:**
+
+| # | Sisa |
+|---|---|
+| S-1 | 🔴 `PATCH /api/admin/endpoints/{key}` berjalan tetapi tidak ada di swagger |
+| S-2 | 🔴 `GET /api/business/reports` berjalan tetapi tidak ada di swagger |
+| S-3 | Angka route di WO-05 §6a tidak dapat direproduksi (tag `endpoints` 8, `sso` 4, bukan 15 / 2) |
+| S-4 | `bin/console` basi — `sha256` beda dari build HEAD, mtime lebih tua dari `sso.go` |
 
 ## Urutan Eksekusi & Dependency
 ```

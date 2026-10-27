@@ -119,7 +119,7 @@ Nilai itu **identik** dengan `APP_KEY` di `.env:89`. Artinya **kunci enkripsi ap
 
 **Mengapa berisiko:** satu kunci bocor → dua fungsi ikut berisiko; rotasi salah satu memaksa rotasi keduanya.
 
-### Desain yang wajib diimplementasikan
+### Desain yang diimplementasikan (hasil)
 
 | Kondisi | Perilaku |
 |---|---|
@@ -189,6 +189,59 @@ Begitu guard aktif, **pusat gagal start** sampai `.env` diberi `SSO_SHARED_SECRE
 - [x] Rebuild binary eksplisit (`go build -o bin/console ./cmd/console`)
 - [x] Verifikasi commit dokumen dengan **`historic git log`**, bukan `git log`
 - [x] Tidak ada push ke remote
+
+## 6a. Arsip Bukti (sumber tunggal — jangan hanya di chat)
+
+### Status implementasi T-1..T-4
+
+| Item | Hasil nyata |
+|---|---|
+| T-1 swagger | `swag init` OK; `grep -c is_root` = **0** di `docs.go`, `swagger.json`, `swagger.yaml`; `paths: 26` ✅. ⚠️ Angka route lama (`endpoints` 15, `sso-enrollments` 2, `portal-token` 1, `whoami` 1) **DICABUT** — diukur ulang Manager per tag: `endpoints` **8**, `sso` **4**, `audit` **1**, total operasi **39**; dua route (`PATCH /api/admin/endpoints/{key}`, `GET /api/business/reports`) berjalan tetapi tidak terdokumentasi → `WO-07`. Lihat WO-06 §7.3 S-1/S-2/S-3 |
+| T-1 pendukung | 3 anotasi `@Success {object} gin.H` → tipe eksplisit (`EnrollmentListResponse`, `ApproveResponse`, `WhoAmIResponse`) |
+| T-2 env | `.env.example` (111 baris) memuat `INSTANCE_KEY`, `INSTANCE_LABEL`, `SSO_SHARED_SECRET` (+peringatan), `PORTAL_TOKEN_TTL`, `FEDERATION_FALLBACK_LOCAL`; origin `:8082` masuk `CORS_ALLOWED_ORIGINS` |
+| T-4 guard | `ValidateSecretConfig()` dipanggil dari `RegisterServices`; menolak start bila material kunci sama (lihat WO-06 untuk perbaikan byte-level) |
+| T-4 negatif | `APP_KEY=base64:<APP_KEY asli>` + `SSO_SHARED_SECRET=<APP_KEY asli>` → `failed to run server: portalsso: SSO_SHARED_SECRET tidak boleh sama dengan APP_KEY` |
+| T-4 positif | tanpa `SSO_SHARED_SECRET` → server start, `healthz 200`, SSO nonaktif |
+| Tanpa kebocoran | `grep -c '<APP_KEY>' /tmp/{pusat,cabang,nosso}.log` → `0 0 0` |
+
+### Bukti AC-13 (klik nyata di `/app/portal`)
+
+```text
+afterLogin       : main_token=ADA     portal_token=ADA     active_endpoint=cabang-jkt
+afterEnterPortal : main_token=ADA     portal_token=ADA     active_endpoint=cabang-jkt
+
+whoami OK (200)  : {
+  "instance": "cabang-jkt",
+  "issuer": "bbh-pusat",
+  "subject": "01a168d4-ca17-7aaa-abc0-d51865c4ab6d",
+  "display": "root@admin.local",
+  "admin_id": "01a17c1a-4b45-7d50-86ca-29386649de94",
+  "groups": ["viewer"],
+  "permissions": ["admin.read","endpoint.read","group.read","member.read","permission.read"]
+}
+
+afterExitPortal  : main_token=ADA     portal_token=KOSONG   active_endpoint=KOSONG
+DOM snapshot     : main_token ADA · portal_token KOSONG · active_endpoint KOSONG
+```
+
+**Kesimpulan AC-13:** terbukti — keluar portal membuang `portal_token` + `active_endpoint`, `main_token` tetap utuh.
+
+### Kendala UI yang ditemukan & diperbaiki saat pembuktian
+
+| # | Gejala | Akar masalah | Perbaikan |
+|---|---|---|---|
+| 1 | `403` aset `/app/assets/*.js` | `<script crossorigin>` memaksa mode CORS; origin `:8082` tak terdaftar | `CORS_ALLOWED_ORIGINS` + `:8082` |
+| 2 | `404` di `/app/portal` | `BrowserRouter` tanpa `basename` | `basename="/app"` |
+| 3 | `whoami` 502 "portal token required" | klien kirim portal token via `Authorization` | kirim via `X-Portal-Token`; `main_token` tak pernah ke cabang |
+| 4 | proxy dev tak terpakai | SPA diserve server Go | proxy dicabut dari `vite.config.ts` |
+
+### Gate akhir
+
+```text
+go build ./... OK · go vet ./... OK · go test ./... 10 paket ok · gofmt bersih
+bin/console & bin/server dibangun ulang
+DB setelah cleanup: hanya bbh_data_board (bbh_branch, bbh_cbg_jktbaru, bbh_cbg_smg di-drop)
+```
 
 ## 6b. Verifikasi tambahan Manager (5b/5c)
 

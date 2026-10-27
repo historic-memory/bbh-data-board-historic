@@ -75,7 +75,12 @@ created: "2026-10-27"
 ## Rencana Lanjutan
 - [x] Lampirkan & analisa data mentah core (CSV bayi, 50 baris).
 - [ ] Wawancara jawaban pertanyaan terbuka (khususnya cabang & makna JCH).
-- [ ] Susun **ERD/skema tabel canonical** (fokus saat ini).
+- [x] Susun **ERD/skema tabel canonical** -> lihat `SPEC.md` (revision 1, status draft).
 - [ ] Bekukan enum/controlled vocabulary (status, agama, persalinan, ditolong oleh).
 - [ ] (Terpisah) alur AI-ETL di topic LLM.
+
+## Referensi
+- **`SPEC.md`** di topic ini = desain ERD + definisi tabel (belum implementasi).
+  - 10 tabel + 5 tabel referensi, 10 keputusan terbuka (D-1..D-10), 7 pertanyaan data.
+  - Lihat spesifik baris pertama: Tujuan, Prinsip (P-1..P-10), ERD (mermaid), Definisi Tabel, Aturan resident_code, Pemetaan kolom sumber, View, Constraint, PII, Keputusan Terbuka, AC desain.
 

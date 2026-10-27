@@ -32,7 +32,7 @@ revision: 1
 | P-5 | **Identitas ganda:** kode lama (Notion) dipertahankan, PK internal UUIDv7. | `resident_code` unik dan stabil; `id` UUIDv7. |
 | P-6 | **PII diperlakukan khusus.** NIK/BPJS/nama ibu bersifat sensitif. | Ditandai di SPEC; penanganan (enkripsi/masking) ditetapkan sebelum implementasi. |
 | P-7 | **Skema via migrasi versioned.** Tidak ada `CREATE TABLE` di kode Go. | Konsisten dengan plugin existing. |
-| P-8 | **Nama kolom Bahasa Inggris**, nilai enum Bahasa Indonesia (bila istilah domain). | Konsisten lintas plugin; nilai domain tetap dikenali pengguna. |
+| P-8 | **Nama kolom Bahasa Inggris** (D-7), nilai enum Bahasa Indonesia (bila istilah domain). | Konsisten lintas plugin; nilai domain tetap dikenali pengguna. |
 | P-9 | **Data derived tidak disimpan.** | `age` dihitung dari `birth_date`; tidak ada kolom `umur`. |
 | P-10 | **Branch adalah dimensi** = `endpoint`/`INSTANCE_KEY`, **bukan tabel baru**. | Tidak ada tabel `branches`; `residents.branch_key` merujuk `endpoints.key`. |
 | P-11 | **Semua data core dibungkus satu plugin `resident`.** | Fitur baru wajib plugin (`plugins/<id>/`), bukan `internal/`. |
@@ -421,8 +421,8 @@ Gabungan `residents` + `birth_records` + `mothers` + status terkini + cabang —
 | **D-3** | Enum → tabel referensi atau enum kode | Tabel referensi / enum statis | Usulan: tabel referensi (cabang bisa menambah). **Menunggu** |
 | **D-4** | Wali selain ibu | `mothers` saja / tambah `guardians` + `relation` | **Menunggu** |
 | **D-5** | `SpOG` / nama bidan | `attendant_detail` di `birth_records` / entitas tenaga medis | Usulan: `attendant_detail`. **Menunggu** |
-| **D-6** | "JCH" | Tabel `transfer_partners` / enum status saja | Usulan: `transfer_partners`. **Makna JCH perlu konfirmasi** |
-| **D-7** | Nama field | Inggris / Indonesia | Usulan: Inggris (P-8). **Menunggu** |
+| **D-6** | "JCH" | Tabel `transfer_partners` / enum status saja | **Arti belum diketahui.** Bukti: kolom `Status di yayasan` bernilai `Transfer ke JCH` (9/50 baris). Usulan: **`transfer_partners`** (code `JCH`, `name` diisi menyusul) — bukan enum, agar lembaga lain bisa ditambah. **Menunggu arti JCH** |
+| **D-7** | Nama field | Inggris / Indonesia | ✅ **DIPUTUSKAN: nama field Bahasa Inggris** (DB/API). Nilai enum tetap istilah domain (mis. `DIRAWAT`). Header template Excel tetap berbahasa Indonesia namun tetap field canonical → dipetakan di `schema/fields.yaml` |
 | **D-8** | Unik `resident_code` | Global / per cabang | ✅ **DIPUTUSKAN: UNIQUE GLOBAL.** Kosong -> `NULL` (bukan string kosong). Butuh **generator kode** (WO-10). Siapkan ruang prefix cabang (`BBH-<CAB>-<YY>-<P\|L>-<NNN>`) untuk masa depan. |
 | **D-9** | Aset dokumen | Tetap Google Drive / pindah `internal/storage` | ✅ **DIPUTUSKAN: link (Google Drive)** disimpan di `resident_documents.url` |
 | **D-10** | PII at-rest | Plaintext / enkripsi kolom / tabel terpisah | ✅ **DIPUTUSKAN: plaintext** (database lokal/tertutup). Konsekuensi: ekspor/laporan **wajib punya opsi masking** (§9 N-3). |

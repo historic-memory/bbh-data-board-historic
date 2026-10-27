@@ -86,4 +86,6 @@ created: "2026-10-27"
   - `WO-01-plugin-skeleton.md`, `WO-02-migrasi-skema-canonical.md`, `WO-03-permission-auth.md`, `WO-04-api-admin-crud.md`, `WO-05-cli-resident.md`, `WO-06-importer-csv.md`, `WO-07-swagger-docs.md`.
 - Keputusan dikunci: **D-11** pakai `endpoints.key` (tanpa tabel `branches`); **D-12** `ref_*` di plugin `resident`; **D-13** nama plugin `resident`; **D-1** satu standar (field wajib minimum); **D-8** `resident_code` UNIQUE global; **D-9** dokumen = link Google Drive; **D-10** PII plaintext; **D-14..D-18** template XLSX/CSV di-generate dari `schema/fields.yaml`, global.
 - 10 WO: WO-01..WO-10 (WO-10 = generator `resident_code`).
+- **D-7 dikunci: nama field Bahasa Inggris** (DB/API); nilai enum istilah domain; header template Excel tetap Indonesia, dipetakan di `schema/fields.yaml`.
+- **D-6 (JCH) belum terjawab**: bukti dari kolom `Status di yayasan` = `Transfer ke JCH` (9/50). Arti JCH belum diketahui user. Desain aman: tabel `transfer_partners` (code `JCH`), bukan enum status.
 

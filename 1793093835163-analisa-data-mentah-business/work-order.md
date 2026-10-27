@@ -36,8 +36,8 @@ revision: 1
 | D-3 | Enum → tabel referensi atau enum kode? | Menentukan seed & validasi (WO-02/WO-04) |
 | D-4 | Perlu `guardians` (wali) selain ibu? | Menambah tabel (WO-02) |
 | D-5 | `SpOG`/nama bidan → `attendant_detail` atau entitas? | Menentukan skema birth_records (WO-02) |
-| D-6 | Makna "JCH" | Isi `transfer_partners` (WO-02) |
-| D-7 | Nama field Inggris/Indonesia? | Usulan SPEC: Inggris (P-8) |
+| D-6 | Makna \"JCH\" (belum diketahui; berasal dari nilai `Transfer ke JCH` di sumber) | Isi `transfer_partners.name` (WO-02). Desain tabel tetap bisa jalan tanpa arti |
+| D-7 | ✅ DIPUTUSKAN: nama field **Bahasa Inggris**; header template Excel berbahasa Indonesia via `fields.yaml` | ✅ |
 
 > **D-1, D-8, D-10 sudah DIPUTUSKAN** -> WO-04 tidak lagi terhalang oleh ketiganya. Sisa terbuka (D-2..D-6) tidak menghalangi WO-01/02/08 namun menghalangi bentuk final seed & klasifikasi.
 

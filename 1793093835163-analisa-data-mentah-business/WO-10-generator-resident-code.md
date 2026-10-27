@@ -94,10 +94,10 @@ Implementasi inti selesai di `plugins/resident/services/code.go` (package-level,
 | AC-3 | Aman konkurensi | ✅ `pg_advisory_xact_lock` + UNIQUE; **uji paralel 200 goroutine PASS, nol duplikat** (aktif setelah WO-02: `code_db_test.go`) |
 | AC-4 | Tidak mengisi gap | ✅ `MAX(RIGHT(code,3))+1` |
 | AC-5 | >999 → error | ✅ `ErrCodeExhausted` |
-| AC-6 | Duplikat→409 / format invalid→400 | ⏳ butuh API (WO-04) |
+| AC-6 | Duplikat→409 / format invalid→400 | ✅ terbukti lewat API WO-04 (`POST` duplikat→**409**, gender/enum invalid→**400**) |
 | AC-7 | Gender konsisten | ✅ `ValidateResidentCodeGender` |
 | AC-8 | Kosong → NULL | ✅ `NormalizeResidentCode` (uji DB impor menyusul) |
 | AC-9 | Hook prefix cabang | ✅ `GenerateResidentCodeWithBranch(..., branch, ...)` |
 | AC-10 | build/vet/test/gofmt + unit test | ✅ lulus di container `app` |
 
-**Sisa bukti (blocked):** uji NULL/409/400 tingkat API & impor memerlukan WO-04/WO-06. Uji konkurensi DB (AC-3) sudah **lulus** setelah WO-02 (tabel `residents` ada).
+**Sisa bukti (blocked):** uji NULL tingkat impor memerlukan WO-06 (AC-8 bagian importer). AC-6 (409/400) sudah **lulus** setelah WO-04 (API live). Uji konkurensi DB (AC-3) sudah **lulus** setelah WO-02.

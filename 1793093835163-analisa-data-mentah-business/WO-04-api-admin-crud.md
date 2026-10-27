@@ -1,10 +1,10 @@
 ---
 title: "WO-04: API Admin CRUD — model, service, handler residents"
 description: "Implementasi model GORM + service (validasi branch_key, enum, kode RM, klasifikasi) + admin API CRUD untuk residents beserta entitas terkait (mothers, birth_records, status history, documents), seluruhnya ber-guard permission resident.*."
-status: draft
+status: complete
 created: "2026-10-27"
 updated: "2026-10-27"
-revision: 1
+revision: 2
 ---
 
 # WO-04: API Admin CRUD
@@ -76,3 +76,44 @@ Respons mengikuti pola plugin existing (`MessageResponse`/`ErrorResponse`).
 | AC-8 | Tidak ada `CREATE TABLE` di kode Go; tidak ada kode fitur di `internal/`. |
 | AC-9 | Semua operasi multi-tabel berjalan dalam satu transaksi. |
 | AC-10 | `go build`/`vet`/`test`/`gofmt` lulus. |
+
+## Status Eksekusi (complete)
+**Status: complete** — commit kode `17da01e` (`feat(resident): WO-04 model/service/API`). Tidak ada push.
+
+### Catatan koreksi terhadap WO
+- **AC-6 "validasi enum terhadap `ref_*`" USANG.** Sesuai D-3/D-12 tidak ada tabel `ref_*`; enum divalidasi terhadap **himpunan statis di kode** (`services/enums.go`) yang dijaga konsisten dengan `fields.yaml` & CHECK constraint lewat `TestEnumsMatchSchema`.
+- **AC-7 (`branch_key` default dari `INSTANCE_KEY`)** diimplementasikan di `services.resolveInstanceKey` (env `INSTANCE_KEY`, fallback `"local"`) + `resolveBranchKey` (validasi ke `endpoints.key`).
+
+### Bukti
+Perintah: `docker compose exec app sh -c 'cd /src && go build ./... && go vet ./... && gofmt -l plugins/resident && go test ./plugins/resident/... -count=1'` → **lulus** (`schema`, `services` ok).
+
+Uji HTTP (server binari WO-04 di container `app`, port 8082):
+
+| Uji | Ekspektasi | Hasil |
+|---|---|---|
+| `POST /api/admin/residents` (nested mother/birth/status/documents) | 201 + kode auto | **201**, `resident_code=BBH-26-P-001` |
+| `GET /api/admin/residents?q=Bayi Uji` | 200 | **200** |
+| `GET /api/admin/residents/:id` | 200 | **200** |
+| `PATCH /api/admin/residents/:id` | 200 | **200** |
+| `POST /api/admin/residents/:id/status` ×2 | 201, append-only | **201, 201** → `GET .../status` = **3 baris** |
+| `POST` gender `X` (enum invalid) | 400 | **400** |
+| `POST` `branch_key:"nope"` | 400 | **400** |
+| `POST` `resident_code` duplikat | 409 | **409** |
+| `GET /api/admin/residents` sebagai `viewer` | 200 | **200** |
+| `POST /api/admin/residents` sebagai `viewer` | 403 (fail-closed) | **403** |
+| `DELETE /api/admin/residents/:id` | 200 | **200** |
+
+| # | AC | Hasil |
+|---|---|---|
+| AC-1 | 12+ route berfungsi | ✅ 14 route ter-wire (log GIN 10 entri registrasi + uji di atas) |
+| AC-2 | Pakai `RequirePermission` | ✅ di `plugin.go` (read/write/delete) |
+| AC-3 | Fail-closed viewer | ✅ `viewer` GET 200 / POST 403 |
+| AC-4 | Status append-only | ✅ 2 POST → 3 baris |
+| AC-5 | Kode divalidasi format & unik | ✅ `ValidateResidentCode` + 409 |
+| AC-6 | Enum tak dikenal → 400 | ✅ (via enum statis, lihat koreksi) |
+| AC-7 | `branch_key` default `INSTANCE_KEY` | ✅ `resolveInstanceKey`/`resolveBranchKey` |
+| AC-8 | Nol `CREATE TABLE` di Go; nol fitur di `internal/` | ✅ skema via migrasi; kode di `plugins/resident/` |
+| AC-9 | Operasi multi-tabel satu transaksi | ✅ `CreateResident` (mother→resident→birth→admission→status→documents) + `TestCreateResidentTransactionRollback` |
+| AC-10 | build/vet/test/gofmt | ✅ lulus di container `app` |
+
+**Commit kode:** `17da01e`.

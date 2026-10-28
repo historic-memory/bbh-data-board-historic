@@ -62,9 +62,11 @@ tags:
 | H-2 | Pisahkan `useAuth` dari `AuthContext.tsx` agar Fast Refresh bersih (GAP-17) | WO-03 |
 | H-3 | Evaluasi `npm audit` (10 advisory) — tanpa `--force` (GAP-18) | WO-03 |
 | H-4 | Image produksi yang menyertakan `sub_app/webapp/dist` (GAP-13) | SPEC A-19 |
+| H-5 | `bin/` **tidak** di-gitignore → risiko terulang insiden commit binari ~80 MB (WO-04 Lapis B) | WO-04 |
 
 ## Catatan
-- Progress: WO-00, WO-01, WO-02, WO-03 **complete**. Berikutnya **WO-04** (Resident CRUD).
+- Progress: WO-00, WO-01, WO-02, WO-03 **complete**. **WO-04 progress** — Lapis A (`d05ceb7`, list) + Lapis B (`00a918b`, detail) selesai; Lapis C (form create/edit + modal status/dokumen) belum.
+- **Cara cek stateless yang benar:** cari **host:port** (`http://localhost:8082`, `:5173`, IP tailscale), bukan string `http://localhost` polos. Bundle library (react-router) memang memuat `"http://localhost"` sebagai fallback internal — bukan URL backend.
 - Topik ini **draft** — daftar WO dapat berubah setelah peninjauan SPEC.
 - Importer data = topik `1793109556782` (di luar lingkup). Urutan: **WO-00 (dev workflow) → WO-01 → WO-02 → WO-03 → ...** (A-16).
 - TailAdmin dipakai sebagai **acuan pola visual**; implementasi komponen milik sendiri.

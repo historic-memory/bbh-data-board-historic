@@ -98,6 +98,19 @@ Alur create → detail → ubah status ×2 → tambah dokumen → edit → hapus
 - Drift `fields.ts` vs `fields.yaml` (A-12) → wajib komentar + checklist review.
 - `UpdateResidentInput` tidak mendukung ubah `resident_code` (memang read-only).
 
+## Progress
+| Lapis | Cakupan | Commit | Status |
+|---|---|---|---|
+| A | List: `q` (debounce 300ms), filter `branch_key`/`status`, paginasi dari `total`, state UI (skeleton/empty/error+retry) | `d05ceb7` | ✅ selesai |
+| B | Detail `/residents/:id`: `current_status`, riwayat status, dokumen Drive, ibu/kelahiran/admisi, hapus + konfirmasi, 404 | `00a918b` | ✅ selesai |
+| C | Form create/edit (`resident_code` auto + read-only), modal Ubah Status, modal Tambah Dokumen, PATCH diff-only, guard `resident.write` | — | belum |
+
+Catatan Lapis B:
+- Tombol **Edit sengaja belum dirender** (form belum ada) — tidak memasang tombol mati. Akan muncul di Lapis C.
+- Modal hapus dimount hanya bila `canDelete` → viewer tidak punya jalur ke UI mutasi.
+- Detail memakai `current_status`, **bukan** `status`.
+- Insiden: `git add -A` sempat dijalankan dari dalam `.historic` (bukan repo) → commit kode ikut memuat `bin/server`+`bin/console` (±80 MB). Sudah di-reset (mixed) + commit ulang bersih. Mitigasi: H-5 (`bin/` belum di-gitignore).
+
 ## Rencana Pemecahan (arahan Manager 2026-10-28)
 WO ini dilaporkan **per lapis**, bukan satu laporan raksasa:
 

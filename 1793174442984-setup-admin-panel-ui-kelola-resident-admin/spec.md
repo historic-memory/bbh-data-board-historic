@@ -66,7 +66,40 @@ baru di `internal/` maupun `plugins/` di luar daftar itu.
 | A-14 | Cakupan RBAC UI | **List + assign/unassign grup** untuk admin; list grup & permission **read-only**. Create/update/delete admin & grup **ditunda** (bukan bagian topik ini). |
 | A-15 | Audit log | `/api/audit/endpoints` **tidak** masuk topik ini. |
 | A-16 | Urutan kerja | **Dev workflow dulu (WO-00)** agar `npm run dev` settle sebelum fitur apa pun dikerjakan; panel UI didahulukan atas importer (`1793109556782`). |
-| A-17 | Target API | Dev: proxy Vite ke `VITE_API_TARGET` (default `http://localhost:8082`). Produksi: same-origin via plugin `pages` (tanpa baseURL absolut). Tidak ada `VITE_API_BASE_URL` absolut agar bundle tidak terikat host. **Env webapp:** `.env.example` + `.env.development` di-commit; `.env.local`/`.env.development.local` gitignored (`.gitignore` root diperluas). Wajib `loadEnv` di `vite.config.ts` — `process.env.VITE_*` tidak terisi otomatis. |
+| A-18 | **SPA stateless & base route sync** | Webapp adalah SPA murni tanpa SSR/state server: seluruh state di browser (React state + `localStorage`). `dist/` harus **self-contained** (semua aset di `/app/assets/`, nama ber-hash) dan dapat disajikan backend apa adanya. **Empat tempat base route WAJIB identik `/app`**: (1) `vite.config.ts` → `base: '/app/'`, (2) `main.tsx` → `BrowserRouter basename="/app"`, (3) `plugins/pages/plugin.go` → prefix `/app` + `spaDir="./sub_app/webapp/dist"`, (4) aset di `dist/index.html` → `/app/assets/*`. Bundle **tidak** memuat URL backend absolut dan **tidak** membaca env saat runtime. |
+| A-19 | Deploy `dist` | Development: repo bind-mount → `dist` hasil build HOST langsung terlihat container. Produksi: `dist` **harus** ikut artefak (COPY ke image atau volume read-only) — belum ada image produksi, dicatat sebagai GAP-13 dan **di luar lingkup** topik ini (cukup didokumentasikan + diverifikasi manual). |
+
+## Kontrak SPA ↔ Backend (stateless, base route `/app`)
+
+### Aturan stateless
+1. Tidak ada SSR, server-side session, atau cookie sesi. Auth = Bearer token dari
+   `localStorage`; logout murni client-side (endpoint logout stateless).
+2. `dist/` tidak boleh bergantung pada env runtime: **tidak ada** panggilan
+   `import.meta.env` untuk URL API absolut di bundle produksi. Semua request
+   memakai path relatif (`/api/...`).
+3. Aset di `dist/index.html` harus memakai prefix `/app/` (dijamin `base`),
+   sehingga backend bisa menyajikan langsung dari `spaDir` tanpa rewrite.
+4. Semua rute client-side dilayani `index.html` oleh `pages` (`NoRoute` →
+   `serveSPA`); SPA tidak boleh mengandalkan server menyediakan rute per-halaman.
+
+### Tabel sinkronisasi base route (harus selalu sama)
+| Komponen | Nilai | Berkas |
+|---|---|---|
+| Vite `base` | `/app/` | `sub_app/webapp/vite.config.ts` |
+| Router `basename` | `/app` | `sub_app/webapp/src/main.tsx` |
+| Backend prefix | `/app` | `plugins/pages/plugin.go` (`wildcardHandler`) |
+| Direktori statis | `./sub_app/webapp/dist` | `plugins/pages/plugin.go` (`spaDir`) |
+| Aset hasil build | `/app/assets/*` | `dist/index.html` |
+
+**Aturan perubahan:** mengubah salah satu dari empat nilai di atas = perubahan
+kontrak; wajib memperbarui semuanya sekaligus + menjalankan verifikasi WO-00 T-6.
+
+### Konsekuensi
+- `spaDir` bersifat **relatif terhadap CWD** proses server. Server wajib
+  dijalankan dari root repo (container: `/src`). Bila tidak, SPA 404 — dicatat di
+  GAP-14.
+- Karena `dist/` di-gitignore (`.gitignore:11`), build produksi wajib menjalankan
+  `npm ci && npm run build` di HOST sebelum image dibuat.
 
 ## Perubahan Backend Tipis (disetujui, batas AC-8)
 Hanya tiga perubahan berikut yang boleh menyentuh `plugins/`; **tidak ada
@@ -124,6 +157,9 @@ keterbatasan).
 | GAP-10 | `plugins/pages` hanya menyajikan `./sub_app/webapp/dist`; build harus dijalankan di HOST sebelum verifikasi UI | Prosedur verifikasi: `npm run build` lalu buka `http://localhost:8082/app/` |
 | GAP-11 | Tidak ada `.env`/konfigurasi target API untuk mode dev maupun produksi | Diselesaikan **WO-00** (`VITE_API_TARGET`, proxy) |
 | GAP-12 | Dev SPA memakai `base: '/app/'` sehingga `http://localhost:5173/` kosong (harus `/app/`) | Diterima; didokumentasikan di WO-00 (`npm run dev` → buka `/app/`) |
+| GAP-13 | Tidak ada image/Dockerfile produksi; `dist/` di-gitignore & tidak di-COPY, padahal `pages` menyajikan `./sub_app/webapp/dist` | **Di luar lingkup** (A-19): didokumentasikan + verifikasi manual di WO-00 T-7 |
+| GAP-14 | `spaDir` relatif terhadap CWD → SPA 404 bila server dijalankan dari direktori lain (gagal senyap, bukan error jelas) | Didokumentasikan (WO-00 T-6/T-7); perbaikan kode (env `SPA_DIR`) di luar lingkup |
+| GAP-15 | `index.html` masih `lang="en"` + judul `App` (bukan bahasa/identitas BBH) | Diperbaiki di WO-00 T-8 (metadata statis, bukan runtime env) |
 
 ## Kriteria Penerimaan (SPEC-level)
 - [AC-1] Login ke `POST /api/admin/login` berhasil → `main_token` tersimpan & user diarahkan ke `/app/dashboard`.
@@ -136,5 +172,8 @@ keterbatasan).
 - [AC-8] Kode di `internal/` tidak berubah; perubahan `plugins/` **hanya** B-1/B-2(/B-3) yang tercatat, masing-masing dengan bukti uji.
 - [AC-9] Styling Tailwind v4 terpasang dan dipakai konsisten (token `@theme`), tanpa `tailwind.config.js`.
 - [AC-11] **`npm run dev` berfungsi penuh**: login + list resident sukses melawan backend nyata tanpa `npm run build`, di `http://localhost:5173/app/` (proxy `/api` & `/healthz`), dengan HMR aktif.
+- [AC-12] **Base route sinkron**: `dist/index.html` hanya mereferensikan `/app/*`; `GET http://localhost:8082/app/`, `/app/residents`, dan `/app/assets/<hash>.js` semua merespons 200 dengan konten yang benar (deep link tidak 404).
+- [AC-13] **SPA stateless**: bundle produksi tidak memuat URL absolut backend (`grep` artefak: tidak ada `http://localhost:8082` / `http://localhost:5173`), tidak memakai cookie sesi, dan berfungsi setelah `dist/` disalin ke lokasi lain selama backend dijalankan dari root repo.
+- [AC-14] Auth berjalan tanpa state server: token hanya di `localStorage`; menghapus `dist/` tidak memengaruhi data apa pun; membuka dua tab tidak merusak sesi.
 - [AC-10] Tidak ada data mock, token, atau PII yang ter-commit; `package.json` hanya menambah dependensi Tailwind.
 

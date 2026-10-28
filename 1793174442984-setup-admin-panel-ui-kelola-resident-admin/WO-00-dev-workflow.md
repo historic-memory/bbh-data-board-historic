@@ -1,6 +1,6 @@
 ---
 title: "WO-00: Dev Workflow Settle (npm run dev)"
-description: "Memastikan pengembangan harian berjalan penuh dengan `npm run dev` tanpa build: proxy Vite untuk /api dan /healthz ke backend, konfigurasi VITE_API_TARGET, script dev, dan verifikasi login + data nyata."
+description: "Memastikan pengembangan harian berjalan penuh dengan `npm run dev` tanpa build (proxy Vite ke /api dan /healthz), sekaligus mengunci kontrak base route /app agar dist stateless dapat disajikan backend tanpa rewrite."
 status: draft
 created: "2026-10-28"
 updated: "2026-10-28"
@@ -18,7 +18,7 @@ tags:
 > (mahal, 10-20 detik) dan tidak ada HMR.
 
 ## Referensi
-- SPEC: A-9, A-17, GAP-8, GAP-11, GAP-12, AC-11.
+- SPEC: A-9, A-17, A-18, A-19, GAP-8, GAP-11..GAP-15, AC-11..AC-14.
 - `sub_app/webapp/vite.config.ts` — `base: '/app/'`, `build.outDir: 'dist'`, tanpa `server.proxy`.
 - `sub_app/webapp/src/api/client.ts` — `axios.create({ baseURL: '' })` (relatif!) di
   tiga klien (`apiLocal`, `apiPortal`, `apiClient`).
@@ -119,6 +119,39 @@ Karena itu **jangan** menaruh `VITE_API_TARGET` di `.env` — nilai di
 5. Regresi: `npm run build` tetap lulus dan `http://localhost:8082/app/` menyajikan
    bundle hasil build.
 
+### T-6 — Verifikasi sinkronisasi base route (SPEC A-18)
+Empat nilai berikut **wajib** `/app`; jalankan checklist ini setiap kali salah
+satunya disentuh:
+
+| # | Cek | Perintah / lokasi |
+|---|---|---|
+| 1 | Vite `base` | `grep "base:" sub_app/webapp/vite.config.ts` → `'/app/'` |
+| 2 | Router `basename` | `grep basename sub_app/webapp/src/main.tsx` → `"/app"` |
+| 3 | Prefix backend | `grep -n '"/app"' plugins/pages/plugin.go` |
+| 4 | Aset hasil build | `grep -o '/app/[^"]*' sub_app/webapp/dist/index.html` → semua berawalan `/app/` |
+
+Lalu uji end-to-end terhadap backend (server dijalankan dari **root repo**):
+```bash
+curl -s -o /dev/null -w '%{http_code}\n' http://localhost:8082/app/            # 200
+curl -s -o /dev/null -w '%{http_code}\n' http://localhost:8082/app/residents    # 200 (deep link → index.html)
+curl -s -o /dev/null -w '%{http_code}\n' http://localhost:8082/app/assets/<hash>.js  # 200 (application/javascript)
+curl -s -o /dev/null -w '%{http_code}\n' http://localhost:8082/api/tidak-ada     # 404 JSON
+```
+
+### T-7 — Dokumentasi deploy `dist` (stateless, A-19)
+1. Dokumentasikan di README: urutan rilis = `npm ci && npm run build` di **HOST**
+   → pastikan `sub_app/webapp/dist/` ada → jalankan server dari **root repo**
+   (atau `/src` di container) karena `spaDir` relatif terhadap CWD.
+2. Catat GAP-13 (belum ada image produksi; `dist` tidak di-COPY, `.gitignore:11`)
+   sebagai risiko operasional, **tanpa** mengubah `plugins/pages`.
+3. Catat GAP-14: bila SPA 404 padahal `dist/` ada, periksa CWD proses server.
+4. Verifikasi stateless: `grep -rE "http://localhost:(8082|5173)" sub_app/webapp/dist`
+   → **tidak ada hasil**. Bundle tidak boleh menyimpan host backend.
+
+### T-8 — Metadata statis `index.html`
+`lang="en"` → `lang="id"`, `<title>App</title>` → `<title>BBH Data Board — Admin</title>`.
+Bukan runtime env; murni statis agar bundle tetap deterministik.
+
 ## Kriteria Penerimaan
 - [AC-1] `npm run dev` lalu buka `http://localhost:5173/app/` → SPA termuat tanpa
   error console; HMR aktif.
@@ -130,14 +163,25 @@ Karena itu **jangan** menaruh `VITE_API_TARGET` di `.env` — nilai di
 - [AC-5] `npm run build` tetap lulus; bundle tersaji di `http://localhost:8082/app/`.
 - [AC-6] `.env.local` tidak ter-commit; `.env.development` tidak berisi secret.
 - [AC-7] `internal/` dan `plugins/` tidak berubah (hanya `vite.config.ts`,
-  `package.json`, `.env.development`, `.env.example`, README, `.gitignore`).
+  `package.json`, `.env.development`, `.env.example`, README, `.gitignore`,
+  `index.html`).
+- [AC-8] **Base route sinkron**: keempat nilai `/app` (Vite base, router basename,
+  prefix `pages`, aset `dist/index.html`) sesuai; `GET /app/`, `/app/residents`,
+  `/app/assets/<hash>.js` → 200 levat backend; `/api/<unknown>` → 404 JSON.
+- [AC-9] **Stateless**: bundle `dist` tidak memuat URL absolut backend
+  (`grep -rE "http://localhost:(8082|5173)" dist` kosong), tidak memakai cookie
+  sesi, dan tidak membaca env saat runtime.
+- [AC-10] Prosedur rilis terdokumentasi: build di HOST → server dijalankan dari
+  root repo (karena `spaDir` relatif CWD); SPA 404 dicatat sebagai gejala CWD salah.
 
 ## Bukti
-Log `npm run dev`, output dua `curl` (healthz + /api 401 JSON), screenshot SPA di
-`/app/`, dan log `npm run build`.
+Log `npm run dev`, output `curl` (healthz, /api 401 JSON, /app/ 200, deep link 200,
+ases 200), hasil `grep` bundle (tanpa host absolut), dan log `npm run build`.
 
 ## Catatan
 - CORS `CORS_ALLOWED_ORIGINS` tetap dibiarkan memuat `5173` sebagai cadangan bila
   seseorang memakai `VITE_API_BASE_URL` absolut; tetapi jalur resmi = proxy.
 - Jangan mengubah `base: '/app/'` menjadi `/` — plugin `pages` menyajikan SPA di
   `/app` dan `basename` router sudah mengikuti.
+- SPA ini **murni statis**: tidak ada SSR, tidak ada penyimpanan state di server.
+  Bila di masa depan butuh SSR, itu topik terpisah (bukan penambahan diam-diam).

@@ -27,7 +27,9 @@ tags:
 4. Build frontend dijalankan di **HOST** (`npm ci`/`npm run build`); `app` container Go-only. Build di container **tidak mungkin** (tidak ada Node).
 5. Verifikasi UI dengan menembak API nyata (server container `app`, `http://localhost:8082`).
 6. **Bahasa UI Indonesia**, identifier kode Inggris (SPEC A-13).
-7. Tidak ada push ke remote.
+7. **SPA stateless** (SPEC A-18): tanpa SSR/state server; semua state di browser. Bundle tidak memuat URL backend absolut.
+8. **Base route `/app` sinkron di 4 tempat** (A-18): Vite `base`, router `basename`, prefix `plugins/pages`, prefix aset `dist/index.html`. Mengubah satu = ubah semua.
+9. Tidak ada push ke remote.
 
 ## Daftar WO
 | # | File | Scope | Prasyarat | Status |
@@ -43,6 +45,8 @@ tags:
 
 ## Definisi Selesai
 - **`npm run dev` berfungsi penuh** (login + data nyata) tanpa `npm run build`, HMR aktif.
+- **Base route `/app` sinkron**: `/app/`, deep link (`/app/residents`), dan aset `/app/assets/*` → 200 lewat backend; `/api/<unknown>` → 404 JSON.
+- **Bundle stateless**: `dist` tidak memuat `http://localhost:*`; tidak ada cookie sesi; tidak membaca env runtime.
 - `npm run build` (`tsc -b && vite build`) lulus tanpa error TS; bundle tersaji oleh plugin `pages` di `http://localhost:8082/app/`.
 - Login → token tersimpan → redirect `/app/dashboard`; route admin ter-guard; 401 bersihkan sesi.
 - Alur CRUD resident berfungsi end-to-end terhadap API nyata (dibuktikan manual/curl).

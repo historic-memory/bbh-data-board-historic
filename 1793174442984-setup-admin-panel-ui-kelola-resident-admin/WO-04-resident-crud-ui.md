@@ -103,13 +103,21 @@ Alur create → detail → ubah status ×2 → tambah dokumen → edit → hapus
 |---|---|---|---|
 | A | List: `q` (debounce 300ms), filter `branch_key`/`status`, paginasi dari `total`, state UI (skeleton/empty/error+retry) | `d05ceb7` | ✅ selesai |
 | B | Detail `/residents/:id`: `current_status`, riwayat status, dokumen Drive, ibu/kelahiran/admisi, hapus + konfirmasi, 404 | `00a918b` | ✅ selesai |
-| C | Form create/edit (`resident_code` auto + read-only), modal Ubah Status, modal Tambah Dokumen, PATCH diff-only, guard `resident.write` | — | belum |
+| C | Form create/edit (`resident_code` auto + read-only), modal Ubah Status, modal Tambah Dokumen, PATCH diff-only, guard `resident.write` | `a6406ca` | ✅ selesai |
 
 Catatan Lapis B:
 - Tombol **Edit sengaja belum dirender** (form belum ada) — tidak memasang tombol mati. Akan muncul di Lapis C.
 - Modal hapus dimount hanya bila `canDelete` → viewer tidak punya jalur ke UI mutasi.
 - Detail memakai `current_status`, **bukan** `status`.
 - Insiden: `git add -A` sempat dijalankan dari dalam `.historic` (bukan repo) → commit kode ikut memuat `bin/server`+`bin/console` (±80 MB). Sudah di-reset (mixed) + commit ulang bersih. Mitigasi: H-5 (`bin/` belum di-gitignore).
+
+Catatan Lapis C (koreksi asumsi Manager):
+- **Pengosongan field DIDUKUNG** backend: `UpdateResident` memakai `nilIfBlank` untuk `nik`, `bpjs_no`, `birth_place`, `religion_code`, `blood_type_code`, `mother_id` → `""` menjadi NULL. Instruksi awal ("nonaktifkan pengosongan") **salah** dan tidak dijalankan — menonaktifkan akan menghilangkan fungsi yang sudah bekerja.
+- `resident_code` kosong saat create → kunci **tidak dikirim** sama sekali (bukan `""`), server yang generate.
+- `full_name` kosong → 400 (ditolak server).
+- `mother`/`birth`/`admission` tidak ada di `UpdateResidentInput` → form edit tidak menampilkannya (diberi Alert). Tercatat sebagai **H-6**.
+- Dokumen belum bisa dihapus/diedit — API hanya `GET`/`POST` (H-7).
+- Guard: `hasPermission('resident.write')` dipakai di `ResidentFormPage`, `ResidentDetailPage`, `ResidentListPage`; `/residents/new` untuk viewer → "Tidak berwenang"; API 403 untuk create/PATCH/status/dokumen.
 
 ## Rencana Pemecahan (arahan Manager 2026-10-28)
 WO ini dilaporkan **per lapis**, bukan satu laporan raksasa:

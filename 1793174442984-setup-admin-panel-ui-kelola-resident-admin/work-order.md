@@ -38,7 +38,7 @@ tags:
 | 1 | `WO-01-backend-kontrak-tipis.md` | B-1 `permissions[]` + `groups` terisi di `/api/admin/me`; B-2 filter `status` + `total` di list resident; (B-3 opsional) endpoint stats. Sertakan swagger + Bruno | — | complete |
 | 2 | `WO-02-auth-flow.md` | Auth flow SPA: perbaiki endpoint login (GAP-1), simpan `main_token`, `me` + permissions, logout, penanganan 401 global, halaman Login proper | WO-00, WO-01 | complete |
 | 3 | `WO-03-tailwind-admin-shell.md` | Fondasi Tailwind v4 + shell admin (sidebar/header/konten, pola TailAdmin), routing admin, **route guard**, 404, indikator user + logout | WO-00, WO-02 | complete |
-| 4 | `WO-04-resident-crud-ui.md` | Resident: list (`q`, `branch_key`, `status`, limit/offset) + detail (status history & dokumen) + form create/edit + ubah status + tambah dokumen | WO-03, WO-01 | progress (Lapis A + B + C selesai, review Manager) |
+| 4 | `WO-04-resident-crud-ui.md` | Resident: list (`q`, `branch_key`, `status`, limit/offset) + detail (status history & dokumen) + form create/edit + ubah status + tambah dokumen | WO-03, WO-01 | **complete** (Lapis A `d05ceb7`, B `00a918b`, C `a6406ca`) |
 | 5 | `WO-05-facilities-ui.md` | Fasilitas: list `facilities` + alias; integrasi dropdown di form resident | WO-03 | draft |
 | 6 | `WO-06-admin-rbac-ui.md` | Admin & RBAC: list admin, assign/unassign grup, list grup + permission (read-only), permission-aware | WO-03, WO-01 | draft |
 | 7 | `WO-07-dashboard.md` | Dashboard: ringkasan resident per status/cabang + tautan cepat (ganti placeholder `/api/`, GAP-3) | WO-04 | draft |
@@ -62,10 +62,12 @@ tags:
 | H-2 | Pisahkan `useAuth` dari `AuthContext.tsx` agar Fast Refresh bersih (GAP-17) | WO-03 |
 | H-3 | Evaluasi `npm audit` (10 advisory) — tanpa `--force` (GAP-18) | WO-03 |
 | H-4 | Image produksi yang menyertakan `sub_app/webapp/dist` (GAP-13) | SPEC A-19 |
-| H-5 | `bin/` **tidak** di-gitignore → risiko terulang insiden commit binari ~80 MB (WO-04 Lapis B) — **selesai**: `/bin/` ditambahkan ke `.gitignore` | WO-04 |
+| H-5 | `bin/` **tidak** di-gitignore → risiko terulang insiden commit binari ~80 MB (WO-04 Lapis B) — **selesai**: `/bin/` ditambahkan ke `.gitignore` (`904d99c`) | WO-04 |
+| H-6 | `UpdateResidentInput` belum mencakup `mother`/`birth`/`admission` → data tersebut tidak bisa diubah setelah create; perlu WO backend terpisah | WO-04 Lapis C |
+| H-7 | Dokumen resident belum bisa dihapus/diedit (API hanya `GET`/`POST /:id/documents`) | WO-04 Lapis C |
 
 ## Catatan
-- Progress: WO-00, WO-01, WO-02, WO-03 **complete**. **WO-04 progress** — Lapis A (`d05ceb7`, list) + Lapis B (`00a918b`, detail) selesai; Lapis C (form create/edit + modal status/dokumen) belum.
+- Progress: WO-00, WO-01, WO-02, WO-03, **WO-04 complete**. Berikutnya **WO-05** (fasilitas) atau **WO-06** (RBAC).
 - **Cara cek stateless yang benar:** cari **host:port** (`http://localhost:8082`, `:5173`, IP tailscale), bukan string `http://localhost` polos. Bundle library (react-router) memang memuat `"http://localhost"` sebagai fallback internal — bukan URL backend.
 - Topik ini **draft** — daftar WO dapat berubah setelah peninjauan SPEC.
 - Importer data = topik `1793109556782` (di luar lingkup). Urutan: **WO-00 (dev workflow) → WO-01 → WO-02 → WO-03 → ...** (A-16).

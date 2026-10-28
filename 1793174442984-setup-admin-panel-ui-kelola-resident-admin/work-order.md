@@ -39,9 +39,9 @@ tags:
 | 2 | `WO-02-auth-flow.md` | Auth flow SPA: perbaiki endpoint login (GAP-1), simpan `main_token`, `me` + permissions, logout, penanganan 401 global, halaman Login proper | WO-00, WO-01 | complete |
 | 3 | `WO-03-tailwind-admin-shell.md` | Fondasi Tailwind v4 + shell admin (sidebar/header/konten, pola TailAdmin), routing admin, **route guard**, 404, indikator user + logout | WO-00, WO-02 | complete |
 | 4 | `WO-04-resident-crud-ui.md` | Resident: list (`q`, `branch_key`, `status`, limit/offset) + detail (status history & dokumen) + form create/edit + ubah status + tambah dokumen | WO-03, WO-01 | **complete** (Lapis A `d05ceb7`, B `00a918b`, C `a6406ca`) |
-| 5 | `WO-05-facilities-ui.md` | Fasilitas: list `facilities` + alias; integrasi dropdown di form resident | WO-03 | draft |
+| 5 | `WO-05-facilities-ui.md` | Fasilitas: list `facilities` + alias; integrasi dropdown di form resident | WO-03 | **complete** (dev selesai, menunggu review) |
 | 6 | `WO-06-admin-rbac-ui.md` | Admin & RBAC: list admin, assign/unassign grup, list grup + permission (read-only), permission-aware | WO-03, WO-01 | **complete** (`49a8a92`) |
-| 7 | `WO-07-dashboard.md` | Dashboard: ringkasan resident per status/cabang + tautan cepat (ganti placeholder `/api/`, GAP-3) | WO-04 | draft |
+| 7 | `WO-07-dashboard.md` | Dashboard: ringkasan resident per status/cabang + tautan cepat (ganti placeholder `/api/`, GAP-3) | WO-04 | **complete** (dev selesai, menunggu review) |
 
 ## Definisi Selesai
 - **`npm run dev` berfungsi penuh** (login + data nyata) tanpa `npm run build`, HMR aktif.

@@ -234,3 +234,61 @@ lokal memakai `.env.development.local` yang gitignored).
 - Login **UI** masih menunjuk `/api/auth/login` (GAP-1) → perbaikan di **WO-02**.
   Jalur API login/list sudah terbukti nyata lewat curl di gate ini.
 - `npm run dev` memakai port 5173 + `strictPort`; pastikan tidak ada proses Vite lain.
+
+## Addendum — Akses via Tailscale (2026-10-28, permintaan owner)
+
+**Keputusan:** IP Tailscale mesin dev **`100.125.175.34`** dipakai sebagai
+referensi host default agar panel bisa dibuka dari perangkat mana pun di tailnet.
+Sifat perubahan **additive** — `localhost` tetap valid.
+
+Ruang lingkup yang disetujui owner: dev server 5173 + CORS + backend 8082 +
+`VITE_API_TARGET` default. Referensi host = **IP mentah** (bukan MagicDNS).
+
+### Perubahan
+| Berkas | Perubahan | Kenapa perlu |
+|---|---|---|
+| `sub_app/webapp/vite.config.ts` | `server.host` (default `true`, override `VITE_DEV_HOST`), `server.allowedHosts` (`localhost`, `127.0.0.1`, `100.125.175.34`, + `VITE_ALLOWED_HOSTS`), default `VITE_API_TARGET` → IP Tailscale | tanpa `host` Vite hanya listen `127.0.0.1`; `allowedHosts` menghindari blokir Host header |
+| `sub_app/webapp/.env.development` | `VITE_API_TARGET=http://100.125.175.34:8082` + dokumentasi `VITE_DEV_HOST`/`VITE_ALLOWED_HOSTS` | satu referensi host di seluruh dev |
+| `sub_app/webapp/.env.example` | ditto (template + catatan cara kembali ke localhost) | mesin lain mudah menyesuaikan |
+| `.env` (root) | `CORS_ALLOWED_ORIGINS` + `http://100.125.175.34:5173`, `http://100.125.175.34:8082` | hanya bila memakai jalur absolut (cross-origin); jalur proxy tidak butuh CORS |
+| `.env.example` | ditto + komentar "ganti IP sesuai mesin Anda" | menjaga template tidak menyematkan IP satu mesin secara diam-diam |
+| `README.md` (root) | tabel URL + bagian "Akses dari perangkat lain (Tailscale)"; memperbaiki baris usang `BACKEND_PORT` / `proxy /api & /admin` | dokumentasi |
+| `sub_app/webapp/README.md` | bagian Tailscale + checklist curl versi Tailscale | dokumentasi |
+
+**Tidak diubah:** `plugins/`, `internal/`, `docker-compose.yml` (backend sudah
+bind `0.0.0.0:8082`, jadi tidak perlu diubah).
+
+### Bukti
+```
+# dev server via Tailscale (Vite bind semua interface)
+http://100.125.175.34:5173/app/        -> 200 ; /healthz -> 200 ; /api/admin/residents -> 401 JSON
+log Vite: Network http://100.125.175.34:5173/app/ ; console browser: "[vite] connected."
+
+# backend via Tailscale (container sudah listen 0.0.0.0)
+http://100.125.175.34:8082/app/        -> 200 ; /api/xyz -> 404 JSON
+http://100.125.175.34:8082/healthz     -> 200
+
+# CORS preflight dari origin Tailscale (setelah --force-recreate app)
+OPTIONS /api/admin/residents  Origin: http://100.125.175.34:5173
+  -> 204 ; Access-Control-Allow-Origin: http://100.125.175.34:5173
+
+# alur login end-to-end lewat IP Tailscale (browser)
+login root@admin.local -> redirect /app/dashboard, localStorage ["main_token"],
+  tampil "Masuk sebagai root (root@admin.local) | Grup: root | Izin: semua akses (*)"
+reload halaman -> sesi bertahan (HMR "[vite] connected.")
+
+# bundle tetap stateless
+npm run build -> hijau
+grep -rEo "http://(100\.125\.175\.34|localhost):(8082|5173)" dist -> KOSONG
+```
+
+### Catatan operasional
+- `.env` root dibaca compose **saat container dibuat** → perubahan
+  `CORS_ALLOWED_ORIGINS` butuh `docker compose up -d --force-recreate app`.
+- IP Tailscale bersifat **per-mesin**; `VITE_ALLOWED_HOSTS` + `.env.development.local`
+  tersedia untuk override tanpa mengubah berkas ter-commit.
+- Proxy Vite berjalan di mesin dev, sehingga `VITE_API_TARGET=localhost:8082`
+  sebenarnya juga cukup saat diakses dari perangkat lain. Nilai Tailscale dipilih
+  agar konfigurasi tidak bergantung pada dari mana request dibuka.
+- Untuk pengujian dari perangkat lain, pastikan port 5173 & 8082 terjangkau di
+  tailnet (default tailnet allow, tanpa perlu `tailscale serve`).

@@ -58,7 +58,7 @@ tags:
 ## Housekeeping (bukan WO, dikerjakan kapan saja)
 | # | Item | Sumber |
 |---|---|---|
-| H-1 | `vite.config.ts` fallback `VITE_API_TARGET` → `http://localhost:8082`; IP Tailscale pindah ke `.env.development.local` (GAP-16) | WO-03 (commit `9466e75`) |
+| H-1 | `vite.config.ts` fallback `VITE_API_TARGET` → `http://localhost:8082`; IP Tailscale pindah ke `.env.development.local` (GAP-16) — **selesai** (`3b8effe`): default + `.env.example` + `.env.development` jadi `localhost:8082`, IP juga dilepas dari `allowedHosts` (Vite sudah mengizinkan IP literal) | WO-03 (commit `9466e75`) |
 | H-2 | Pisahkan `useAuth` dari `AuthContext.tsx` agar Fast Refresh bersih (GAP-17) | WO-03 |
 | H-3 | Evaluasi `npm audit` (10 advisory) — tanpa `--force` (GAP-18) | WO-03 |
 | H-4 | Image produksi yang menyertakan `sub_app/webapp/dist` (GAP-13) | SPEC A-19 |

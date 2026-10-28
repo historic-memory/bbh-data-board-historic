@@ -1,0 +1,57 @@
+---
+title: "Work Order (Master Index): Setup Admin Panel (UI)"
+description: "Rencana implementasi panel admin SPA di sub_app/webapp: auth flow, shell admin, CRUD resident, fasilitas, admin/grup/RBAC, dan dashboard — memakai API yang sudah ada (tanpa ubah backend)."
+status: draft
+created: "2026-10-28"
+updated: "2026-10-28"
+tags:
+  - work-order
+  - admin-panel
+  - ui
+  - spa
+---
+
+# Work Order (Master Index): Setup Admin Panel (UI)
+
+## Referensi
+- **SPEC topik ini:** `spec.md` (A-1..A-8, AC-1..AC-8, GAP-1..GAP-4).
+- Backend auth/RBAC: `.historic/1792753542116-bbh-data-board-auth-plugin-admin-schema/`
+- Backend resident (API + validator + generator): `.historic/1793093835163-analisa-data-mentah-business/`
+- Kontrak API: `docs/swagger/swagger.json` (topik `1793093835163` WO-07) + koleksi `api-tests/` (Bruno).
+- Kode SPA: `sub_app/webapp/src/` (client.ts, App.tsx, pages/).
+
+## Prinsip Pelaksanaan
+1. **Frontend-first**: kode di `sub_app/webapp`. `internal/` **tidak disentuh**; `plugins/` hanya untuk B-1..B-3 (WO-01).
+2. Sumber kebenaran endpoint/field = **swagger** + koleksi Bruno, bukan asumsi.
+3. Token & pemilik route mengikuti `client.ts` (`ROUTE_OWNERS` ↔ `federation/routes.go`); jangan campur `main_token`/`portal_token`.
+4. Build frontend dijalankan di **HOST** (`npm ci`/`npm run build`); `app` container Go-only. Build di container **tidak mungkin** (tidak ada Node).
+5. Verifikasi UI dengan menembak API nyata (server container `app`, `http://localhost:8082`).
+6. **Bahasa UI Indonesia**, identifier kode Inggris (SPEC A-13).
+7. Tidak ada push ke remote.
+
+## Daftar WO
+| # | File | Scope | Prasyarat | Status |
+|---|---|---|---|---|
+| 1 | `WO-01-backend-kontrak-tipis.md` | B-1 `permissions[]` + `groups` terisi di `/api/admin/me`; B-2 filter `status` + `total` di list resident; (B-3 opsional) endpoint stats. Sertakan swagger + Bruno | — | draft |
+| 2 | `WO-02-auth-flow.md` | Auth flow SPA: perbaiki endpoint login (GAP-1), simpan `main_token`, `me` + permissions, logout, penanganan 401 global, halaman Login proper | WO-01 | draft |
+| 3 | `WO-03-tailwind-admin-shell.md` | Fondasi Tailwind v4 + shell admin (sidebar/header/konten, pola TailAdmin), `basename="/app"`, routing admin, **route guard**, 404, indikator user + logout | WO-02 | draft |
+| 4 | `WO-04-resident-crud-ui.md` | Resident: list (`q`, `branch_key`, `status`, limit/offset) + detail (status history & dokumen) + form create/edit + ubah status + tambah dokumen | WO-03, WO-01 | draft |
+| 5 | `WO-05-facilities-ui.md` | Fasilitas: list `facilities` + alias; integrasi dropdown di form resident | WO-03 | draft |
+| 6 | `WO-06-admin-rbac-ui.md` | Admin & RBAC: list admin, assign/unassign grup, list grup + permission (read-only), permission-aware | WO-03, WO-01 | draft |
+| 7 | `WO-07-dashboard.md` | Dashboard: ringkasan resident per status/cabang + tautan cepat (ganti placeholder `/api/`, GAP-3) | WO-04 | draft |
+
+## Definisi Selesai
+- `npm run build` (`tsc -b && vite build`) lulus tanpa error TS; bundle tersaji oleh plugin `pages` di `http://localhost:8082/app/`.
+- Login → token tersimpan → redirect `/app/dashboard`; route admin ter-guard; 401 bersihkan sesi.
+- Alur CRUD resident berfungsi end-to-end terhadap API nyata (dibuktikan manual/curl).
+- Error API ditampilkan ramah (tidak crash) dengan pesan Indonesia.
+- `internal/` tidak berubah; `plugins/` hanya B-1..B-3 dan tercatat.
+- Tailwind v4 tanpa `tailwind.config.js`; tidak ada data mock / token / PII ter-commit.
+- Dokumen historic: `historic rebuild` → `historic save` → `historic git commit`.
+
+## Catatan
+- Topik ini **draft** — daftar WO dapat berubah setelah peninjauan SPEC.
+- Importer data = topik `1793109556782` (di luar lingkup). Urutan: panel UI dulu (A-16).
+- TailAdmin dipakai sebagai **acuan pola visual**; implementasi komponen milik sendiri.
+  Periksa lisensi sebelum menyalin kode apa pun dari template.
+

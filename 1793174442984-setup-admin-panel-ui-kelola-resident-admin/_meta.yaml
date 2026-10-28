@@ -9,7 +9,7 @@ files:
     - id: 01a18199-41e3-7e9b-aaeb-877acf16fdb2
       path: WO-01-backend-kontrak-tipis.md
       type: file
-      status: draft
+      status: complete
     - id: 01a18199-41e3-712a-8f0c-f15401d3ca46
       path: WO-02-auth-flow.md
       type: file

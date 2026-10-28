@@ -1,7 +1,7 @@
 ---
 title: "WO-01: Kontrak Backend Tipis (permissions, groups, filter status, total)"
 description: "Menutup GAP-5/6/7: expose permissions & groups di /api/admin/me, tambah filter status + total pada list resident, dan (opsional) endpoint stats. Perubahan additive, tanpa migrasi."
-status: draft
+status: complete
 created: "2026-10-28"
 updated: "2026-10-28"
 tags:
@@ -89,3 +89,88 @@ paritas swagger. Tanpa push.
   bila kelak multi-DB, catat sebagai batasan).
 - `EffectivePermissions` per admin di `/me` = 1 query tambahan; aman karena
   endpoint dipanggil jarang.
+
+## Bukti Pelaksanaan (2026-10-28)
+
+### Implementasi
+**B-1 — `/api/admin/me`**
+- `plugins/auth/handlers/handler.go`: `AdminView` + `Permissions []string \`json:"permissions"\``
+  (selalu non-null, default `[]`).
+- `plugins/auth/handlers/rbac.go`: helper baru `adminViewWithRBAC` = `adminViewWithGroups`
+  + `svc.EffectivePermissions(id).Keys()`. `adminViewWithGroups` (dipakai list/detail)
+  tetap tanpa `permissions` → hindari N+1.
+- `plugins/auth/handlers/auth.go`: `MeAdmin` memakai `adminViewWithRBAC`.
+- **BUG DITEMUKAN & DIPERBAIKI**: `PermissionSet.Keys()` mengeluarkan `"*"` dua kali
+  (dari map `keys` dan dari cabang `hasAll`) → `/me` root mengembalikan `["*","*"]`.
+  Kini wildcard di-skip di loop map lalu ditambahkan sekali. Regresi dikunci
+  `TestPermissionSetWildcard` + `TestPermissionSetKeysSortedWithoutDuplicates`.
+
+**B-2 — filter status + total**
+- `plugins/resident/services/service.go`: `ListFilter.Status`; tipe baru `ResidentStats`.
+- `plugins/resident/services/query.go`: `listFrom` (satu sumber FROM + LATERAL status
+  terakhir) dipakai bersama oleh list, COUNT, dan stats; `normalizeListFilter`
+  (trim, validasi `ValidStatuses` → `ErrUnknownEnum`, clamp limit 1..200, offset ≥ 0);
+  `buildListWhere` dipakai list **dan** count agar `total` tak pernah melenceng.
+- `plugins/resident/handlers/handlers.go`: `ListResponse` + `Total int64`;
+  `newListResponse(rows, total)`; helper `countOf` untuk list non-paginated
+  (`status`, `documents`, `mothers`, `facilities`) supaya `total` tetap konsisten.
+- **Catatan desain**: `GET /api/admin/residents` sekarang **selalu** memuat `total`.
+  Ini additive; item tetap array. Bentuk ini dipilih agar paginasi UI (WO-04) tidak
+  perlu endpoint terpisah.
+
+**B-3 — stats**
+- `GET /api/admin/residents/stats?branch_key=` (guard `resident.read`), didaftarkan
+  **sebelum** `/:id`; gin 1.9.1 memprioritaskan segmen statis sehingga `/stats`
+  tidak tertangkap `Get` (terverifikasi dari log route + hasil 200).
+- Bentuk: `{total, by_status, by_branch}`. Resident tanpa baris status tidak masuk
+  bucket mana pun → UI menghitung sisanya `total - sum(by_status)`.
+
+### Gate lulus (curl, port 8082)
+```
+# B-1 /me
+root     -> groups [root]        permissions ["*"]        (tidak duplikat)
+viewer   -> groups [viewer]      permissions [admin.read, endpoint.read,
+                                  group.read, member.read, permission.read,
+                                  resident.read]
+
+# B-2 list (data uji: 2 resident berstatus + 1 tanpa status)
+?q=Uji WO01                    -> total 3, n 3, current_status tiap baris benar
+?q=Uji WO01&status=DIRAWAT     -> total 1, n 1 [Uji WO01 Satu]
+?q=Uji WO01&status=DIKEMBALIKAN-> total 1, n 1 [Uji WO01 Dua]
+?q=Uji WO01&limit=1&offset=0   -> total 3, n 1
+?q=Uji WO01&limit=1&offset=1   -> total 3, n 1 [Uji WO01 Dua]   (total stabil)
+?status=NGASAL                 -> 400 {"error":"unknown enum value: status=\"NGASAL\" tidak dikenal"}
+
+# B-3 stats
+?branch_key=local -> {"total":3,"by_status":{"DIKEMBALIKAN":1,"DIRAWAT":1},
+                      "by_branch":{"local":3}}
+
+# AC-5 viewer (grup viewer, tanpa resident.write)
+GET  list   -> 200
+GET  stats  -> 200
+POST create -> 403
+```
+
+### Test
+- `go build ./...`, `go vet ./...`, `go test ./...` **hijau** (exit 0).
+- Test baru: `plugins/resident/services/query_test.go` (validasi filter, WHERE
+  bersama), `plugins/resident/services/query_db_test.go` (filter status pakai
+  status TERAKHIR, `total` vs `limit`, stats), `plugins/auth/services/rbac_test.go`
+  (+2 regresi wildcard).
+
+### Swagger & Bruno (AC-7)
+- `build.sh` di container `app` → `docs/swagger` regenerated (gitignored).
+  `paths_total=37` (sebelum 36), `ops_total=58`, `/api/admin/residents/stats` ada,
+  `AdminView.permissions` ada, `ListResponse{items,total}`.
+  Catatan: penghitung lama (`grep resident`) menghitung *path*; angka resident kini
+  5 path (`/residents`, `/stats`, `/{id}`, `/{id}/status`, `/{id}/documents`) +
+  mothers/facilities/template = 10 path total.
+- Bruno: `api-tests/auth/02-Me.bru` (groups + permissions, wildcard ≤1),
+  `api-tests/smoke/04-List-residents-filtered.bru` (`total` independen dari `limit`).
+  Hasil: `bru run --env Local auth` 2 req / 6 test PASS; `--tags=smoke` 4 req /
+  9 test PASS.
+
+### Data uji
+Semua resident uji (`Uji WO01 *`) dan admin `uji-wo01-viewer@test.local` sudah
+**dihapus** setelah verifikasi; DB kembali `{"items":[],"total":0}`. Tidak ada
+PII/token ter-commit.

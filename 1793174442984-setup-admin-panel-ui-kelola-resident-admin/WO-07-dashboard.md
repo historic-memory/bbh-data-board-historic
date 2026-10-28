@@ -14,8 +14,7 @@ tags:
 
 ## Referensi
 - SPEC: GAP-3, A-11, AC-6.
-- Sumber data: `GET /api/admin/residents/stats` (WO-01 B-3) **atau** agregasi
-  client-side dari `GET /api/admin/residents?limit=...&branch_key=...`.
+- Sumber data: **`GET /api/admin/residents/stats?branch_key=`** (B-3, sudah tersedia sejak WO-01) → `{total, by_status, by_branch}`. Fallback agregasi client-side tidak lagi diperlukan kecuali endpoint gagal.
 - `src/pages/Dashboard.tsx` saat ini memanggil `GET /api/` → **selalu 404**.
 
 ## Langkah
@@ -34,8 +33,7 @@ tags:
 - [AC-1] Dashboard tidak lagi memanggil `/api/`; tidak ada 404 di console.
 - [AC-2] Angka per status konsisten dengan hasil filter list WO-04 (diverifikasi
   pada data uji yang sama).
-- [AC-3] Bila `stats` tidak tersedia (B-3 tidak dikerjakan), dashboard tetap
-  berfungsi memakai agregasi client-side dan mencatat batasannya di UI.
+- [AC-3] Bila `stats` gagal (5xx), dashboard menampilkan pesan error ringkas + tombol coba lagi; **tidak** crash dan tidak menampilkan angka palsu.
 - [AC-4] Tautan cepat hanya muncul bila permission terkait dimiliki; unduh
   template menghasilkan file XLSX valid.
 - [AC-5] `npm run build` lulus.

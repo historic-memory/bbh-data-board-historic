@@ -60,7 +60,7 @@ baru di `internal/` maupun `plugins/` di luar daftar itu.
 | A-8 | Tanpa mock | UI menembak API nyata (container `app`, port `8082`); tidak ada data palsu yang di-commit. |
 | A-9 | Dev workflow | **Dev wajib jalan dengan `npm run dev` tanpa build.** `baseURL` axios saat ini `''` (relatif) sehingga request ke `/api/*` akan mendarat di dev server Vite, **bukan** backend — CORS saja tidak cukup. Solusi: **Vite `server.proxy`** meneruskan `/api` dan `/healthz` ke backend (`VITE_API_TARGET`, default `http://localhost:8082`) sehingga dev bersifat same-origin. `base: '/app/'` + `basename="/app"` (sudah ada) dipertahankan → dev diakses di `http://localhost:5173/app/`. `CORS_ALLOWED_ORIGINS` tetap dibiarkan memuat `5173` sebagai jalur cadangan (tanpa proxy). |
 | A-10 | Sumber permission UI | Permission diambil dari `GET /api/admin/me` (field `permissions: string[]`, hasil perubahan backend tipis B-1). Tidak ada endpoint baru khusus UI. |
-| A-11 | Paginasi | API hanya `limit`/`offset` (tanpa `total`). UI memakai pola **prev/next + page size 25** berbasis `items.length`; tombol "berikutnya" nonaktif bila hasil < page size. Setelah B-2 ada `total`, UI boleh menampilkan nomor halaman. |
+| A-11 | Paginasi | **Realisasi WO-01:** `GET /api/admin/residents` kini **selalu** mengembalikan `total` (additive, `items` tetap array) → UI memakai nomor halaman (page size 25) dihitung dari `total`. Filter `status` memfilter **status terakhir** saja dan nilai tak dikenal → **400** (bukan hasil kosong). |
 | A-12 | Field form resident | Form di-generate dari **mirror statis** `plugins/resident/schema/fields.yaml` di TypeScript (`src/features/resident/fields.ts`), karena backend tidak mengekspos schema. Risiko drift dicatat: perubahan `fields.yaml` **wajib** disertai update file mirror (dicatat di README fitur). |
 | A-13 | Bahasa UI | **Bahasa Indonesia** untuk seluruh label/teks; identifier kode tetap Inggris. Enum memakai label Indonesia (mengikuti `fields.yaml`), nilai API tetap istilah domain. |
 | A-14 | Cakupan RBAC UI | **List + assign/unassign grup** untuk admin; list grup & permission **read-only**. Create/update/delete admin & grup **ditunda** (bukan bagian topik ini). |
@@ -108,8 +108,8 @@ penambahan endpoint/fitur lain**. Semuanya additive & backward-compatible.
 | # | Perubahan | Alasan | Berkas terdampak |
 |---|---|---|---|
 | B-1 | `GET /api/admin/me` mengembalikan `permissions: []string` dan `groups` yang benar-benar terisi | A-5 permission-aware UI; saat ini `AdminView.Groups` di-hard-code `[]` | `plugins/auth/handlers/{handler.go,auth.go}` |
-| B-2 | `GET /api/admin/residents` menerima query `status` (kode enum) dan mengembalikan `total` di samping `items` | Filter status + paginasi di WO-04 | `plugins/resident/{handlers,services,model}` |
-| B-3 | (Opsional, hanya bila B-2 tidak dilakukan) endpoint `GET /api/admin/residents/stats` untuk dashboard | Agregasi status/cabang tanpa menarik seluruh data | `plugins/resident/handlers` |
+| B-2 | `GET /api/admin/residents` menerima query `status` (kode enum) dan mengembalikan `total` di samping `items` | Filter status + paginasi di WO-04 | `plugins/resident/{handlers,services,model}` | ✅ **Selesai WO-01** (`eeb7b74`) |
+| B-3 | `/api/admin/residents/stats?branch_key=` → `{total, by_status, by_branch}` (guard `resident.read`) | Agregasi status/cabang tanpa menarik seluruh data | `plugins/resident/handlers` | ✅ **Selesai WO-01** (dipilih dikerjakan) |
 
 **Aturan B-1..B-3:** kontrak lama tidak berubah (field baru additive), migrasi DB
 baru tidak diperlukan, dan scope RBAC tetap. Semua perubahan wajib disertai

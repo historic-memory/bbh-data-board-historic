@@ -9,7 +9,7 @@ files:
     - id: 01a18247-ff2c-7a6a-a0d4-109ab07e96a1
       path: WO-02-dokumen-delete-patch.md
       type: file
-      status: planned
+      status: complete
     - id: 01a18247-ff2c-71b8-90e4-a41bb578bfcf
       path: WO-03-ui-edit-lengkap.md
       type: file

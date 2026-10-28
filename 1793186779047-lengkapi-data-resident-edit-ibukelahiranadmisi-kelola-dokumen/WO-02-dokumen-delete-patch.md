@@ -1,7 +1,7 @@
 ---
 title: 'WO-02: Dokumen resident — DELETE & PATCH'
 description: H-7 — tambah service/handler/route untuk menghapus dan mengedit dokumen resident (parsial), ter-guard resident.write.
-status: planned
+status: complete
 created: "2026-10-28"
 updated: "2026-10-28"
 tags:
@@ -55,3 +55,23 @@ tags:
 - AC-5, AC-6, AC-7 terpenuhi.
 - `go build ./...` + `go test ./plugins/resident/...` lulus.
 - Swagger memuat kedua endpoint setelah WO-04.
+
+## Catatan Implementasi (2026-10-28)
+
+- `UpdateDocumentInput` di `services/service.go` (semua pointer). `DeleteDocument` / `UpdateDocument`
+  di `services/query.go`; handler `DeleteDocument` (204) & `PatchDocument` (200) di `handlers/handlers.go`;
+  route di `plugin.go` (guard `resident.write`).
+- Query selalu menyertakan `resident_id` → dokumen milik resident lain = `404` (bukan 403), tidak
+  membocorkan kepemilikan.
+- `doc_type` blank → `400` (bukan dianggap NULL), invalid → `400`; `url` blank/spasi → `400`;
+  `label` blank → `NULL`; `updated_at` hanya disentuh bila ada field yang berubah.
+- Verifikasi (container `app`): build + vet + `go test ./plugins/resident/...` lulus.
+  Test DB baru `services/document_db_test.go` PASS (bukan skip): hard delete (baris benar-benar hilang),
+  404 lintas resident, patch label saja, blank label → NULL, blank url/invalid doc_type ditolak tanpa
+  mengubah baris.
+- Verifikasi HTTP (port 8082, actor root): create 201 → PATCH label 200 → PATCH blank url 400
+  (`url wajib`) → PATCH `doc_type` invalid 400 (`unknown enum value`) → PATCH valid 200 →
+  DELETE 204 → DELETE ulang 404 → DELETE resident lain 404 → tanpa token 401.
+- **Catatan:** jalur 403 (`resident.write` tanpa wildcard) BELUM teruji end-to-end — aktor uji root
+  memegang `*` (H-8). Guard terpasang; verifikasi butuh admin non-root.
+- Kode: `d6114a2`.

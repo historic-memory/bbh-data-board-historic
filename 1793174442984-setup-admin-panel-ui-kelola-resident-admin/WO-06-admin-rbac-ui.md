@@ -57,6 +57,21 @@ tanpa `group.write`.
 Create/update/delete admin & grup sengaja di luar lingkup (A-14); jangan
 menambahkan tombol yang tidak berfungsi.
 
+## Hasil Implementasi (commit `49a8a92`)
+- Berkas: `src/api/rbac.ts` (tipe + 5 fungsi), `pages/admin/admins/{AdminListPage,ManageGroupsModal}.tsx`,
+  `pages/admin/rbac/{GroupsPage,PermissionsPage}.tsx`, rute di `App.tsx`, menu di `AdminLayout.tsx`.
+- **Deviasi struktur (diterima):** rencana `src/features/rbac/` → aktual `src/api/rbac.ts` + `src/pages/admin/rbac/`,
+  mengikuti konvensi WO-02..WO-04. Tidak perlu diubah.
+- **409 dibedakan dari 409 generik:** `toApiFailure()` menerjemahkan 409 → "bentrok dengan data lain" (menyesatkan
+  untuk anti-lockout). Modal memeriksa `statusOf(err) === 409` dan memberi pesan anti-lockout spesifik;
+  403 memakai pesan anti-escalation.
+- **Keterbatasan uji (dicatat jujur):** jalur **403 anti-escalation tidak terpicu lewat UI** karena aktor uji
+  (root) memegang `*` → `EnsureCanGrant` meloloskan. Yang terbukti: viewer tanpa `group.write` tidak punya
+  tombol, API PUT → 403, dan cabang pesan 403 ada serta tidak crash. Terbuka sebagai **H-8**.
+- Read-only terverifikasi: `GroupsPage` & `PermissionsPage` tidak memiliki elemen `<button>`.
+- Gate lain lulus: tabel admin grup terisi, modal prefill benar, assign viewer→admin tersimpan (refetch),
+  anti-lockout 409 dengan modal tetap terbuka, build 130 modul, `grep` host:port di `dist` kosong.
+
 ## Laporan Implementasi (2026-10-28)
 
 ### File

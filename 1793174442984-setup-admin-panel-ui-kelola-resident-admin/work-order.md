@@ -55,7 +55,16 @@ tags:
 - Tailwind v4 tanpa `tailwind.config.js`; tidak ada data mock / token / PII ter-commit.
 - Dokumen historic: `historic rebuild` → `historic save` → `historic git commit`.
 
+## Housekeeping (bukan WO, dikerjakan kapan saja)
+| # | Item | Sumber |
+|---|---|---|
+| H-1 | `vite.config.ts` fallback `VITE_API_TARGET` → `http://localhost:8082`; IP Tailscale pindah ke `.env.development.local` (GAP-16) | WO-03 (commit `9466e75`) |
+| H-2 | Pisahkan `useAuth` dari `AuthContext.tsx` agar Fast Refresh bersih (GAP-17) | WO-03 |
+| H-3 | Evaluasi `npm audit` (10 advisory) — tanpa `--force` (GAP-18) | WO-03 |
+| H-4 | Image produksi yang menyertakan `sub_app/webapp/dist` (GAP-13) | SPEC A-19 |
+
 ## Catatan
+- Progress: WO-00, WO-01, WO-02, WO-03 **complete**. Berikutnya **WO-04** (Resident CRUD).
 - Topik ini **draft** — daftar WO dapat berubah setelah peninjauan SPEC.
 - Importer data = topik `1793109556782` (di luar lingkup). Urutan: **WO-00 (dev workflow) → WO-01 → WO-02 → WO-03 → ...** (A-16).
 - TailAdmin dipakai sebagai **acuan pola visual**; implementasi komponen milik sendiri.

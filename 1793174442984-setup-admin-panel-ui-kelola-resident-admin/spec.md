@@ -68,6 +68,7 @@ baru di `internal/` maupun `plugins/` di luar daftar itu.
 | A-16 | Urutan kerja | **Dev workflow dulu (WO-00)** agar `npm run dev` settle sebelum fitur apa pun dikerjakan; panel UI didahulukan atas importer (`1793109556782`). |
 | A-18 | **SPA stateless & base route sync** | Webapp adalah SPA murni tanpa SSR/state server: seluruh state di browser (React state + `localStorage`). `dist/` harus **self-contained** (semua aset di `/app/assets/`, nama ber-hash) dan dapat disajikan backend apa adanya. **Empat tempat base route WAJIB identik `/app`**: (1) `vite.config.ts` → `base: '/app/'`, (2) `main.tsx` → `BrowserRouter basename="/app"`, (3) `plugins/pages/plugin.go` → prefix `/app` + `spaDir="./sub_app/webapp/dist"`, (4) aset di `dist/index.html` → `/app/assets/*`. Bundle **tidak** memuat URL backend absolut dan **tidak** membaca env saat runtime. |
 | A-19 | Deploy `dist` | Development: repo bind-mount → `dist` hasil build HOST langsung terlihat container. Produksi: `dist` **harus** ikut artefak (COPY ke image atau volume read-only) — belum ada image produksi, dicatat sebagai GAP-13 dan **di luar lingkup** topik ini (cukup didokumentasikan + diverifikasi manual). |
+| A-20 | Akses dev via Tailscale (commit `9466e75`) | Dev server bind semua interface (`VITE_DEV_HOST`, default `true`) + `server.allowedHosts` (localhost/127.0.0.1 + `VITE_ALLOWED_HOSTS`). Panel dibuka di `http://<ip-tailscale>:5173/app/`. **Catatan:** `VITE_API_TARGET` default dev kini menunjuk IP Tailscale; nilai per-mesin **seharusnya** di `.env.development.local`, bukan di `.env.development` yang di-commit (dicatat sebagai GAP-16, tidak memblokir). |
 
 ## Kontrak SPA ↔ Backend (stateless, base route `/app`)
 
@@ -160,6 +161,9 @@ keterbatasan).
 | GAP-13 | Tidak ada image/Dockerfile produksi; `dist/` di-gitignore & tidak di-COPY, padahal `pages` menyajikan `./sub_app/webapp/dist` | **Di luar lingkup** (A-19): didokumentasikan + verifikasi manual di WO-00 T-7 |
 | GAP-14 | `spaDir` relatif terhadap CWD → SPA 404 bila server dijalankan dari direktori lain (gagal senyap, bukan error jelas) | Didokumentasikan (WO-00 T-6/T-7); perbaikan kode (env `SPA_DIR`) di luar lingkup |
 | GAP-15 | `index.html` masih `lang="en"` + judul `App` (bukan bahasa/identitas BBH) | Diperbaiki di WO-00 T-8 (metadata statis, bukan runtime env) |
+| GAP-16 | `vite.config.ts` memakai fallback IP absolut (`http://100.125.175.34:8082`) dan `.env.development` (di-commit) berisi IP mesin → tidak portabel untuk dev lain | Housekeeping: fallback ke `http://localhost:8082`, IP pindah ke `.env.development.local` |
+| GAP-17 | `AuthContext.tsx` mengekspor provider + hook → peringatan Fast Refresh (full reload saat diedit) | Housekeeping: pisah `useAuth` ke file sendiri |
+| GAP-18 | `npm audit` webapp: 10 advisory (2 moderate, 8 high) pada axios/react-router-dom/vite — **sudah ada sebelum topik ini** | Housekeeping terpisah; JANGAN `npm audit fix --force` (menurunkan versi paket inti) |
 
 ## Kriteria Penerimaan (SPEC-level)
 - [AC-1] Login ke `POST /api/admin/login` berhasil → `main_token` tersimpan & user diarahkan ke `/app/dashboard`.

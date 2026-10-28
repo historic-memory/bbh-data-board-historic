@@ -29,7 +29,7 @@ files:
     - id: 01a18199-41e5-72aa-8d5c-4718a35ca5a7
       path: WO-06-admin-rbac-ui.md
       type: file
-      status: draft
+      status: progress
     - id: 01a18199-41e5-781f-911f-46425df3f30c
       path: WO-07-dashboard.md
       type: file

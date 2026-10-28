@@ -40,7 +40,7 @@ tags:
 | 3 | `WO-03-tailwind-admin-shell.md` | Fondasi Tailwind v4 + shell admin (sidebar/header/konten, pola TailAdmin), routing admin, **route guard**, 404, indikator user + logout | WO-00, WO-02 | complete |
 | 4 | `WO-04-resident-crud-ui.md` | Resident: list (`q`, `branch_key`, `status`, limit/offset) + detail (status history & dokumen) + form create/edit + ubah status + tambah dokumen | WO-03, WO-01 | **complete** (Lapis A `d05ceb7`, B `00a918b`, C `a6406ca`) |
 | 5 | `WO-05-facilities-ui.md` | Fasilitas: list `facilities` + alias; integrasi dropdown di form resident | WO-03 | draft |
-| 6 | `WO-06-admin-rbac-ui.md` | Admin & RBAC: list admin, assign/unassign grup, list grup + permission (read-only), permission-aware | WO-03, WO-01 | draft |
+| 6 | `WO-06-admin-rbac-ui.md` | Admin & RBAC: list admin, assign/unassign grup, list grup + permission (read-only), permission-aware | WO-03, WO-01 | progress (dev selesai, menunggu review) |
 | 7 | `WO-07-dashboard.md` | Dashboard: ringkasan resident per status/cabang + tautan cepat (ganti placeholder `/api/`, GAP-3) | WO-04 | draft |
 
 ## Definisi Selesai
@@ -67,7 +67,7 @@ tags:
 | H-7 | Dokumen resident belum bisa dihapus/diedit (API hanya `GET`/`POST /:id/documents`) | WO-04 Lapis C |
 
 ## Catatan
-- Progress: WO-00, WO-01, WO-02, WO-03, **WO-04 complete**. Berikutnya **WO-05** (fasilitas) atau **WO-06** (RBAC).
+- Progress: WO-00, WO-01, WO-02, WO-03, WO-04 **complete**. **WO-06** progress (dev selesai, menunggu review). Berikutnya **WO-05** (fasilitas) lalu **WO-07** (dashboard).
 - **Cara cek stateless yang benar:** cari **host:port** (`http://localhost:8082`, `:5173`, IP tailscale), bukan string `http://localhost` polos. Bundle library (react-router) memang memuat `"http://localhost"` sebagai fallback internal — bukan URL backend.
 - Topik ini **draft** — daftar WO dapat berubah setelah peninjauan SPEC.
 - Importer data = topik `1793109556782` (di luar lingkup). Urutan: **WO-00 (dev workflow) → WO-01 → WO-02 → WO-03 → ...** (A-16).

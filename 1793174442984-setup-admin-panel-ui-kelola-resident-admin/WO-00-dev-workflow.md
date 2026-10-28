@@ -61,16 +61,38 @@ export default defineConfig(({ mode }) => ({
 - Jangan tambahkan `rewrite`; path `/api/*` diteruskan apa adanya.
 
 ### T-2 — Konfigurasi env
-1. `sub_app/webapp/.env.development` (**di-commit**, tanpa secret):
-   ```
-   VITE_API_TARGET=http://localhost:8082
-   ```
-2. `sub_app/webapp/.env.local` (opsional, **gitignored**) untuk override lokal
-   (mis. backend di port lain). Tambah `.env.local` ke `.gitignore` root —
-   pola `.env` yang ada **tidak** mencakup `.env.local`.
-3. `.env.example` root: tambah blok komentar "Frontend dev target"
-   (`VITE_API_TARGET=http://localhost:8082`) agar onboarding jelas.
-4. **Tidak** menambah `VITE_API_BASE_URL` — klien tetap relatif (A-17).
+**Status: env files sudah dibuat** (2026-10-28):
+
+| File | Status | Isi |
+|---|---|---|
+| `sub_app/webapp/.env.example` | di-commit | template + komentar |
+| `sub_app/webapp/.env.development` | di-commit | `VITE_API_TARGET=http://localhost:8082` |
+| `sub_app/webapp/.env.local`, `.env.development.local` | gitignored | override lokal |
+| `.gitignore` | diubah | tambah `sub_app/webapp/.env.local`, `.env.*.local` (pola `.env` lama **tidak** mencakup keduanya) |
+
+Catatan prioritas Vite: `.env.[mode].local` > `.env.[mode]` > `.env.local` > `.env`.
+Karena itu **jangan** menaruh `VITE_API_TARGET` di `.env` — nilai di
+`.env.development` akan menimpanya dan membingungkan. Override selalu lewat
+`.env.development.local`.
+
+> **JEBAKAN PENTING (blocker WO-00):** `process.env.VITE_API_TARGET` **tidak**
+> terisi otomatis di `vite.config.ts`, karena Vite memuat berkas `.env` setelah
+> konfigurasi dievaluasi. Wajib pakai `loadEnv`:
+> ```ts
+> import { defineConfig, loadEnv } from 'vite'
+>
+> export default defineConfig(({ mode }) => {
+>   const env = loadEnv(mode, process.cwd(), '')
+>   const apiTarget = env.VITE_API_TARGET || 'http://localhost:8082'
+>   ...
+> })
+> ```
+> Tanpa `loadEnv`, proxy akan jatuh ke fallback dan `.env` seolah tidak
+> berpengaruh.
+
+4. **Tidak** menambah `VITE_API_BASE_URL` — klien tetap relatif (A-17). Bila
+   suatu saat dipakai, nilainya harus dioper ke klien lewat `loadEnv` juga,
+   bukan `process.env` langsung.
 
 ### T-3 — Script `package.json`
 - `dev`: `vite` (default, port 5173).

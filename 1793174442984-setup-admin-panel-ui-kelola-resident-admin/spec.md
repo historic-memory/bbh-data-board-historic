@@ -66,7 +66,7 @@ baru di `internal/` maupun `plugins/` di luar daftar itu.
 | A-14 | Cakupan RBAC UI | **List + assign/unassign grup** untuk admin; list grup & permission **read-only**. Create/update/delete admin & grup **ditunda** (bukan bagian topik ini). |
 | A-15 | Audit log | `/api/audit/endpoints` **tidak** masuk topik ini. |
 | A-16 | Urutan kerja | **Dev workflow dulu (WO-00)** agar `npm run dev` settle sebelum fitur apa pun dikerjakan; panel UI didahulukan atas importer (`1793109556782`). |
-| A-17 | Target API | Dev: proxy Vite ke `VITE_API_TARGET` (default `http://localhost:8082`). Produksi: same-origin via plugin `pages` (tanpa baseURL absolut). Tidak ada `VITE_API_BASE_URL` absolut agar bundle tidak terikat host. |
+| A-17 | Target API | Dev: proxy Vite ke `VITE_API_TARGET` (default `http://localhost:8082`). Produksi: same-origin via plugin `pages` (tanpa baseURL absolut). Tidak ada `VITE_API_BASE_URL` absolut agar bundle tidak terikat host. **Env webapp:** `.env.example` + `.env.development` di-commit; `.env.local`/`.env.development.local` gitignored (`.gitignore` root diperluas). Wajib `loadEnv` di `vite.config.ts` — `process.env.VITE_*` tidak terisi otomatis. |
 
 ## Perubahan Backend Tipis (disetujui, batas AC-8)
 Hanya tiga perubahan berikut yang boleh menyentuh `plugins/`; **tidak ada

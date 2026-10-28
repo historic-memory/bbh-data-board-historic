@@ -17,7 +17,7 @@ files:
     - id: 01a18199-41e4-72a6-a4da-bdd0682e5745
       path: WO-03-tailwind-admin-shell.md
       type: file
-      status: draft
+      status: complete
     - id: 01a18199-41e5-703e-8acb-d22cc67270a1
       path: WO-04-resident-crud-ui.md
       type: file

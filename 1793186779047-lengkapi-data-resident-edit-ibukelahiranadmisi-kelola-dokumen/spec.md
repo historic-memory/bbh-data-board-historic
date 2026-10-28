@@ -1,7 +1,7 @@
 ---
 title: 'SPEC: Lengkapi Data Resident — edit ibu/kelahiran/admisi & kelola dokumen'
 description: 'Melengkapi kontrak admin resident: jalur update parsial untuk mother/birth/admission di PATCH /api/admin/residents/:id, plus kelola dokumen (DELETE + PATCH) — beserta penyesuaian UI form/detail. Backend tipis + frontend sub_app/webapp.'
-status: planned
+status: complete
 created: "2026-10-28"
 updated: "2026-10-28"
 tags:

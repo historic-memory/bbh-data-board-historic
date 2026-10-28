@@ -17,11 +17,11 @@ files:
     - id: 01a18247-ff2c-7d01-a291-3d8373162967
       path: WO-04-kontrak-verifikasi.md
       type: file
-      status: planned
+      status: complete
     - id: 01a18247-ff2c-7207-9f33-8ceab7731815
       path: spec.md
       type: spec
-      status: planned
+      status: complete
     - id: 01a18247-ff2c-7bab-b22c-06da49fdc19d
       path: work-order.md
       type: file

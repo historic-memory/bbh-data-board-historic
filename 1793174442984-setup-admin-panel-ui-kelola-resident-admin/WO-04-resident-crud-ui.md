@@ -104,7 +104,7 @@ WO ini dilaporkan **per lapis**, bukan satu laporan raksasa:
 | Lapis | Isi | Status |
 |---|---|---|
 | **A** | List: `q` debounce 300ms, `branch_key`, `status`, paginasi dari `total`, skeleton/empty/error+retry | **selesai** |
-| **B** | Detail: `current_status`, riwayat status, dokumen Drive, ibu/kelahiran/admisi, hapus + edit via modal | belum |
+| **B** | Detail: `current_status`, riwayat status, dokumen Drive, ibu/kelahiran/admisi, hapus via modal | **selesai** |
 | **C** | Form create/edit + mutasi (status & dokumen), `resident_code` auto, PATCH diff-only, guard `hasPermission` | belum |
 
 ## Laporan Lapis A (2026-10-28)
@@ -162,3 +162,78 @@ resident paginasi; **semua dihapus setelah uji** (DB kembali `{"items":[],"total
 ### Betul-betul belum dikerjakan (Lapis B/C)
 Detail, form create/edit, ubah status, tambah dokumen, hapus, dan seluruh
 tombol mutasi — sesuai arahan pemecahan bertahap.
+
+## Laporan Lapis B (2026-10-28)
+
+Lingkup: **halaman detail** `/residents/:id` + jalur navigasi list → detail +
+aksi hapus dengan modal konfirmasi. Form create/edit, ubah status, dan tambah
+dokumen tetap di Lapis C.
+
+### File
+| Berkas | Isi |
+|---|---|
+| `src/pages/admin/residents/ResidentDetailPage.tsx` (baru) | Halaman detail: `current_status`, riwayat status, dokumen, ibu, kelahiran, admisi, hapus |
+| `src/pages/admin/residents/DetailRow.tsx` (baru) | `DetailRow` / `DetailText` — baris `dt/dd` seragam untuk semua kartu |
+| `src/api/residents.ts` (ubah) | Tipe agregat (`ResidentFull`, `ResidentDocument`, `StatusHistoryRow`, …) + `getResident`, `listResidentStatus`, `listResidentDocuments`, `deleteResident` |
+| `src/App.tsx` (ubah) | Route `/residents/:id` di dalam grup `RequireAuth` + `AdminLayout` |
+| `src/pages/admin/residents/ResidentListPage.tsx` (ubah) | Nama resident jadi tautan ke detail; kolom cabang memakai label endpoint (fallback key) |
+
+Tidak ada perubahan di `internal/`, `plugins/`, atau build backend.
+
+### Catatan implementasi
+1. **`current_status`, bukan `status`** — kartu “Status terkini” membaca
+   `full.current_status?.status_code` (hasil LATERAL subquery WO-01) dan
+   menampilkan `effective_at` + `note`. Tidak ada field `status` di UI.
+2. **Riwayat append-only** — sumbernya `GET /residents/:id/status` yang sudah
+   terurut terbaru→terlama dari server; UI tidak mengurutkan ulang dan tidak
+   menawarkan hapus baris riwayat.
+3. **Dokumen Drive** — `target="_blank"` + `rel="noreferrer"` (wajib, diverifikasi
+   lewat DOM), `doc_type` memakai `enumLabel('document_type', …)`.
+4. **Edit tidak dipasang di Lapis B** — sengaja, karena form-nya baru ada di
+   Lapis C. Tombol “Edit” yang belum berfungsi tidak dirender supaya tidak ada
+   tombol mati. Tombol **Hapus** hanya muncul bila `hasPermission('resident.delete')`
+   dan modal konfirmasinya pun tidak dipasang (`{canDelete && <Modal …>}`).
+5. **Viewer** — tanpa `resident.write` halaman menampilkan Alert “Anda masuk
+   sebagai pengamat…”; tanpa `resident.delete` tidak ada tombol Hapus. 403 dari
+   server tetap ditangani (`deleteError` → Alert di dalam modal), jadi bukan
+   sekadar menyembunyikan tombol.
+6. **Umur manusiawi** — `ageLabel()` menampilkan `11 bulan` untuk < 2 tahun dan
+   `N tahun` selebihnya (bukan `0 tahun`).
+7. **Baris kosong tidak dipaksakan** — “Fasilitas (ID)” disembunyikan bila
+   `facility_id` null; seksi ibu/kelahiran/admisi punya pesan kosong masing-masing.
+8. **Label cabang** — detail memakai `branch.label ?? branch.key ?? branch_key`;
+   list memakai peta dari `listBranches()` dengan fallback key mentah.
+
+### Gate (browser, `http://100.125.175.34:5173/app/residents/:id`, data nyata)
+Data uji: 1 resident lengkap (ibu, kelahiran, admisi, 3 baris riwayat status,
+2 dokumen) + 1 admin viewer sementara. **Semua dihapus setelah uji** — DB kembali
+`{"items":[],"total":0}` dan admin `Viewer Uji` dihapus.
+
+| # | Uji | Hasil |
+|---|---|---|
+| 1 | Klik nama di list | Pindah ke `/app/residents/<id>`; judul tab “Detail Resident · BBH Data Board — Admin” |
+| 2 | Kartu data bayi | `20 Nov 2025 · 11 bulan`, agama `Hindu`, gol darah `O positif`, cabang `Instance ini` |
+| 3 | Status terkini | `Transfer`, “Berlaku sejak 01 Feb 2027”, catatan “Transfer ke JCH” |
+| 4 | Riwayat status | 3 baris terbaru→terlama (`01 Feb 2027`, `10 Jan 2027`, `25 Nov 2025`), catatan kosong → `—` |
+| 5 | Dokumen | 2 entri, badge `Folder Google Drive` + `Media`; DOM: `target="_blank"`, `rel="noreferrer"` untuk keduanya |
+| 6 | Ibu / Kelahiran / Admisi | Terisi lengkap (`2900 g`, `48 cm`, `Anak ke- 2`, `Normal`, `Bidan`); “Fasilitas (ID)” tidak muncul karena null |
+| 7 | ID tidak ada | `Resident tidak ditemukan` + tombol “Kembali ke daftar” (bukan halaman error generik) |
+| 8 | Hapus (root) | Modal “Hapus resident?” → “Ya, hapus” → toast `Resident dihapus.` → redirect `/residents`, `0 data cocok` |
+| 9 | Viewer: GET detail | 200; tombol Hapus **tidak dirender**, Alert pengamat tampil |
+| 10 | Viewer: DELETE API | `403` `{"error":"izin ditolak: butuh resident.delete"}` |
+| 11 | `npm run build` | hijau (`tsc -b && vite build`, 122 modul) |
+| 12 | Stateless | `grep -rEo "http://(100\.125\.175\.34\|localhost):(8082\|5173)" dist` → kosong |
+
+### Catatan pengujian
+- Seed lewat API sempat gagal `400` karena dua nilai enum salah tebak
+  (`status=PULANG`, `doc_type=akta_lahir`); enum sebenarnya hanya
+  `DIRAWAT/DIKEMBALIKAN/TRANSFER/MENINGGAL` dan
+  `drive_folder/media/other` (lihat `fields.yaml`). Ini justru mengonfirmasi
+  validasi server bekerja — bukan bug UI.
+- Saat file diubah bertahap, Vite sempat gagal reload (`500`) karena sintaks
+  setengah jadi; build final bersih. Tidak ada jejak di commit.
+
+### Betul-betul belum dikerjakan (Lapis C)
+Form create/edit (`/residents/baru`, `/residents/:id/edit`), modal Ubah Status,
+modal Tambah Dokumen, PATCH diff-only, dan guard `hasPermission('resident.write')`
+untuk tombol mutasi. Tombol “Edit” sengaja belum dirender sampai form-nya ada.

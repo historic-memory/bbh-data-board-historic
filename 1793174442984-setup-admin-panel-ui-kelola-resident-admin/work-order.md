@@ -1,7 +1,7 @@
 ---
 title: "Work Order (Master Index): Setup Admin Panel (UI)"
 description: "Rencana implementasi panel admin SPA di sub_app/webapp: auth flow, shell admin, CRUD resident, fasilitas, admin/grup/RBAC, dan dashboard — memakai API yang sudah ada (tanpa ubah backend)."
-status: draft
+status: complete
 created: "2026-10-28"
 updated: "2026-10-28"
 tags:
@@ -39,9 +39,9 @@ tags:
 | 2 | `WO-02-auth-flow.md` | Auth flow SPA: perbaiki endpoint login (GAP-1), simpan `main_token`, `me` + permissions, logout, penanganan 401 global, halaman Login proper | WO-00, WO-01 | complete |
 | 3 | `WO-03-tailwind-admin-shell.md` | Fondasi Tailwind v4 + shell admin (sidebar/header/konten, pola TailAdmin), routing admin, **route guard**, 404, indikator user + logout | WO-00, WO-02 | complete |
 | 4 | `WO-04-resident-crud-ui.md` | Resident: list (`q`, `branch_key`, `status`, limit/offset) + detail (status history & dokumen) + form create/edit + ubah status + tambah dokumen | WO-03, WO-01 | **complete** (Lapis A `d05ceb7`, B `00a918b`, C `a6406ca`) |
-| 5 | `WO-05-facilities-ui.md` | Fasilitas: list `facilities` + alias; integrasi dropdown di form resident | WO-03 | **complete** (dev selesai, menunggu review) |
+| 5 | `WO-05-facilities-ui.md` | Fasilitas: list `facilities` + integrasi dropdown di form resident (alias tidak ada endpoint) | WO-03 | **complete** (`71c5ac2`) |
 | 6 | `WO-06-admin-rbac-ui.md` | Admin & RBAC: list admin, assign/unassign grup, list grup + permission (read-only), permission-aware | WO-03, WO-01 | **complete** (`49a8a92`) |
-| 7 | `WO-07-dashboard.md` | Dashboard: ringkasan resident per status/cabang + tautan cepat (ganti placeholder `/api/`, GAP-3) | WO-04 | **complete** (dev selesai, menunggu review) |
+| 7 | `WO-07-dashboard.md` | Dashboard: ringkasan resident per status/cabang + tautan cepat (ganti placeholder `/api/`, GAP-3) | WO-04 | **complete** (`621cf1f`) |
 
 ## Definisi Selesai
 - **`npm run dev` berfungsi penuh** (login + data nyata) tanpa `npm run build`, HMR aktif.
@@ -66,9 +66,11 @@ tags:
 | H-6 | `UpdateResidentInput` belum mencakup `mother`/`birth`/`admission` → data tersebut tidak bisa diubah setelah create; perlu WO backend terpisah | WO-04 Lapis C |
 | H-7 | Dokumen resident belum bisa dihapus/diedit (API hanya `GET`/`POST /:id/documents`) | WO-04 Lapis C |
 | H-8 | Jalur **403 anti-escalation** belum teruji lewat UI: aktor uji (root) memegang `*` → `EnsureCanGrant` selalu meloloskan. Perlu admin non-root yang mencoba memberi grup lebih tinggi | WO-06 |
+| H-9 | Fasilitas tidak punya endpoint `DELETE`; data uji dibersihkan manual via SQL | WO-05 |
+| H-10 | `PUT /api/admin/facilities/:id` tidak menerima `branch_key` → field cabang disabled di mode edit (UI jujur, bukan bug) | WO-05 |
 
 ## Catatan
-- Progress: WO-00, WO-01, WO-02, WO-03, WO-04, WO-06 **complete**. Sisa: **WO-05** (fasilitas) dan **WO-07** (dashboard).
+- Progress: **SEMUA WO (00-07) `complete`** — review Manager selesai. Topik siap ditutup; sisa item ada di tabel Housekeeping (H-1..H-8).
 - **Cara cek stateless yang benar:** cari **host:port** (`http://localhost:8082`, `:5173`, IP tailscale), bukan string `http://localhost` polos. Bundle library (react-router) memang memuat `"http://localhost"` sebagai fallback internal — bukan URL backend.
 - Topik ini **draft** — daftar WO dapat berubah setelah peninjauan SPEC.
 - Importer data = topik `1793109556782` (di luar lingkup). Urutan: **WO-00 (dev workflow) → WO-01 → WO-02 → WO-03 → ...** (A-16).

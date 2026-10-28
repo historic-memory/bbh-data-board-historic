@@ -1,7 +1,7 @@
 ---
 title: "WO-04: UI Kelola Resident (list, detail, create, edit, status, dokumen)"
 description: "Halaman resident: tabel dengan pencarian/filter/paginasi, halaman detail (status history + dokumen), form create/edit berbasis mirror fields.yaml, aksi ubah status append-only, dan tambah dokumen link Drive."
-status: progress
+status: complete
 created: "2026-10-28"
 updated: "2026-10-28"
 tags:

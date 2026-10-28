@@ -1,7 +1,7 @@
 ---
 title: "WO-06: UI Admin & RBAC"
 description: "Halaman admin: daftar admin + assign/unassign grup, serta halaman grup & permission (read-only) dengan penyesuaian tombol berbasis permission."
-status: progress
+status: complete
 created: "2026-10-28"
 updated: "2026-10-28"
 tags:

@@ -1,7 +1,7 @@
 ---
 title: "WO-07: Dashboard"
 description: "Dashboard ringkas: jumlah resident per status & cabang, total, daftar terbaru, dan tautan cepat — mengganti placeholder GET /api/ (GAP-3)."
-status: progress
+status: complete
 created: "2026-10-28"
 updated: "2026-10-28"
 tags:
@@ -43,6 +43,16 @@ Screenshot dashboard berisi data nyata + perbandingan angka dengan list API.
 
 ## Catatan
 Tanpa library chart pada iterasi ini; visual sederhana (bar CSS) agar bundle kecil.
+
+## Hasil Implementasi (commit `621cf1f`)
+- Berkas: `pages/admin/DashboardPage.tsx` (+ `src/api/residents.ts`).
+- Sumber angka: `GET /api/admin/residents/stats` (WO-01). Panggilan lama `GET /api/` (GAP-3) dihapus.
+- Gate lulus: kartu 3/1/1/1/0 konsisten dengan `stats` API **dan** dengan `?status=` pada list;
+  error state (`/stats` di-abort) menampilkan Alert + Coba lagi **tanpa angka palsu**, retry pulih;
+  viewer tanpa "+ Tambah resident", tautan read-only tetap ada; build 133 modul; `grep` host:port kosong.
+- **Catatan unduh template:** respons 200 + MIME `spreadsheetml.sheet`; `curl` menghasilkan xlsx valid
+  12943 byte. Playwright tidak memicu event `download` untuk blob+object URL, jadi validasi dilakukan
+  lewat respons HTTP — bukan cacat implementasi.
 
 ## Laporan Implementasi (2026-10-28)
 

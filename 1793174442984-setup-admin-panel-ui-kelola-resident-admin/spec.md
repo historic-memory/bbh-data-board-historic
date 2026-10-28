@@ -1,7 +1,7 @@
 ---
 title: "SPEC: Setup Admin Panel (UI) — kelola resident & admin"
 description: "Spesifikasi panel admin SPA (React + Vite + Tailwind v4) di sub_app/webapp: auth flow (login/logout/sesi/guard), shell admin, CRUD data resident, manajemen admin/grup/RBAC, dan dashboard ringkas — memakai API yang sudah ada."
-status: draft
+status: complete
 created: "2026-10-28"
 updated: "2026-10-28"
 tags:

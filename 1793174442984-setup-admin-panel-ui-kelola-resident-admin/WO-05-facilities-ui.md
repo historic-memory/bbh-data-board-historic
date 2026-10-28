@@ -1,7 +1,7 @@
 ---
 title: "WO-05: UI Fasilitas"
 description: "Halaman fasilitas: tabel facilities (filter cabang, tipe, status aktif) + form create/edit ringan, serta integrasi dropdown fasilitas pada form resident (WO-04)."
-status: progress
+status: complete
 created: "2026-10-28"
 updated: "2026-10-28"
 tags:
@@ -46,6 +46,18 @@ Screenshot tabel + form, uji dropdown fasilitas di form resident.
 
 ## Catatan
 Endpoint alias tidak tersedia; jangan mengarang UI untuk itu.
+
+## Hasil Implementasi (commit `71c5ac2`)
+- Berkas: `src/api/facilities.ts`, `pages/admin/facilities/{FacilityListPage,FacilityFormModal}.tsx`,
+  `pages/admin/residents/FacilitySelect.tsx`, integrasi di `ResidentFormPage.tsx`, rute di `App.tsx`.
+- Gate lulus: tabel 4 fasilitas; filter `branch_key=local` → 1 baris; pencarian lokal "Bidan" → 1 baris;
+  create 201; edit (nonaktifkan) 200; duplikat → 409 pesan Indonesia.
+- `FacilitySelect` hanya menampilkan fasilitas `is_active` + global; resident tersimpan dengan
+  `birth.facility_id` (terverifikasi).
+- Viewer: 0 tombol aksi, 0 `dialog`.
+- **Batasan jujur:** (a) API tidak punya `DELETE /facilities/:id` → data uji dibersihkan via SQL (H-9);
+  (b) `PUT /facilities/:id` tidak menerima `branch_key` → field cabang **disabled** di mode edit (H-10);
+  (c) UI alias tidak dibuat karena endpoint tidak ada.
 
 ## Laporan Implementasi (2026-10-28)
 

@@ -65,3 +65,6 @@ Login sukses/gagal/luring (screenshot atau log), isi localStorage, dan
 
 ## Catatan
 Backend logout stateless — UI hanya membuang token.
+
+Verifikasi dilakukan lewat `npm run dev` (`http://localhost:5173/app/`) memakai
+proxy dari **WO-00**; tidak perlu `npm run build` setiap iterasi.

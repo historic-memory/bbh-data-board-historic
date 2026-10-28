@@ -2,6 +2,10 @@ id: "1793174442984"
 title: Setup Admin Panel (UI) — kelola resident & admin
 created: "2026-10-28"
 files:
+    - id: 01a1819e-26ae-7bde-94fc-674089474e5c
+      path: WO-00-dev-workflow.md
+      type: file
+      status: draft
     - id: 01a18199-41e3-7e9b-aaeb-877acf16fdb2
       path: WO-01-backend-kontrak-tipis.md
       type: file

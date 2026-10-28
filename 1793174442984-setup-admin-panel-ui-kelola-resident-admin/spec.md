@@ -58,14 +58,15 @@ baru di `internal/` maupun `plugins/` di luar daftar itu.
 | A-6 | Cakupan cabang | Menu resident memakai `apiLocal` (route pusat `/api/admin/*`). Menu business/cabang memakai `apiPortal` (bila nanti ada). Tidak mencampur token. |
 | A-7 | Styling | **Tailwind CSS v4** (`tailwindcss` + `@tailwindcss/vite`, tanpa `tailwind.config.js` — konfigurasi via `@theme` di CSS). Komponen mengacu pada pola **TailAdmin** (layout sidebar, tabel, form, badge, modal) tetapi **diimplementasikan sendiri** — bukan menyalin template. Ikonya inline SVG dulu. |
 | A-8 | Tanpa mock | UI menembak API nyata (container `app`, port `8082`); tidak ada data palsu yang di-commit. |
-| A-9 | Dev workflow | **Tanpa Vite proxy.** CORS ditangani backend lewat `CORS_ALLOWED_ORIGINS` (`.env` sudah memuat `http://localhost:5173`). Vite `base: '/app/'` dan `BrowserRouter basename="/app"` **sudah** ada di `main.tsx`; dev server diakses di `http://localhost:5173/app/`. CORS wajib menyertakan origin `http://localhost:5173` (sudah ada) — tidak perlu ubah backend. |
+| A-9 | Dev workflow | **Dev wajib jalan dengan `npm run dev` tanpa build.** `baseURL` axios saat ini `''` (relatif) sehingga request ke `/api/*` akan mendarat di dev server Vite, **bukan** backend — CORS saja tidak cukup. Solusi: **Vite `server.proxy`** meneruskan `/api` dan `/healthz` ke backend (`VITE_API_TARGET`, default `http://localhost:8082`) sehingga dev bersifat same-origin. `base: '/app/'` + `basename="/app"` (sudah ada) dipertahankan → dev diakses di `http://localhost:5173/app/`. `CORS_ALLOWED_ORIGINS` tetap dibiarkan memuat `5173` sebagai jalur cadangan (tanpa proxy). |
 | A-10 | Sumber permission UI | Permission diambil dari `GET /api/admin/me` (field `permissions: string[]`, hasil perubahan backend tipis B-1). Tidak ada endpoint baru khusus UI. |
 | A-11 | Paginasi | API hanya `limit`/`offset` (tanpa `total`). UI memakai pola **prev/next + page size 25** berbasis `items.length`; tombol "berikutnya" nonaktif bila hasil < page size. Setelah B-2 ada `total`, UI boleh menampilkan nomor halaman. |
 | A-12 | Field form resident | Form di-generate dari **mirror statis** `plugins/resident/schema/fields.yaml` di TypeScript (`src/features/resident/fields.ts`), karena backend tidak mengekspos schema. Risiko drift dicatat: perubahan `fields.yaml` **wajib** disertai update file mirror (dicatat di README fitur). |
 | A-13 | Bahasa UI | **Bahasa Indonesia** untuk seluruh label/teks; identifier kode tetap Inggris. Enum memakai label Indonesia (mengikuti `fields.yaml`), nilai API tetap istilah domain. |
 | A-14 | Cakupan RBAC UI | **List + assign/unassign grup** untuk admin; list grup & permission **read-only**. Create/update/delete admin & grup **ditunda** (bukan bagian topik ini). |
 | A-15 | Audit log | `/api/audit/endpoints` **tidak** masuk topik ini. |
-| A-16 | Urutan kerja | Panel UI didahulukan; importer (`1793109556782`) dikerjakan setelah shell admin stabil. |
+| A-16 | Urutan kerja | **Dev workflow dulu (WO-00)** agar `npm run dev` settle sebelum fitur apa pun dikerjakan; panel UI didahulukan atas importer (`1793109556782`). |
+| A-17 | Target API | Dev: proxy Vite ke `VITE_API_TARGET` (default `http://localhost:8082`). Produksi: same-origin via plugin `pages` (tanpa baseURL absolut). Tidak ada `VITE_API_BASE_URL` absolut agar bundle tidak terikat host. |
 
 ## Perubahan Backend Tipis (disetujui, batas AC-8)
 Hanya tiga perubahan berikut yang boleh menyentuh `plugins/`; **tidak ada
@@ -118,9 +119,11 @@ keterbatasan).
 | GAP-5 | `AdminView.Groups` selalu `[]string{}` (hard-code) walau admin punya grup | Diselesaikan **B-1** |
 | GAP-6 | `/api/admin/me` tidak memuat `permissions` → A-5 tidak mungkin | Diselesaikan **B-1** |
 | GAP-7 | List resident tanpa filter `status` dan tanpa `total` | Diselesaikan **B-2**; fallback A-11 |
-| GAP-8 | `vite.config.ts` tanpa `server.proxy` (dev hanya bisa lewat CORS) | **Bukan blocker**: CORS sudah aktif via `.env` (A-9); `basename="/app"` sudah ada di `main.tsx` |
+| GAP-8 | `vite.config.ts` tanpa `server.proxy`; `axios.baseURL = ''` sehingga dev tidak bisa memanggil API | Diselesaikan **WO-00** (A-9) |
 | GAP-9 | Tidak ada export schema field (`fields.yaml` hanya dibaca backend) | Diterima sebagai risiko drift, dimitigasi A-12 |
 | GAP-10 | `plugins/pages` hanya menyajikan `./sub_app/webapp/dist`; build harus dijalankan di HOST sebelum verifikasi UI | Prosedur verifikasi: `npm run build` lalu buka `http://localhost:8082/app/` |
+| GAP-11 | Tidak ada `.env`/konfigurasi target API untuk mode dev maupun produksi | Diselesaikan **WO-00** (`VITE_API_TARGET`, proxy) |
+| GAP-12 | Dev SPA memakai `base: '/app/'` sehingga `http://localhost:5173/` kosong (harus `/app/`) | Diterima; didokumentasikan di WO-00 (`npm run dev` → buka `/app/`) |
 
 ## Kriteria Penerimaan (SPEC-level)
 - [AC-1] Login ke `POST /api/admin/login` berhasil → `main_token` tersimpan & user diarahkan ke `/app/dashboard`.
@@ -132,5 +135,6 @@ keterbatasan).
 - [AC-7] `npm run build` (tsc + vite) lulus tanpa error TS; bundle tersaji oleh plugin `pages` di `http://localhost:<APP_PORT>/app/`.
 - [AC-8] Kode di `internal/` tidak berubah; perubahan `plugins/` **hanya** B-1/B-2(/B-3) yang tercatat, masing-masing dengan bukti uji.
 - [AC-9] Styling Tailwind v4 terpasang dan dipakai konsisten (token `@theme`), tanpa `tailwind.config.js`.
+- [AC-11] **`npm run dev` berfungsi penuh**: login + list resident sukses melawan backend nyata tanpa `npm run build`, di `http://localhost:5173/app/` (proxy `/api` & `/healthz`), dengan HMR aktif.
 - [AC-10] Tidak ada data mock, token, atau PII yang ter-commit; `package.json` hanya menambah dependensi Tailwind.
 

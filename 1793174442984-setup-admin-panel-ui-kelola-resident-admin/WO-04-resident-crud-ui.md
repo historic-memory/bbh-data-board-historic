@@ -118,7 +118,7 @@ WO ini dilaporkan **per lapis**, bukan satu laporan raksasa:
 |---|---|---|
 | **A** | List: `q` debounce 300ms, `branch_key`, `status`, paginasi dari `total`, skeleton/empty/error+retry | **selesai** |
 | **B** | Detail: `current_status`, riwayat status, dokumen Drive, ibu/kelahiran/admisi, hapus via modal | **selesai** |
-| **C** | Form create/edit + mutasi (status & dokumen), `resident_code` auto, PATCH diff-only, guard `hasPermission` | belum |
+| **C** | Form create/edit + mutasi (status & dokumen), `resident_code` auto, PATCH diff-only, guard `hasPermission` | **selesai** |
 
 ## Laporan Lapis A (2026-10-28)
 
@@ -250,3 +250,86 @@ Data uji: 1 resident lengkap (ibu, kelahiran, admisi, 3 baris riwayat status,
 Form create/edit (`/residents/baru`, `/residents/:id/edit`), modal Ubah Status,
 modal Tambah Dokumen, PATCH diff-only, dan guard `hasPermission('resident.write')`
 untuk tombol mutasi. Tombol “Edit” sengaja belum dirender sampai form-nya ada.
+
+## Laporan Lapis C (2026-10-28)
+
+Lingkup (arahan Manager, “tetap 3 hal”): form create, PATCH diff-only, modal status
++ dokumen. Ditambah guard `resident.write` di setiap tombol mutasi.
+
+### File
+| Berkas | Isi |
+|---|---|
+| `src/pages/admin/residents/ResidentFormPage.tsx` (baru) | Satu komponen untuk create (`/residents/new`) & edit (`/residents/:id/edit`) |
+| `src/pages/admin/residents/StatusModal.tsx` (baru) | Modal Ubah Status (append-only, `note` wajib untuk TRANSFER) |
+| `src/pages/admin/residents/DocumentModal.tsx` (baru) | Modal Tambah Dokumen (URL wajib `https://`) |
+| `src/api/residents.ts` (ubah) | `CreateResidentPayload`, `UpdateResidentPayload`, `createResident`, `patchResident`, `addResidentStatus`, `addResidentDocument` |
+| `src/pages/admin/residents/ResidentDetailPage.tsx` (ubah) | Tombol Edit/Ubah status/+Status/+Dokumen (guard `resident.write`) + mount kedua modal |
+| `src/pages/admin/residents/ResidentListPage.tsx` (ubah) | Tombol “+ Tambah resident” (guard `resident.write`) |
+| `src/App.tsx` (ubah) | Rute `/residents/new` (sebelum `:id`) dan `/residents/:id/edit` |
+| `.gitignore` (ubah) | `bin/` diabaikan — temuan **H-5** (lihat catatan) |
+
+### Catatan implementasi
+1. **`resident_code` kosong = auto.** Form tidak mengirim `resident_code` bila
+   field dibiarkan kosong (kunci tidak ada di payload sama sekali, bukan `""`),
+   sehingga server memakai generator WO-10. Hint “Kosongkan agar sistem membuat
+   kode otomatis” tampil di bawah field. Di halaman edit field ini `disabled` +
+   hint “Kode rekam medis tidak dapat diubah”.
+2. **PATCH diff-only terbukti dari payload nyata**, bukan dari kode saja. Edit
+   nama + kosongkan BPJS + ubah tempat lahir + ubah agama menghasilkan body:
+   `{"full_name":"…","bpjs_no":"","birth_place":"Denpasar","religion_code":"KATOLIK"}`
+   — hanya 4 kunci, tidak ada `nik`, `gender`, `birth_date`, dll.
+3. **Pengosongan field DIDUKUNG** (koreksi terhadap kekhawatiran awal):
+   `services.UpdateResident` memakai `nilIfBlank` untuk `nik`, `bpjs_no`,
+   `birth_place`, `religion_code`, `blood_type_code`, jadi `""` → NULL. Diuji:
+   `bpjs_no` dikosongkan → tampil `—`. Karena itu pengosongan TIDAK dinonaktifkan.
+   Yang memang tidak bisa dikosongkan: `full_name` (server menolak 400).
+   `resident_code`, `mother`, `birth`, `admission` tidak ada di
+   `UpdateResidentInput` → form edit tidak menampilkannya (Alert menjelaskan).
+4. **Tombol Simpan tanpa perubahan** → toast “Tidak ada perubahan untuk disimpan.”
+   dan **tidak ada request PATCH sama sekali** (diuji: 0 request).
+5. **`note` wajib untuk TRANSFER** ditegakkan di klien (inline error, tanpa
+   request) *dan* tidak bergantung pada itu — server tetap sumber kebenaran.
+6. **Dokumen**: URL wajib diawali `https://`; `http://…` ditolak inline tanpa
+   request. Tautan hasil tersimpan tetap `target="_blank"` + `rel="noreferrer"`.
+7. **Guard rute form.** Pengamat yang mengetik `/residents/new` langsung melihat
+   “Tidak berwenang”, bukan form yang pasti gagal 403 saat disimpan.
+8. Modal hapus/status/dokumen hanya **dimount** bila izinnya ada, jadi viewer
+   tidak punya jalan ke UI mutasi mana pun (`dialogs: 0` diuji di DOM).
+
+### Gate (browser, `http://100.125.175.34:5173`, data nyata)
+Satu alur penuh sebagai root + satu sesi viewer. Data uji (1 resident lengkap +
+1 admin viewer) **dihapus setelah uji**; DB kembali `{"items":[],"total":0}` dan
+daftar admin kembali 4 akun semula.
+
+| # | Uji | Hasil |
+|---|---|---|
+| 1 | Create (semua seksi terisi) | `201`; POST body memuat `mother`/`birth`/`admission`/`status`, **tanpa** `resident_code`; redirect ke detail, kode otomatis `BBH-26-P-001` |
+| 2 | Ubah status TRANSFER tanpa catatan | error inline “Status Transfer wajib disertai catatan tujuan.”, **0 request** |
+| 3 | Ubah status TRANSFER + catatan | `201`; riwayat 1 → **2 baris**, “Status terkini” ikut berubah |
+| 4 | Ubah status lagi (DIRAWAT) | riwayat **3 baris**; baris lama TIDAK tertimpa (append-only terbukti) |
+| 5 | Tambah dokumen `http://…` | inline “URL harus diawali https://”, **0 request** |
+| 6 | Tambah dokumen `https://…` | tersimpan; DOM: `target="_blank"`, `rel="noreferrer"` |
+| 7 | Edit tanpa perubahan | toast info, **0 request PATCH** |
+| 8 | Edit 4 field | PATCH body **hanya 4 kunci** (lihat catatan 2); `bpjs_no` jadi `—` |
+| 9 | Hapus | modal konfirmasi → redirect list, `0 data cocok` |
+| 10 | Viewer: list | tombol “+ Tambah resident” **tidak ada** |
+| 11 | Viewer: detail | hanya tombol “← Daftar”; tidak ada Edit/Ubah status/Hapus/+Status/+Dokumen; `dialog` = 0 |
+| 12 | Viewer: `/residents/new` | “Tidak berwenang” + kembali ke daftar |
+| 13 | Viewer: API | GET detail `200`; POST create, PATCH, POST status, POST dokumen semuanya **`403`** |
+| 14 | `npm run build` | hijau (`tsc -b && vite build`, 125 modul) |
+| 15 | Stateless | `grep -rEo "http://(100\.125\.175\.34\|localhost):(8082\|5173)" dist` → kosong |
+
+### Temuan H-5 (dikerjakan, bukan WO)
+`bin/` tidak ada di `.gitignore` — inilah akar insiden commit 80 MB pada Lapis B
+(bukan semata salah direktori). Sudah ditambahkan `/bin/` beserta komentar alasan;
+`git check-ignore` mengonfirmasi `bin/server` & `bin/console` terabaikan. Ikut
+memperbaiki baris `sub_app/webapp/tsconfig.tsbuildinfo` yang sempat tergabung
+dengan komentar di baris berikutnya.
+
+### Sisa / belum dikerjakan
+- Data ibu, kelahiran, dan admisi **belum bisa diubah** setelah dibuat —
+  `UpdateResidentInput` tidak punya field-nya. Butuh WO backend terpisah bila
+  diinginkan; saat ini Alert di form edit menyatakannya terang-terangan.
+- Dokumen belum bisa dihapus/diedit (backend belum menyediakan route).
+- `resident_code` eksplisit di form create belum diuji dengan kode duplikat →
+  409 (jalur ini ada di backend & sudah diuji di WO-04 backend).

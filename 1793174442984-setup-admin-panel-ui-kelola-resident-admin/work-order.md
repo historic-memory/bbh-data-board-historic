@@ -38,7 +38,7 @@ tags:
 | 1 | `WO-01-backend-kontrak-tipis.md` | B-1 `permissions[]` + `groups` terisi di `/api/admin/me`; B-2 filter `status` + `total` di list resident; (B-3 opsional) endpoint stats. Sertakan swagger + Bruno | — | complete |
 | 2 | `WO-02-auth-flow.md` | Auth flow SPA: perbaiki endpoint login (GAP-1), simpan `main_token`, `me` + permissions, logout, penanganan 401 global, halaman Login proper | WO-00, WO-01 | complete |
 | 3 | `WO-03-tailwind-admin-shell.md` | Fondasi Tailwind v4 + shell admin (sidebar/header/konten, pola TailAdmin), routing admin, **route guard**, 404, indikator user + logout | WO-00, WO-02 | complete |
-| 4 | `WO-04-resident-crud-ui.md` | Resident: list (`q`, `branch_key`, `status`, limit/offset) + detail (status history & dokumen) + form create/edit + ubah status + tambah dokumen | WO-03, WO-01 | progress (Lapis A + B selesai, C belum) |
+| 4 | `WO-04-resident-crud-ui.md` | Resident: list (`q`, `branch_key`, `status`, limit/offset) + detail (status history & dokumen) + form create/edit + ubah status + tambah dokumen | WO-03, WO-01 | progress (Lapis A + B + C selesai, review Manager) |
 | 5 | `WO-05-facilities-ui.md` | Fasilitas: list `facilities` + alias; integrasi dropdown di form resident | WO-03 | draft |
 | 6 | `WO-06-admin-rbac-ui.md` | Admin & RBAC: list admin, assign/unassign grup, list grup + permission (read-only), permission-aware | WO-03, WO-01 | draft |
 | 7 | `WO-07-dashboard.md` | Dashboard: ringkasan resident per status/cabang + tautan cepat (ganti placeholder `/api/`, GAP-3) | WO-04 | draft |
@@ -62,7 +62,7 @@ tags:
 | H-2 | Pisahkan `useAuth` dari `AuthContext.tsx` agar Fast Refresh bersih (GAP-17) | WO-03 |
 | H-3 | Evaluasi `npm audit` (10 advisory) — tanpa `--force` (GAP-18) | WO-03 |
 | H-4 | Image produksi yang menyertakan `sub_app/webapp/dist` (GAP-13) | SPEC A-19 |
-| H-5 | `bin/` **tidak** di-gitignore → risiko terulang insiden commit binari ~80 MB (WO-04 Lapis B) | WO-04 |
+| H-5 | `bin/` **tidak** di-gitignore → risiko terulang insiden commit binari ~80 MB (WO-04 Lapis B) — **selesai**: `/bin/` ditambahkan ke `.gitignore` | WO-04 |
 
 ## Catatan
 - Progress: WO-00, WO-01, WO-02, WO-03 **complete**. **WO-04 progress** — Lapis A (`d05ceb7`, list) + Lapis B (`00a918b`, detail) selesai; Lapis C (form create/edit + modal status/dokumen) belum.

@@ -93,13 +93,13 @@ keterbatasan).
 3. **Resident**: tabel list (search/filter status & branch, paginasi), halaman
    detail, form create/edit, aksi ubah status (append `resident_status_history`),
    daftar & tautan dokumen (Google Drive).
-4. **Fasilitas**: list `facilities` (+ alias) untuk dipakai form resident.
+4. **Fasilitas**: list `facilities` untuk dipakai form resident (endpoint alias belum tersedia di API).
 5. **Admin & RBAC**: list admin, assign/unassign grup, list grup + permission
-   (read-only dulu, mutasi bila permission tersedia).
+   (read-only, sesuai A-14).
 6. **Dashboard**: ringkasan (jumlah resident per status/branch, tautan cepat).
 
 ## Non-Goals
-- Tidak mengubah backend (kecuali perbaikan kontrak klien yang disetujui).
+- Tidak mengubah backend di luar **B-1..B-3**; `internal/` tidak disentuh sama sekali.
 - Tidak membangun modul importer (itu topik `1793109556782`).
 - Tidak membangun desain visual final/branding (fase polish terpisah); TailAdmin
   dipakai sebagai acuan pola, bukan tema yang harus ditiru 1:1.
@@ -111,10 +111,10 @@ keterbatasan).
 ## Gap yang Diketahui
 | # | Gap | Catatan |
 |---|---|---|
-| GAP-1 | `Login.tsx` memanggil `/api/auth/login`; route auth resmi `/api/admin/login` | Verifikasi & perbaiki di WO-01 |
-| GAP-2 | Belum ada guard route (semua route publik) | Ditangani WO-02 |
-| GAP-3 | `Dashboard.tsx` memanggil `/api/` (placeholder) | Diganti dashboard nyata di WO-06 |
-| GAP-4 | Belum ada halaman kelola resident/admin | WO-04/WO-05/WO-06 |
+| GAP-1 | `Login.tsx` memanggil `/api/auth/login`; route auth resmi `/api/admin/login` | Diperbaiki di WO-02 |
+| GAP-2 | Belum ada guard route (semua route publik) | Ditangani WO-03 |
+| GAP-3 | `Dashboard.tsx` memanggil `/api/` (placeholder) | Diganti dashboard nyata di WO-07 |
+| GAP-4 | Belum ada halaman kelola resident/fasilitas/admin | WO-04/WO-05/WO-06 |
 | GAP-5 | `AdminView.Groups` selalu `[]string{}` (hard-code) walau admin punya grup | Diselesaikan **B-1** |
 | GAP-6 | `/api/admin/me` tidak memuat `permissions` → A-5 tidak mungkin | Diselesaikan **B-1** |
 | GAP-7 | List resident tanpa filter `status` dan tanpa `total` | Diselesaikan **B-2**; fallback A-11 |
@@ -132,5 +132,5 @@ keterbatasan).
 - [AC-7] `npm run build` (tsc + vite) lulus tanpa error TS; bundle tersaji oleh plugin `pages` di `http://localhost:<APP_PORT>/app/`.
 - [AC-8] Kode di `internal/` tidak berubah; perubahan `plugins/` **hanya** B-1/B-2(/B-3) yang tercatat, masing-masing dengan bukti uji.
 - [AC-9] Styling Tailwind v4 terpasang dan dipakai konsisten (token `@theme`), tanpa `tailwind.config.js`.
-- [AC-10] Tidak ada `tailwind.config.js`, data mock, maupun token/PII yang ter-commit.
+- [AC-10] Tidak ada data mock, token, atau PII yang ter-commit; `package.json` hanya menambah dependensi Tailwind.
 

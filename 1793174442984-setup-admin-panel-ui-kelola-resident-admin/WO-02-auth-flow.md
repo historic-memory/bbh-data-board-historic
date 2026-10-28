@@ -1,7 +1,7 @@
 ---
 title: "WO-02: Auth Flow SPA"
 description: "Perbaiki login (GAP-1), simpan main_token, muat profil + permissions, logout, penanganan 401 global, dan halaman Login yang layak."
-status: draft
+status: complete
 created: "2026-10-28"
 updated: "2026-10-28"
 tags:
@@ -68,3 +68,51 @@ Backend logout stateless — UI hanya membuang token.
 
 Verifikasi dilakukan lewat `npm run dev` (`http://localhost:5173/app/`) memakai
 proxy dari **WO-00**; tidak perlu `npm run build` setiap iterasi.
+
+## Bukti Pelaksanaan (2026-10-28)
+
+### File
+- **Baru** `sub_app/webapp/src/auth/AuthContext.tsx` — provider sesi tunggal:
+  `status` (`loading|authenticated|anonymous`), `user`, `permissions`,
+  `hasPermission`, `login`, `logout`, `refresh`.
+- `sub_app/webapp/src/main.tsx` — `<AuthProvider>` **di dalam** `BrowserRouter`
+  (handler 401 butuh `navigate`).
+- `sub_app/webapp/src/api/client.ts` — `setUnauthorizedHandler()` +
+  `handleLocalUnauthorized()`; interceptor respons dipasang pada `apiClient`
+  **dan** `apiLocal`; entri mati `/api/auth` dihapus dari `ROUTE_OWNERS`
+  (diganti entri `/api/groups` + `/api/permissions`).
+- `sub_app/webapp/src/pages/Login.tsx` — ditulis ulang: form + state submit,
+  pesan Indonesia, redirect ke `state.from` / `/dashboard`.
+- `sub_app/webapp/src/pages/Dashboard.tsx` — request usang `GET /api/` (404)
+  dihapus; menampilkan identitas sesi + tombol Keluar (isi ringkasan → WO-07).
+
+### Anti-loop 401
+`handleLocalUnauthorized` mengabaikan request ke `/api/admin/login` dan
+`/api/admin/logout` (`isPublicAuthCall`). Jadi 401 dari login = "kredensial
+salah", bukan "sesi berakhir" → tidak pernah memicu redirect. Handler global juga
+melewati redirect bila sudah berada di `/login`.
+
+### Gate lulus (browser, dev `http://localhost:5173/app/`)
+| Skenario | Hasil |
+|---|---|
+| Buka `/app/login` | form tampil, title `BBH Data Board — Admin` |
+| Login salah (`admin123` → kata sandi salah) | pesan **"Email atau kata sandi salah"**; `localStorage` = `{}` (token TIDAK disimpan); URL tetap `/app/login` (tanpa loop) |
+| Login benar | redirect `/app/dashboard`; `localStorage` = `["main_token"]`; tampil `Masuk sebagai root (root@admin.local)`, `Grup: root`, `Izin: semua akses (*)` |
+| Reload halaman | tetap di `/app/dashboard`, sesi hidup (`main_token` bertahan, `/me` dimuat ulang) |
+| `main_token` diisi token palsu lalu buka `/app/dashboard` | 401 → sesi dibersihkan (`localStorage` = `[]`) → pindah ke `/app/login` **sekali**, `history.state.usr.from = "/dashboard"`, URL stabil setelah 1,2 s (tidak loop) |
+| Klik **Keluar** | `main_token` hilang (`localStorage` = `[]`), kembali ke `/app/login` |
+| `npm run build` | hijau (99 modul, `tsc -b && vite build`) |
+| `grep -rEo "http://localhost:(8082|5173)" dist` | kosong |
+
+### Catatan implementasi
+- **Redirect ganda di dev**: React `StrictMode` menjalankan effect bootstrap dua
+  kali sehingga log browser memperlihatkan **dua** 401 saat token palsu; redirect
+  tetap terjadi **sekali** (terbukti URL stabil). Ini artefak dev-only.
+- Handler 401 hanya membersihkan **sesi pusat**; `portal_token` (jalur cabang)
+  tidak disentuh — sesuai pemisahan D-14/D-15.
+- `plugins/federation/routes.go` (backend) masih memuat prefix `/api/auth` dan
+  `federation_test.go` mengujinya sebagai `OwnerLocal`. **Tidak diubah** (R-1:
+  `plugins/` hanya untuk B-1..B-3 di WO-01); entri itu hanya warisan yang tetap
+  aman karena default owner = local. Dicatat sebagai temuan, bukan tindakan.
+- Komponen individual **tidak** memanggil `hasPermission` sendiri-sendiri lagi;
+  sumber tunggal adalah `useAuth()` (arahan Manager) — dikonsumsi WO-03/WO-04/WO-06.

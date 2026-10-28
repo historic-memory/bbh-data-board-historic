@@ -13,7 +13,7 @@ files:
     - id: 01a18199-41e3-712a-8f0c-f15401d3ca46
       path: WO-02-auth-flow.md
       type: file
-      status: draft
+      status: complete
     - id: 01a18199-41e4-72a6-a4da-bdd0682e5745
       path: WO-03-tailwind-admin-shell.md
       type: file

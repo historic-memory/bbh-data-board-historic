@@ -1,7 +1,7 @@
 ---
 title: "Work Order (Master Index): Lengkapi Data Resident"
 description: "Rencana implementasi H-6 (update mother/birth/admission pada PATCH resident) dan H-7 (DELETE/PATCH dokumen resident), beserta penyesuaian UI dan kontrak (swagger + Bruno)."
-status: draft
+status: complete
 created: "2026-10-28"
 updated: "2026-10-28"
 tags:
@@ -38,10 +38,10 @@ tags:
 ## Daftar WO
 | # | File | Scope | Prasyarat | Status |
 |---|---|---|---|---|
-| 1 | `WO-01-update-sub-entitas.md` | H-6: `UpdateResidentInput` + `mother`/`birth`/`admission`; upsert dalam transaksi; validasi enum & `admitted_at`; unit/DB test | — | pending |
-| 2 | `WO-02-dokumen-delete-patch.md` | H-7: service `DeleteDocument`/`UpdateDocument`, handler + route `DELETE`/`PATCH /:id/documents/:docId` (guard `resident.write`), test | — | pending |
-| 3 | `WO-03-ui-edit-lengkap.md` | UI: perluas `PATCHResidentPayload`, form edit menampilkan Ibu/Kelahiran/Admisi (prefill + delta), aksi hapus/edit dokumen di detail, permission-aware, toast | WO-01, WO-02 | pending |
-| 4 | `WO-04-kontrak-verifikasi.md` | Regen swagger, Bruno baru (patch sub-entitas, delete/patch dokumen), dokumentasi README, verifikasi end-to-end | WO-01, WO-02, WO-03 | pending |
+| 1 | `WO-01-update-sub-entitas.md` | H-6: `UpdateResidentInput` + `mother`/`birth`/`admission`; upsert dalam transaksi; validasi enum & `admitted_at`; unit/DB test | — | **complete** |
+| 2 | `WO-02-dokumen-delete-patch.md` | H-7: service `DeleteDocument`/`UpdateDocument`, handler + route `DELETE`/`PATCH /:id/documents/:docId` (guard `resident.write`), test | — | **complete** (`d6114a2`) |
+| 3 | `WO-03-ui-edit-lengkap.md` | UI: perluas `PATCHResidentPayload`, form edit menampilkan Ibu/Kelahiran/Admisi (prefill + delta), aksi hapus/edit dokumen di detail, permission-aware, toast | WO-01, WO-02 | **complete** (`dd6c753`) |
+| 4 | `WO-04-kontrak-verifikasi.md` | Regen swagger, Bruno baru (patch sub-entitas, delete/patch dokumen), dokumentasi README, verifikasi end-to-end | WO-01, WO-02, WO-03 | **complete** (`56f78f8`) |
 
 ## Definisi Selesai
 - `PATCH /api/admin/residents/:id` mengubah `mother`/`birth`/`admission` sesuai A-2..A-5, atomik.
@@ -54,7 +54,22 @@ tags:
 - Dokumen historic: `historic rebuild` → `historic save` → `historic git commit`.
 
 ## Catatan
-- Topik ini **draft** — daftar WO dapat berubah setelah peninjauan.
+- **Topik SELESAI** — semua WO (01–04) `complete`, SPEC `complete`. Review Manager: disetujui.
 - Urutan eksekusi: **WO-01 → WO-02 → WO-03 → WO-04**.
 - `status` & daftar `documents` **tidak** disatukan ke `PATCH /:id` (A-14).
 - Konvensi "admission terbaru" (A-4) didokumentasikan di kode & swagger description.
+
+## Bukti Verifikasi (dari laporan WO-04)
+| Cek | Hasil |
+|---|---|
+| `bru run --env Local residents` | 14/14 request, 28/28 test PASS |
+| `bru run --env Local --tags=smoke` | 4/4 request, 9/9 test PASS (tanpa regresi) |
+| `go build ./...` + `go test ./plugins/...` (container) | lulus |
+| `npm run build` (HOST) | lulus |
+| grep `host:port` di `dist` | kosong (stateless) |
+| `internal/` | tidak berubah · tanpa push |
+| Swagger | paths 38, ops 60, `UpdateResidentInput` memuat `mother`/`birth`/`admission` |
+
+## Catatan Operasional
+- Token `.env` (gitignored) harus di-refresh setelah server restart — nilai lama menyebabkan 401 massal.
+- Jalur **403** sub-entitas masih belum teruji e2e (aktor root memegang `*`) → tetap terbuka sebagai **H-8** di topik sebelumnya; tidak memblokir topik ini.

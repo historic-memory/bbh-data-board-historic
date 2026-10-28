@@ -1,7 +1,7 @@
 ---
 title: "WO-00: Dev Workflow Settle (npm run dev)"
 description: "Memastikan pengembangan harian berjalan penuh dengan `npm run dev` tanpa build (proxy Vite ke /api dan /healthz), sekaligus mengunci kontrak base route /app agar dist stateless dapat disajikan backend tanpa rewrite."
-status: draft
+status: complete
 created: "2026-10-28"
 updated: "2026-10-28"
 tags:
@@ -185,3 +185,52 @@ ases 200), hasil `grep` bundle (tanpa host absolut), dan log `npm run build`.
   `/app` dan `basename` router sudah mengikuti.
 - SPA ini **murni statis**: tidak ada SSR, tidak ada penyimpanan state di server.
   Bila di masa depan butuh SSR, itu topik terpisah (bukan penambahan diam-diam).
+
+## Bukti Pelaksanaan (2026-10-28)
+
+## File yang diubah
+`sub_app/webapp/vite.config.ts` (`defineConfig(({mode}))` + `loadEnv` + `server.proxy`
+`/api`+`/healthz` + `strictPort`), `sub_app/webapp/package.json` (script `dev:lan`),
+`sub_app/webapp/index.html` (`lang="id"`, title), `sub_app/webapp/README.md` (baru).
+Tidak ada perubahan pada `internal/` maupun `plugins/`.
+
+### Gate lulus (log)
+```
+# backend 8082 (server dijalankan dari root repo, /src)
+/api/admin/residents        -> HTTP/1.1 401 Unauthorized  (application/json)
+/api/xyz                    -> HTTP/1.1 404 Not Found     (application/json)
+/app/                       -> 200
+/app/residents              -> 200
+/app/assets/index-BalWtzG0.js -> 200  (text/javascript)
+
+# dev server 5173 (proxy via loadEnv)
+/healthz                    -> HTTP/1.1 200 OK
+/api/admin/residents        -> HTTP/1.1 401 Unauthorized  (application/json)
+/app/                       -> 200
+
+# jalur data nyata lewat proxy 5173 (kredensial dari .credentials/admin.yaml)
+POST /api/admin/login       -> access_token (len 216)
+GET  /api/admin/residents?limit=5 -> 200 {"items":[]}
+
+# HMR ter-inject di HTML dev
+<script src="/app/@vite/client">  +  /app/@react-refresh
+
+# base route sinkron (4 titik)
+vite.config.ts:19  base: '/app/'
+main.tsx:8         <BrowserRouter basename="/app">
+plugins/pages      prefix "/app"
+dist/index.html    /app/vite.svg, /app/assets/index-BalWtzG0.js
+
+# stateless
+grep -rEo "http://localhost:(8082|5173)" dist -> KOSONG
+npm run build -> hijau (tsc -b && vite build; 98 modules, dist 286.31 kB)
+```
+
+### Status AC
+AC-1..AC-10 **lulus** (AC-4 diuji lewat `.env.development` default 8082; override
+lokal memakai `.env.development.local` yang gitignored).
+
+### Catatan handoff
+- Login **UI** masih menunjuk `/api/auth/login` (GAP-1) → perbaikan di **WO-02**.
+  Jalur API login/list sudah terbukti nyata lewat curl di gate ini.
+- `npm run dev` memakai port 5173 + `strictPort`; pastikan tidak ada proses Vite lain.

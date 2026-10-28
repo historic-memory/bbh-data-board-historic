@@ -34,7 +34,7 @@ tags:
 ## Daftar WO
 | # | File | Scope | Prasyarat | Status |
 |---|---|---|---|---|
-| 0 | `WO-00-dev-workflow.md` | **Dev workflow settle**: `npm run dev` jalan penuh — proxy Vite `/api`+`/healthz` ke `VITE_API_TARGET`, `.env.development`, script `dev`/`dev:lan`, verifikasi login tanpa build | — | draft |
+| 0 | `WO-00-dev-workflow.md` | **Dev workflow settle**: `npm run dev` jalan penuh — proxy Vite `/api`+`/healthz` ke `VITE_API_TARGET`, `.env.development`, script `dev`/`dev:lan`, verifikasi login tanpa build | — | complete |
 | 1 | `WO-01-backend-kontrak-tipis.md` | B-1 `permissions[]` + `groups` terisi di `/api/admin/me`; B-2 filter `status` + `total` di list resident; (B-3 opsional) endpoint stats. Sertakan swagger + Bruno | — | draft |
 | 2 | `WO-02-auth-flow.md` | Auth flow SPA: perbaiki endpoint login (GAP-1), simpan `main_token`, `me` + permissions, logout, penanganan 401 global, halaman Login proper | WO-00, WO-01 | draft |
 | 3 | `WO-03-tailwind-admin-shell.md` | Fondasi Tailwind v4 + shell admin (sidebar/header/konten, pola TailAdmin), routing admin, **route guard**, 404, indikator user + logout | WO-00, WO-02 | draft |

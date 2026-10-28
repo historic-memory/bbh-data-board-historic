@@ -70,7 +70,8 @@ tags:
 | H-10 | `PUT /api/admin/facilities/:id` tidak menerima `branch_key` → field cabang disabled di mode edit (UI jujur, bukan bug) | WO-05 |
 
 ## Catatan
-- Progress: **SEMUA WO (00-07) `complete`** — review Manager selesai. Topik siap ditutup; sisa item ada di tabel Housekeeping (H-1..H-8).
+- Progress: **SEMUA WO (00-07) `complete`** — review Manager selesai. Sisa item ada di tabel Housekeeping (H-1..H-10).
+- **Perbaikan pasca-complete:** `f01f35d` modal `<dialog>` tidak ter-center — Tailwind Preflight mengeset `margin: 0` termasuk pada `<dialog>`, sehingga penengahan bawaan (`inset:0; margin:auto`) hilang. Fix: kelas `m-auto`. Pelajaran umum: elemen dengan user-agent style yang bergantung margin bisa rusak setelah Preflight.
 - **Cara cek stateless yang benar:** cari **host:port** (`http://localhost:8082`, `:5173`, IP tailscale), bukan string `http://localhost` polos. Bundle library (react-router) memang memuat `"http://localhost"` sebagai fallback internal — bukan URL backend.
 - Topik ini **draft** — daftar WO dapat berubah setelah peninjauan SPEC.
 - Importer data = topik `1793109556782` (di luar lingkup). Urutan: **WO-00 (dev workflow) → WO-01 → WO-02 → WO-03 → ...** (A-16).

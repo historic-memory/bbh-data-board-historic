@@ -69,6 +69,11 @@ dengan `AdminLayout`. Tambah rute placeholder `/residents`, `/facilities`,
 `Portal.tsx` (186 baris) tetap dipertahankan; jangan dipindah ke shell admin
 kecuali diputuskan terpisah.
 
+## Perbaikan pasca-complete (commit `f01f35d`)
+Modal `<dialog>` tidak ter-center karena **Tailwind Preflight** mengeset `margin: 0` pada semua elemen,
+termasuk `<dialog>` — penengahan bawaan browser (`inset: 0; margin: auto`) jadi hilang. Fix: kelas `m-auto`
+pada elemen `dialog`. Wajib diingat untuk elemen lain yang mengandalkan user-agent margin.
+
 ## Bukti Pelaksanaan (2026-10-28)
 
 ### Tailwind v4

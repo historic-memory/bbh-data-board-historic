@@ -42,7 +42,7 @@ tags:
 | 1 | `WO-01-skeleton-plugin-skema.md` | Skeleton `plugins/hsh`, `schema/fields.yaml`, migrasi 5 tabel + enum, seed 7 kategori (referensi) | — | **complete** (`cf6367f`) |
 | 2 | `WO-02-permission-crud-master.md` | Seed permission `hsh.*` di migrasi `auth`; CRUD kategori/item/alias + test | WO-01 | **complete** (`8128072`) |
 | 3 | `WO-03-periode-entri.md` | CRUD periode + entri + query per periode (ringkasan urgen/enough) | WO-02 | **complete** (`5645154`) |
-| 4 | `WO-04-generator-template.md` | `GET /admin/hsh-template?format=xlsx\|csv` dari `fields.yaml` + dropdown REFERENSI | WO-01 | pending |
+| 4 | `WO-04-generator-template.md` | `GET /admin/hsh-template?format=xlsx\|csv` dari `fields.yaml` + dropdown REFERENSI | WO-01 | **complete** (`18eaf8f`) |
 | 5 | `WO-05-validator.md` | `POST /admin/hsh-template/validate` (read-only, umpan-balik per baris) | WO-04 | pending |
 | 6 | `WO-06-importer.md` | `POST .../template/import` staging → upsert, alias-first, auto-create (N-16), tolak `.xls` | WO-05 | pending |
 | 7 | `WO-07-seed-data-awal.md` | **_DITUNDA (N-15)_** — impor berkas SEPT–OKT + laporan normalisasi (GAP-2/7/8) | WO-06 | pending |

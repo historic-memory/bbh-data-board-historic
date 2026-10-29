@@ -17,7 +17,7 @@ files:
     - id: 01a1875b-242d-7194-a908-7d07d2b3af61
       path: WO-04-generator-template.md
       type: file
-      status: pending
+      status: complete
     - id: 01a1875b-242d-7789-89d7-4eda1b69552f
       path: WO-05-validator.md
       type: file

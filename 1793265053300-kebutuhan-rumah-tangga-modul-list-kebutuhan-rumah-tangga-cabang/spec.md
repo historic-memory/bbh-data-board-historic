@@ -1,6 +1,6 @@
 ---
 title: 'SPEC: Kebutuhan Rumah Tangga — skema kanonik, template Excel & form input'
-description: 'Desain kanonik untuk modul kebutuhan (rumah tangga & elektronik): tabel kanonik, kategori/katalog yang bisa dikurasi, snapshot per periode, template Excel yang digenerate, validator, importer, dan form input — sehingga data mentah yang berantakan bisa diperbaiki bertahap.'
+description: 'Desain kanonik untuk modul kebutuhan (rumah tangga & sekunder): tabel kanonik, kategori/katalog yang bisa dikurasi, snapshot per periode, template Excel yang digenerate, validator, importer, dan form input — sehingga data mentah yang berantakan bisa diperbaiki bertahap.'
 status: draft
 created: "2026-10-29"
 updated: "2026-10-29"
@@ -23,10 +23,10 @@ Modul diwujudkan sebagai **plugin baru** (aturan user: fitur baru = plugin, `int
 | Plugin | Topic | Peran |
 |---|---|---|
 | **`plugins/hsh`** | `1793265053300` (dokumen ini) | Kebutuhan rumah tangga |
-| **`plugins/elec`** | `1793265053246` | Kebutuhan elektronik (kembar) |
+| **`plugins/sec`** | `1793265053246` | Kebutuhan sekunder — tahan lama: elektronik, peralatan, mainan (kembar) |
 
 Kedua plugin **identik bentuk**, dibedakan **prefix** id/plugin/tabel. Dokumen ini = **desain
-kanonik**; SPEC topik elektronik menyalin bentuk yang sama (hanya isi kategori & datanya berbeda).
+kanonik**; SPEC topik sekunder menyalin bentuk yang sama (hanya isi kategori & datanya berbeda).
 
 ## Kondisi Awal (terverifikasi)
 - Aset: `List Kebutuhan RT  BBH  SEPT 19 OKT 26 d.xls` (35.840 byte, tercatat di `_meta.yaml.assets`).
@@ -63,7 +63,7 @@ kanonik**; SPEC topik elektronik menyalin bentuk yang sama (hanya isi kategori &
 | **N-3** | Kategori | **Tabel** `*_categories` (bukan enum statis) → bisa tambah/normalisasi tanpa deploy. |
 | **N-4** | Nama item | **Disimpan apa adanya** (bilingual gabung, seperti di berkas). Normalisasi & dedup lewat tabel **alias**. |
 | **N-5** | Atribut | Lengkap & **aditif**: satuan, harga, jumlah, catatan. Kolom baru = migrasi baru. |
-| **N-6** | Struktur plugin | **Dua plugin terpisah** (`hsh`, `elec`). Satu DB → **prefix tabel wajib** (`hsh_*`, `elec_*`). |
+| **N-6** | Struktur plugin | **Dua plugin terpisah** (`hsh`, `sec`). Satu DB → **prefix tabel wajib** (`hsh_*`, `sec_*`). |
 | **N-7** | Harga | Di **item** (`est_price`, harga satuan referensi) + **override opsional per entri** (`unit_price`). |
 | **N-8** | Status | Enum **statis** di kode + `CHECK`: `URGENT`, `ENOUGH`, `UNKNOWN` (label Indonesia via i18n). |
 | **N-9** | Permission | `hsh.read/write/delete` **di-seed lewat migrasi plugin `auth`** (pola `resident`; kalau lupa → semua route 403 fail-closed). |
@@ -246,7 +246,7 @@ Path template dibuat **flat** agar tidak bentrok wildcard `/:id` (pola WO-08 `re
 | GAP-6 | Tidak ada padanan EN terpisah (N-4) | Diterima; EN bisa masuk ke `name` |
 | GAP-7 | Item nyasar antar kategori di berkas | Koreksi saat seed; dicatat di laporan |
 | GAP-8 | Duplikat nama beda penulisan | Alias + dedup saat seed |
-| GAP-9 | Prefix tabel & permission kembar dgn plugin elektronik | Konvensi `hsh_*` / `elec_*` |
+| GAP-9 | Prefix tabel & permission kembar dgn plugin sekunder | Konvensi `hsh_*` / `sec_*` |
 
 ## Pertanyaan Terbuka
 - [x] **O-1** ~~Periode di template~~ → **DIKUNCI**: **kolom `Periode` di sheet DATA** (bebas per baris, format `YYYY-MM`).
@@ -262,8 +262,9 @@ dibedakan prefix plugin/tabel — **bukan** memakai topic induk.
 
 **Status dokumen:** `draft` — **menunggu review owner** sebelum `work-order.md` disusun.
 
-**Catatan lintas topik:** topic `elec` (`1793265053246`) **ditunda** sampai data mentah
-kebutuhan elektronik tersedia (keputusan owner 2026-10-29). SPEC topik itu menyalin bentuk dokumen ini.
+**Catatan lintas topik:** topic `sec` (`1793265053246`) semula bernama "Kebutuhan Elektronik",
+kini **"Kebutuhan Sekunder"** (barang tahan lama: elektronik, peralatan, mainan). Data mentah sudah
+ada (2026-10-29); SPEC topik itu menyalin bentuk dokumen ini.
 
 ## Rencana Work Order (draft)
 | WO | Judul | Isi |
@@ -278,5 +279,5 @@ kebutuhan elektronik tersedia (keputusan owner 2026-10-29). SPEC topik itu menya
 | WO-08 | UI admin panel | Kategori, Item (+alias), Periode, Entri (matriks), Unduh/Impor |
 | WO-09 | Swagger + README + Bruno | Paritas dokumentasi & koleksi API |
 
-**Catatan lintas topik:** plugin `elec` (topic `1793265053246`) mengikuti bentuk yang sama;
-perbedaannya hanya sumber kategori/item. SPEC topik itu dibuat setelah data mentah elektronik tersedia.
+**Catatan lintas topik:** plugin `sec` (topic `1793265053246`, "Kebutuhan Sekunder") mengikuti bentuk
+yang sama; perbedaannya hanya sumber kategori/item serta batas domain (hsh = habis pakai, sec = tahan lama).

@@ -1,9 +1,15 @@
 id: "1793265053246"
-title: Kebutuhan Elektronik — modul list kebutuhan elektronik cabang
+title: Kebutuhan Sekunder — modul list kebutuhan sekunder cabang
 created: "2026-10-29"
 files:
     - id: 01a186ed-5889-7656-a47a-959f099085cf
       path: notes.md
       type: file
-      status: create
-assets: []
+      status: progress
+    - id: 01a18802-e93f-7aa8-98ee-805fec088ba7
+      path: spec.md
+      type: spec
+      status: draft
+assets:
+    - path: List Kebutuhan Elektronik BBH - Updated 22 SEPT 26 2026.xlsx
+      type: xlsx

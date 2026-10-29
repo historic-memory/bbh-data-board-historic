@@ -41,7 +41,7 @@ tags:
 |---|---|---|---|---|
 | 1 | `WO-01-skeleton-plugin-skema.md` | Skeleton `plugins/sec`, `schema/fields.yaml`, migrasi 5 tabel + enum, seed 2 kategori | — | complete |
 | 2 | `WO-02-permission-crud-master.md` | Seed permission `sec.*` di migrasi `auth`; CRUD kategori/item/alias + test | WO-01 | complete |
-| 3 | `WO-03-periode-entri.md` | CRUD periode + entri + query per periode (ringkasan status) | WO-02 | pending |
+| 3 | `WO-03-periode-entri.md` | CRUD periode + entri + query per periode (ringkasan status) | WO-02 | complete |
 | 4 | `WO-04-generator-template.md` | `GET /admin/sec-template?format=xlsx\|csv` dari `fields.yaml` + dropdown REFERENSI | WO-01 | pending |
 | 5 | `WO-05-validator.md` | `POST /admin/sec-template/validate` (read-only, umpan-balik per baris) | WO-04 | pending |
 | 6 | `WO-06-importer.md` | `POST .../sec-template/import` staging → upsert, alias-first, auto-create (S-19), tolak `.xls` | WO-05 | pending |

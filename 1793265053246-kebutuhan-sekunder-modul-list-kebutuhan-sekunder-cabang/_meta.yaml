@@ -13,7 +13,7 @@ files:
     - id: 01a18809-f197-76f0-8e59-1d1c8bff59cf
       path: WO-03-periode-entri.md
       type: file
-      status: pending
+      status: complete
     - id: 01a18809-f197-7f48-95cf-bfed610387db
       path: WO-04-generator-template.md
       type: file

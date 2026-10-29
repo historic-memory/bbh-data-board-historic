@@ -1,0 +1,21 @@
+id: "1793278051962"
+title: Navigasi Admin — Pengelompokan Menu per Domain/Plugin (outline group)
+created: "2026-10-29"
+files:
+    - id: 01a187b3-fa4a-7d64-b4e5-23352cb048d2
+      path: spec.md
+      type: spec
+      status: draft
+    - id: 01a187b3-fb21-7372-a7b5-8afe2cdf5c9f
+      path: wo-01-registry-navigasi-outline.md
+      type: file
+      status: pending
+    - id: 01a187b3-fb88-7b57-80c2-65edf4c97744
+      path: wo-02-verifikasi-dokumentasi.md
+      type: file
+      status: pending
+    - id: 01a187b3-faaf-7f67-860b-db54d4807205
+      path: work-order.md
+      type: file
+      status: draft
+assets: []

@@ -5,5 +5,7 @@ files:
     - id: 01a186ed-5905-7248-b6f5-bf9cfb9fa4ad
       path: notes.md
       type: file
-      status: create
-assets: []
+      status: progress
+assets:
+    - path: List Kebutuhan RT  BBH  SEPT 19 OKT 26 d.xls
+      type: xls

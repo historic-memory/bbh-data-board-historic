@@ -23,7 +23,7 @@ tags:
 ## Tugas (saat diaktifkan)
 1. **Pra-konversi** `.xls` → `.xlsx` (LibreOffice di host: `soffice --headless --convert-to xlsx`);
    importer hanya menerima `.xlsx`/`.csv` (N-17).
-2. Bentuk ulang data (kolom-daftar → tabel baris) menjadi template needhousehold sesuai **2 blok**:
+2. Bentuk ulang data (kolom-daftar → tabel baris) menjadi template hsh sesuai **2 blok**:
    periode `2026-09` (r2–32) dan `2026-10-19` (r33–54).
 3. **Normalisasi** (wajib, catat di laporan):
    - artikulasi bilingual tanpa separator (`Zaitun oil for Baby's bodyMinyak zaitun…`);

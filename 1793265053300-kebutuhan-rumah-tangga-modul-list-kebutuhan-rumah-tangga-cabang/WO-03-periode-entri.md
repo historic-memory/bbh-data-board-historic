@@ -27,22 +27,22 @@ tags:
    - `unit_price` opsional; jika NULL → tampilkan `items.est_price` sebagai harga efektif di view.
    - `recorded_by` diisi dari identitas admin pemanggil.
    - validasi `status_code ∈ {URGENT,ENOUGH,UNKNOWN}` (400 bila invalid).
-3. **Ringkasan**: `GET /admin/needhousehold/entries/summary?period_id=` →
+3. **Ringkasan**: `GET /admin/hsh/entries/summary?period_id=` →
    `{ total, by_status: {URGENT,ENOUGH,UNKNOWN}, by_category: [ ... ] }`.
    Didaftarkan **sebelum** `/:id` (gin memprioritaskan segmen statis, pola `residents/stats`).
 4. **Route**:
    | Method | Path | Guard |
    |---|---|---|
-   | GET/POST | `/admin/needhousehold/periods` | read / write |
-   | PATCH/DELETE | `/admin/needhousehold/periods/:id` | write / delete |
-   | GET | `/admin/needhousehold/entries/summary` | read |
-   | GET/POST | `/admin/needhousehold/entries` | read / write |
-   | PATCH/DELETE | `/admin/needhousehold/entries/:id` | write / delete |
+   | GET/POST | `/admin/hsh/periods` | read / write |
+   | PATCH/DELETE | `/admin/hsh/periods/:id` | write / delete |
+   | GET | `/admin/hsh/entries/summary` | read |
+   | GET/POST | `/admin/hsh/entries` | read / write |
+   | PATCH/DELETE | `/admin/hsh/entries/:id` | write / delete |
 5. **Test**: periode aktif tunggal; entri upsert idempoten (2x kirim → 1 baris); status invalid 400;
    summary benar; delete periode berisi entri → 409.
 
 ## Bukti yang harus dilampirkan
-- `go build ./...` + `go test ./plugins/needhousehold/...` hijau.
+- `go build ./...` + `go test ./plugins/hsh/...` hijau.
 - curl: buat 2 periode → aktifkan p2 (p1 auto nonaktif); buat entri (p1,itemX) 2x → 1 baris;
   summary menampilkan hitungan per status; delete periode berisi entri → 409.
 

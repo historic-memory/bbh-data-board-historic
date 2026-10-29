@@ -1,6 +1,6 @@
 ---
 title: "WO-05: Validator umpan-balik template"
-description: "Endpoint validasi template needhousehold (read-only) yang mengembalikan error per baris tanpa menyentuh DB."
+description: "Endpoint validasi template hsh (read-only) yang mengembalikan error per baris tanpa menyentuh DB."
 status: pending
 created: "2026-10-29"
 updated: "2026-10-29"
@@ -28,7 +28,7 @@ tags:
    - `Harga Satuan`/`Jumlah`: opsional; bila diisi harus angka ≥ 0.
    - **`template_version`** dicek; versi tak dikenal → file-level reject.
    - **Deteksi `.xls`** (BIFF8): tolak dengan pesan **pra-konversi** (N-17).
-2. **`handlers/validate.go`** — `POST /admin/needhousehold-template/validate`:
+2. **`handlers/validate.go`** — `POST /admin/hsh-template/validate`:
    - multipart `file`; `?format=xlsx|csv`; `?strict=1` → status 422 bila ada penolakan.
    - **read-only**: tidak menulis DB apa pun.
    - Ringkasan → stdout + header `X-Validate-Total/Valid/Rejected`.
@@ -37,7 +37,7 @@ tags:
    versi usang ditolak, non-strict 200 vs strict 422.
 
 ## Bukti yang harus dilampirkan
-- `go build ./...` + `go test ./plugins/needhousehold/...` hijau.
+- `go build ./...` + `go test ./plugins/hsh/...` hijau.
 - curl: template valid → total=N valid=M rejected=0; fixture rusak → rejected>0 dengan rincian baris+kolom.
 - Uji `.xls` → 400/422 dengan pesan konversi; `?strict=1` → 422.
 - Bukti tidak ada penulisan DB (bandingkan `SELECT count(*)` sebelum/sesudah).

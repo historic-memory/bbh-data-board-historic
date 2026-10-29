@@ -1,6 +1,6 @@
 ---
 title: "Work Order (Master Index): Kebutuhan Rumah Tangga"
-description: "Rencana implementasi plugin needhousehold: skema kanonik, master kategori/item, periode & entri snapshot, template Excel ter-generate, validator, importer, UI admin, dan dokumentasi."
+description: "Rencana implementasi plugin hsh: skema kanonik, master kategori/item, periode & entri snapshot, template Excel ter-generate, validator, importer, UI admin, dan dokumentasi."
 status: draft
 created: "2026-10-29"
 updated: "2026-10-29"
@@ -24,33 +24,33 @@ tags:
 - **Aturan user:** fitur baru HARUS plugin di `plugins/<id>/`; `internal/` hanya framework/bootstrap.
 
 ## Prinsip Pelaksanaan
-1. **Plugin baru** `plugins/needhousehold`; seluruh kode fitur di dalamnya. Jangan menyentuh `internal/`.
-2. **Prefix tabel wajib** `needhousehold_*` (satu DB dengan `needelectronics_*` nanti).
+1. **Plugin baru** `plugins/hsh`; seluruh kode fitur di dalamnya. Jangan menyentuh `internal/`.
+2. **Prefix tabel wajib** `hsh_*` (satu DB dengan `elec_*` nanti).
 3. **Tanpa dimensi cabang** (N-1); batas data = instance (`INSTANCE_KEY`).
 4. **Kategori = tabel**, **satuan = daftar REFERENSI statis** (N-3/N-13), **status = enum statis**
    `URGENT|ENOUGH|UNKNOWN` + `CHECK` (N-8).
 5. **Nama item apa adanya**; normalisasi/dedup lewat **alias** (N-4/N-16).
 6. **Template digenerate** dari `fields.yaml`, tidak di-maintain manual (N-11).
 7. **Importer 2 fasa** (staging → upsert), idempoten (N-12); **impor hanya `.xlsx`/`.csv`** (N-17).
-8. **Permission** `needhousehold.*` di-seed via migrasi plugin `auth` — kalau lupa, semua route 403.
+8. **Permission** `hsh.*` di-seed via migrasi plugin `auth` — kalau lupa, semua route 403.
 9. ID = **UUID v7** dibuat di Go (`model.NewID`), `TEXT`, tanpa `DEFAULT` DB (N-10).
 10. Setiap WO berakhir: `historic rebuild` → `historic save` → `historic git commit` (**tanpa push**).
 
 ## Daftar WO
 | # | File | Scope | Prasyarat | Status |
 |---|---|---|---|---|
-| 1 | `WO-01-skeleton-plugin-skema.md` | Skeleton `plugins/needhousehold`, `schema/fields.yaml`, migrasi 5 tabel + enum, seed 7 kategori (referensi) | — | pending |
-| 2 | `WO-02-permission-crud-master.md` | Seed permission `needhousehold.*` di migrasi `auth`; CRUD kategori/item/alias + test | WO-01 | pending |
+| 1 | `WO-01-skeleton-plugin-skema.md` | Skeleton `plugins/hsh`, `schema/fields.yaml`, migrasi 5 tabel + enum, seed 7 kategori (referensi) | — | pending |
+| 2 | `WO-02-permission-crud-master.md` | Seed permission `hsh.*` di migrasi `auth`; CRUD kategori/item/alias + test | WO-01 | pending |
 | 3 | `WO-03-periode-entri.md` | CRUD periode + entri + query per periode (ringkasan urgen/enough) | WO-02 | pending |
-| 4 | `WO-04-generator-template.md` | `GET /admin/needhousehold-template?format=xlsx\|csv` dari `fields.yaml` + dropdown REFERENSI | WO-01 | pending |
-| 5 | `WO-05-validator.md` | `POST /admin/needhousehold-template/validate` (read-only, umpan-balik per baris) | WO-04 | pending |
+| 4 | `WO-04-generator-template.md` | `GET /admin/hsh-template?format=xlsx\|csv` dari `fields.yaml` + dropdown REFERENSI | WO-01 | pending |
+| 5 | `WO-05-validator.md` | `POST /admin/hsh-template/validate` (read-only, umpan-balik per baris) | WO-04 | pending |
 | 6 | `WO-06-importer.md` | `POST .../template/import` staging → upsert, alias-first, auto-create (N-16), tolak `.xls` | WO-05 | pending |
 | 7 | `WO-07-seed-data-awal.md` | **_DITUNDA (N-15)_** — impor berkas SEPT–OKT + laporan normalisasi (GAP-2/7/8) | WO-06 | pending |
 | 8 | `WO-08-ui-admin.md` | UI: Kategori, Item (+alias), Periode, Entri (matriks), Unduh/Impor | WO-03, WO-06 | pending |
 | 9 | `WO-09-swagger-docs-bruno.md` | Swagger + README + koleksi Bruno + paritas | WO-08 | pending |
 
 ## Definisi Selesai (topik)
-- Plugin `needhousehold` terpasang, migrasi jalan bersih dari DB kosong, 5 tabel + enum + 7 kategori.
+- Plugin `hsh` terpasang, migrasi jalan bersih dari DB kosong, 5 tabel + enum + 7 kategori.
 - Permission ter-seed; route read/write/delete fail-closed sesuai guard.
 - Template XLSX/CSV ter-generate dari `fields.yaml` (dropdown kategori/satuan/status; kolom Periode).
 - Validator & importer berjalan; `.xls` ditolak dengan pesan pra-konversi; impor idempoten.
@@ -61,5 +61,5 @@ tags:
 ## Catatan
 - Topik **draft** — daftar WO dapat berubah setelah pelaksanaan.
 - Urutan: **WO-01 → 02 → 03 → 04 → 05 → 06 → (07 ditunda) → 08 → 09**.
-- Topik kembar `needelectronics` (`1793265053246`) **ditunda** sampai data mentah elektronik ada;
-  plugin itu menyalin bentuk ini dengan prefix `needelectronics_*`.
+- Topik kembar `elec` (`1793265053246`) **ditunda** sampai data mentah elektronik ada;
+  plugin itu menyalin bentuk ini dengan prefix `elec_*`.

@@ -22,8 +22,8 @@ Modul diwujudkan sebagai **plugin baru** (aturan user: fitur baru = plugin, `int
 
 | Plugin | Topic | Peran |
 |---|---|---|
-| **`plugins/needhousehold`** | `1793265053300` (dokumen ini) | Kebutuhan rumah tangga |
-| **`plugins/needelectronics`** | `1793265053246` | Kebutuhan elektronik (kembar) |
+| **`plugins/hsh`** | `1793265053300` (dokumen ini) | Kebutuhan rumah tangga |
+| **`plugins/elec`** | `1793265053246` | Kebutuhan elektronik (kembar) |
 
 Kedua plugin **identik bentuk**, dibedakan **prefix** id/plugin/tabel. Dokumen ini = **desain
 kanonik**; SPEC topik elektronik menyalin bentuk yang sama (hanya isi kategori & datanya berbeda).
@@ -63,10 +63,10 @@ kanonik**; SPEC topik elektronik menyalin bentuk yang sama (hanya isi kategori &
 | **N-3** | Kategori | **Tabel** `*_categories` (bukan enum statis) → bisa tambah/normalisasi tanpa deploy. |
 | **N-4** | Nama item | **Disimpan apa adanya** (bilingual gabung, seperti di berkas). Normalisasi & dedup lewat tabel **alias**. |
 | **N-5** | Atribut | Lengkap & **aditif**: satuan, harga, jumlah, catatan. Kolom baru = migrasi baru. |
-| **N-6** | Struktur plugin | **Dua plugin terpisah** (`needhousehold`, `needelectronics`). Satu DB → **prefix tabel wajib** (`needhousehold_*`, `needelectronics_*`). |
+| **N-6** | Struktur plugin | **Dua plugin terpisah** (`hsh`, `elec`). Satu DB → **prefix tabel wajib** (`hsh_*`, `elec_*`). |
 | **N-7** | Harga | Di **item** (`est_price`, harga satuan referensi) + **override opsional per entri** (`unit_price`). |
 | **N-8** | Status | Enum **statis** di kode + `CHECK`: `URGENT`, `ENOUGH`, `UNKNOWN` (label Indonesia via i18n). |
-| **N-9** | Permission | `needhousehold.read/write/delete` **di-seed lewat migrasi plugin `auth`** (pola `resident`; kalau lupa → semua route 403 fail-closed). |
+| **N-9** | Permission | `hsh.read/write/delete` **di-seed lewat migrasi plugin `auth`** (pola `resident`; kalau lupa → semua route 403 fail-closed). |
 | **N-10** | ID | `TEXT` berisi **UUID v7** dibuat di Go (`model.NewID`), tanpa `DEFAULT` DB. |
 | **N-11** | Template | **Digenerate** dari `schema/fields.yaml`, tidak di-maintain manual. |
 | **N-12** | Importer | **2 fasa**: staging → upsert. Kunci idempotensi `(period_code, item match)`. |
@@ -82,7 +82,7 @@ kanonik**; SPEC topik elektronik menyalin bentuk yang sama (hanya isi kategori &
 Semua tabel: `id TEXT PK`, `created_at`, `updated_at` (`timestamptz`). Nama field **Bahasa Inggris**
 (pola D-7), header template **Bahasa Indonesia**.
 
-### `needhousehold_categories`
+### `hsh_categories`
 | Kolom | Tipe | Catatan |
 |---|---|---|
 | id | text | PK (UUIDv7) |
@@ -91,7 +91,7 @@ Semua tabel: `id TEXT PK`, `created_at`, `updated_at` (`timestamptz`). Nama fiel
 | sort_order | int | urutan tampil |
 | is_active | boolean | NOT NULL DEFAULT true |
 
-### `needhousehold_items` (master katalog)
+### `hsh_items` (master katalog)
 | Kolom | Tipe | Catatan |
 |---|---|---|
 | id | text | PK |
@@ -104,7 +104,7 @@ Semua tabel: `id TEXT PK`, `created_at`, `updated_at` (`timestamptz`). Nama fiel
 
 Index: `UNIQUE (category_id, lower(name))` — cegah duplikat persis; beda penulisan ditangani alias.
 
-### `needhousehold_item_aliases`
+### `hsh_item_aliases`
 | Kolom | Tipe | Catatan |
 |---|---|---|
 | id | text | PK |
@@ -115,7 +115,7 @@ Fungsi: menyerap varian kotor dari data mentah (mis. `PARATUSIN TAB` → item `P
 `Sepidol Warna` → item kanonik, `Telon oil/Minyak telon` → nama ternormalisasi). Saat impor,
 alias dicocokkan lebih dulu sebelum `name` persis.
 
-### `needhousehold_periods`
+### `hsh_periods`
 | Kolom | Tipe | Catatan |
 |---|---|---|
 | id | text | PK |
@@ -124,7 +124,7 @@ alias dicocokkan lebih dulu sebelum `name` persis.
 | started_on / ended_on | date | opsional |
 | is_active | boolean | NOT NULL DEFAULT true; ≤1 periode aktif (aturan aplikasi) |
 
-### `needhousehold_entries` (kondisi per periode)
+### `hsh_entries` (kondisi per periode)
 | Kolom | Tipe | Catatan |
 |---|---|---|
 | id | text | PK |
@@ -205,24 +205,24 @@ flowchart LR
 - Tidak menulis DB pada tahap validasi (`POST .../validate` read-only).
 
 ## API & Permission
-Guard: `middleware.RequirePermission(authSvc, "needhousehold.<verb>")` — read/write/delete.
+Guard: `middleware.RequirePermission(authSvc, "hsh.<verb>")` — read/write/delete.
 Grup `api` sudah ber-prefix `/api`, jadi path relatif:
 
 | Method | Path | Guard |
 |---|---|---|
-| GET/POST | `/admin/needhousehold/categories` | read / write |
-| PATCH/DELETE | `/admin/needhousehold/categories/:id` | write / delete |
-| GET/POST | `/admin/needhousehold/items` | read / write |
-| GET/PUT/PATCH/DELETE | `/admin/needhousehold/items/:id` | read / write / write / delete |
-| GET/POST | `/admin/needhousehold/items/:id/aliases` | read / write |
-| DELETE | `/admin/needhousehold/items/:id/aliases/:aliasId` | write |
-| GET/POST | `/admin/needhousehold/periods` | read / write |
-| PATCH/DELETE | `/admin/needhousehold/periods/:id` | write / delete |
-| GET/POST | `/admin/needhousehold/entries` | read / write |
-| PATCH/DELETE | `/admin/needhousehold/entries/:id` | write / delete |
-| GET | `/admin/needhousehold-template?format=xlsx\|csv` | read |
-| POST | `/admin/needhousehold-template/validate` | read |
-| POST | `/admin/needhousehold-template/import` | write |
+| GET/POST | `/admin/hsh/categories` | read / write |
+| PATCH/DELETE | `/admin/hsh/categories/:id` | write / delete |
+| GET/POST | `/admin/hsh/items` | read / write |
+| GET/PUT/PATCH/DELETE | `/admin/hsh/items/:id` | read / write / write / delete |
+| GET/POST | `/admin/hsh/items/:id/aliases` | read / write |
+| DELETE | `/admin/hsh/items/:id/aliases/:aliasId` | write |
+| GET/POST | `/admin/hsh/periods` | read / write |
+| PATCH/DELETE | `/admin/hsh/periods/:id` | write / delete |
+| GET/POST | `/admin/hsh/entries` | read / write |
+| PATCH/DELETE | `/admin/hsh/entries/:id` | write / delete |
+| GET | `/admin/hsh-template?format=xlsx\|csv` | read |
+| POST | `/admin/hsh-template/validate` | read |
+| POST | `/admin/hsh-template/import` | write |
 
 Path template dibuat **flat** agar tidak bentrok wildcard `/:id` (pola WO-08 `resident`).
 
@@ -246,7 +246,7 @@ Path template dibuat **flat** agar tidak bentrok wildcard `/:id` (pola WO-08 `re
 | GAP-6 | Tidak ada padanan EN terpisah (N-4) | Diterima; EN bisa masuk ke `name` |
 | GAP-7 | Item nyasar antar kategori di berkas | Koreksi saat seed; dicatat di laporan |
 | GAP-8 | Duplikat nama beda penulisan | Alias + dedup saat seed |
-| GAP-9 | Prefix tabel & permission kembar dgn plugin elektronik | Konvensi `needhousehold_*` / `needelectronics_*` |
+| GAP-9 | Prefix tabel & permission kembar dgn plugin elektronik | Konvensi `hsh_*` / `elec_*` |
 
 ## Pertanyaan Terbuka
 - [x] **O-1** ~~Periode di template~~ → **DIKUNCI**: **kolom `Periode` di sheet DATA** (bebas per baris, format `YYYY-MM`).
@@ -262,21 +262,21 @@ dibedakan prefix plugin/tabel — **bukan** memakai topic induk.
 
 **Status dokumen:** `draft` — **menunggu review owner** sebelum `work-order.md` disusun.
 
-**Catatan lintas topik:** topic `needelectronics` (`1793265053246`) **ditunda** sampai data mentah
+**Catatan lintas topik:** topic `elec` (`1793265053246`) **ditunda** sampai data mentah
 kebutuhan elektronik tersedia (keputusan owner 2026-10-29). SPEC topik itu menyalin bentuk dokumen ini.
 
 ## Rencana Work Order (draft)
 | WO | Judul | Isi |
 |---|---|---|
-| WO-01 | Skeleton plugin + skema | `plugins/needhousehold`, `schema/fields.yaml`, migrasi 5 tabel + enum + seed kategori/periode |
-| WO-02 | Permission + CRUD kategori/item/alias | Seed `needhousehold.*` di migrasi `auth`; API + service + test |
+| WO-01 | Skeleton plugin + skema | `plugins/hsh`, `schema/fields.yaml`, migrasi 5 tabel + enum + seed kategori/periode |
+| WO-02 | Permission + CRUD kategori/item/alias | Seed `hsh.*` di migrasi `auth`; API + service + test |
 | WO-03 | Periode & entri API | CRUD periode + entri + query per periode (ringkasan urgen) |
-| WO-04 | Generator template | `GET /admin/needhousehold-template?format=xlsx\|csv` dari `fields.yaml` |
+| WO-04 | Generator template | `GET /admin/hsh-template?format=xlsx\|csv` dari `fields.yaml` |
 | WO-05 | Validator umpan-balik | `POST .../template/validate` (read-only, error per baris + header ringkasan) |
 | WO-06 | Importer | Staging → upsert, alias-first matching, laporan; pra-konversi `.xls` |
 | WO-07 | Seed data awal **_(ditunda, N-15)_** | Impor berkas SEPT–OKT + laporan normalisasi (GAP-2/7/8) |
 | WO-08 | UI admin panel | Kategori, Item (+alias), Periode, Entri (matriks), Unduh/Impor |
 | WO-09 | Swagger + README + Bruno | Paritas dokumentasi & koleksi API |
 
-**Catatan lintas topik:** plugin `needelectronics` (topic `1793265053246`) mengikuti bentuk yang sama;
+**Catatan lintas topik:** plugin `elec` (topic `1793265053246`) mengikuti bentuk yang sama;
 perbedaannya hanya sumber kategori/item. SPEC topik itu dibuat setelah data mentah elektronik tersedia.

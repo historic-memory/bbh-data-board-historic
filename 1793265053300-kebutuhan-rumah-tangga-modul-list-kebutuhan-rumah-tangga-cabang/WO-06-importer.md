@@ -1,6 +1,6 @@
 ---
 title: "WO-06: Importer (staging → upsert)"
-description: "Endpoint impor template needhousehold: fasa staging + upsert idempoten, alias-first matching, auto-create item/alias, tolak .xls."
+description: "Endpoint impor template hsh: fasa staging + upsert idempoten, alias-first matching, auto-create item/alias, tolak .xls."
 status: pending
 created: "2026-10-29"
 updated: "2026-10-29"
@@ -17,7 +17,7 @@ tags:
 - Pola acuan: importer 2 fasa plugin `resident` (staging tabel dulu, baru cek idempotensi).
 
 ## Tugas
-1. **Migrasi staging** `needhousehold_import_batches` + `needhousehold_import_rows`
+1. **Migrasi staging** `hsh_import_batches` + `hsh_import_rows`
    (batch = berkas unggahan; rows = baris mentah + status validasi + pesan + aksi).
 2. **Fasa 1 — staging**: baca `.xlsx`/`.csv` (pola WO-05), simpan baris mentah, jalankan validator,
    tulis laporan (dibuat/diperbarui/dilewati/ditolak) **tanpa** menyentuh master/entri.
@@ -30,14 +30,14 @@ tags:
      `recorded_by`.
 4. **Idempotensi**: menjalankan impor berkas sama 2x tidak menggandakan baris.
 5. **Penolakan `.xls`**: deteksi BIFF8 → 400 + pesan pra-konversi (N-17).
-6. **Endpoint**: `POST /admin/needhousehold-template/import` (guard `needhousehold.write`),
+6. **Endpoint**: `POST /admin/hsh-template/import` (guard `hsh.write`),
    multipart `file` + `?format=`. Respons: id batch + ringkasan + tautan laporan.
-   Bila perlu: `GET /admin/needhousehold/import-batches/:id` untuk membaca laporan.
+   Bila perlu: `GET /admin/hsh/import-batches/:id` untuk membaca laporan.
 7. **Test**: impor valid → count master/entri sesuai; impor ulang → tidak bertambah; item baru → alias
    tercatat; `.xls` → 400; baris invalid dari staging → dilaporkan & tidak menggagalkan baris valid.
 
 ## Bukti yang harus dilampirkan
-- `go build ./...` + `go test ./plugins/needhousehold/...` hijau.
+- `go build ./...` + `go test ./plugins/hsh/...` hijau.
 - curl impor template contoh → ringkasan; `SELECT count(*)` master/entri sebelum & sesudah impor ulang
   (tidak berubah); alias item baru muncul; `.xls` → 400 dengan pesan konversi.
 - Laporan batch (per status: dibuat/diperbarui/dilewati/ditolak).

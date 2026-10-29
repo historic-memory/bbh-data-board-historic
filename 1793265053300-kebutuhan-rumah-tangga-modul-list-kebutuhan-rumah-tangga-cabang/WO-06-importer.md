@@ -1,7 +1,7 @@
 ---
 title: "WO-06: Importer (staging → upsert)"
 description: "Endpoint impor template hsh: fasa staging + upsert idempoten, alias-first matching, auto-create item/alias, tolak .xls."
-status: pending
+status: complete
 created: "2026-10-29"
 updated: "2026-10-29"
 tags:
@@ -46,3 +46,48 @@ tags:
 - Impor idempoten; staging menyimpan laporan yang bisa diaudit.
 - Auto-create item + alias berjalan; kategori tidak auto-create.
 - `.xls` ditolak jelas; tidak ada penulisan DB pada fasa validasi.
+
+## Bukti Pelaksanaan
+- **Commit kode:** `532eb81` — `feat(hsh): importer 2 fasa staging+upsert idempoten (WO-06)`.
+  File: `plugins/hsh/services/import.go`, `import_test.go`, `import_db_test.go`,
+  `plugins/hsh/handlers/import.go`, `plugins/hsh/model/models.go`,
+  `plugins/hsh/migrations/postgres/2026_10_29_120300_create_hsh_import_tables.{up,down}.sql`,
+  `plugins/hsh/schema/fields.yaml` (2 tabel staging masuk SSOT), `plugins/hsh/plugin.go`.
+- **Kualitas:** `gofmt -l` bersih, `go build ./...` hijau, `go vet ./plugins/hsh/...` bersih,
+  `go test ./plugins/hsh/...` hijau. Test importer RUN (bukan skip):
+  `TestImportIsIdempotent`, `TestImportDryRunDoesNotTouchMaster`, `TestImportAliasFirst`,
+  `TestImportRejectsLegacyXLS`, `TestImportTemplateRejectsEmptyAndXLS`.
+- **Migrasi**: `hsh_import_batches` (filename, format, template_version, status
+  `staged|committed|failed`, dry_run, 5 counter, error, created_by) +
+  `hsh_import_rows` (row_no, kolom template, valid, action `pending|created|updated|skipped|rejected`,
+  reason, message, raw JSON). `migrate --plugin hsh up` → **applied** (versi 2).
+- **curl (`POST /api/admin/hsh-template/import`, CSV 4 baris: 2 valid + 1 duplikat + 1 kategori hantu):**
+
+  | Aksi | Ringkasan | Counts P/E/I/A/B |
+  |---|---|---|
+  | Impor #1 | `committed` — total 4, created 2, updated 0, skipped 1, rejected 1 | `1/2/2/2/1` |
+  | Impor #2 (berkas sama) | `committed` — created **0**, updated 2, skipped 1, rejected 1 | `1/2/2/2/2` (**identik** kecuali batch) |
+  | `?dry_run=1` | `staged` — created 0/updated 0 | counts **tidak berubah** (`1/2/2/2`) |
+  | `.xls` (BIFF8) | **400** `berkas .xls (Excel lama) tidak didukung; …simpan sebagai .xlsx atau .csv` | — |
+  | tanpa token / viewer (`hsh.write` tidak ada) | **401** / **403** `izin ditolak: butuh hsh.write` | — |
+
+  (P/E/I/A/B = periode / entri / item / alias / batch)
+
+- **Laporan batch per baris** (`GET /api/admin/hsh/import-batches/:id`, 200):
+  `row 2 created | periode dibuat; item baru dibuat + alias`;
+  `row 3 created | item baru dibuat + alias`;
+  `row 4 skipped | duplikat (periode, item) dengan baris 2; baris ini diabaikan`;
+  `row 5 rejected | Kategori: kategori tidak dikenal (pakai kode dari sheet REFERENSI)`.
+- **Isi DB sesudah impor:** item `Biskuit bayi` (pak `12000`) & `Susu formula tahap 1`
+  (`kaleng` `95000`) masing-masing **punya alias** dengan ejaan asli; entri `2026-09`
+  `ENOUGH qty 5` / `URGENT qty 3` dengan `recorded_by` terisi UUID admin.
+- **Keputusan penting:** periode hasil impor dibuat **nonaktif** (`is_active=false`)
+  agar bulk import tidak mencuri flag “≤1 periode aktif” milik WO-03. Dicatat di test.
+  (Catatan teknis: GORM melewati kolom ber-`default` saat nilainya zero, jadi insert
+  periode memakai map eksplisit.)
+- **Duplikat dalam satu berkas**: kemunculan pertama menang, sisanya `skipped` — satu
+  berkas tidak pernah menghitung ganda.
+- **Idempotensi**: kunci `(period_id, item_id)` dari WO-01 tetap penjaminnya; impor ulang
+  hanya `UPDATE`. Tinggal tabel staging yang bertambah (audit), master/entri tetap.
+- **Pembersihan:** DB dikembalikan ke `0 periode / 0 entri / 0 item / 0 alias / 0 batch / 7 kategori`.
+- **Dampak di luar plugin:** tidak ada; `internal/` tidak disentuh.

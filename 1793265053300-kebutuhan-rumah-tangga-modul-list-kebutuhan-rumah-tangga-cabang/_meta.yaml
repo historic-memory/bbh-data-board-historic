@@ -25,7 +25,7 @@ files:
     - id: 01a1875b-242d-7af3-a2c4-87b3c5cbece8
       path: WO-06-importer.md
       type: file
-      status: pending
+      status: complete
     - id: 01a1875b-242d-7320-b3ef-f26122f65917
       path: WO-07-seed-data-awal.md
       type: file

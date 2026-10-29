@@ -73,6 +73,9 @@ kanonik**; SPEC topik elektronik menyalin bentuk yang sama (hanya isi kategori &
 | **N-13** | Satuan | Daftar **REFERENSI** (dropdown terbatas). Disimpan sebagai daftar **statis di `fields.yaml`**; dipromosikan ke tabel bila kelak perlu dikelola lewat UI. |
 | **N-14** | Dropdown template | Kolom `Kategori`, `Satuan`, `Status` memakai **Excel data validation** dari sheet `REFERENSI` (pola `resident`: `REFERENSI!$X$2:$X$n`). `Periode` = kolom bebas format `YYYY-MM`. |
 | **N-15** | Seed data awal | **Ditunda** ("bikin sistem dulu", 2026-10-29). Skema, master, template, importer dibangun lebih dulu. |
+| **N-16** | Auto-create saat impor | **Ya** (O-2 = B): item baru dibuat otomatis + nama aslinya dicatat sebagai **alias**. Kategori tetap dari dropdown. |
+| **N-17** | Format berkas impor | Kontrak resmi = **`.xlsx` / `.csv`** (dibaca `excelize`). **`.xls` (BIFF8) ditolak** dengan pesan jelas + instruksi pra-konversi; konversi server-side tidak dilakukan (image runtime tetap Go-only). |
+| **N-18** | Alur pemenuhan | **Belum perlu.** Cukup mencatat kebutuhan + status stok (`URGENT`/`ENOUGH`/`UNKNOWN`). Alur pengadaan = topik terpisah bila kelak dibutuhkan. |
 
 ## Skema Kanonik
 
@@ -196,8 +199,9 @@ flowchart LR
   D --> E["Laporan: dibuat / diperbarui / dilewati / ditolak"]
 ```
 - Fasa staging menyimpan **laporan** agar impor bisa diaudit dan diulang (idempoten).
-- **Cakupan auto-create ditentukan O-2**: pilihan (A) item wajib ada di master (fail-closed); pilihan (B) item baru dibuat otomatis + dicatat sebagai alias.
-- Item dicocokkan dengan urutan: **alias** → **name persis (case/space-insensitive)** → **buat baru** (bila O-2 = B).
+- **Auto-create (N-16 / O-2 = B)**: item baru dibuat otomatis; nama asli baris itu otomatis tercatat sebagai **alias**. Kategori hanya boleh dari daftar REFERENSI (bukan auto-create).
+- Item dicocokkan dengan urutan: **alias** → **name persis (case/space-insensitive)** → **buat item baru**.
+- Format: `.xlsx` / `.csv` saja; `.xls` → tolak dengan pesan pra-konversi (N-17).
 - Tidak menulis DB pada tahap validasi (`POST .../validate` read-only).
 
 ## API & Permission
@@ -234,7 +238,7 @@ Path template dibuat **flat** agar tidak bentrok wildcard `/:id` (pola WO-08 `re
 ## Gap & Risiko
 | GAP | Deskripsi | Rencana |
 |---|---|---|
-| GAP-1 | `.xls` legacy BIFF8 tak terbaca `excelize` | Konversi manual (LibreOffice) untuk seed; arahkan owner ke `.xlsx` (O-6) |
+| GAP-1 | `.xls` legacy BIFF8 tak terbaca `excelize` | Kontrak impor `.xlsx`/`.csv`; `.xls` ditolak dengan pesan pra-konversi (N-17). Konversi manual tersedia di host (`soffice`) untuk kebutuhan seed. |
 | GAP-2 | Nama item kotor/bilingual gabung | Tabel alias + seed ternormalisasi |
 | GAP-3 | Harga & jumlah kosong di data mentah | Kolom nullable; diisi bertahap via form/template |
 | GAP-4 | Belum ada UI form | WO UI |
@@ -246,12 +250,17 @@ Path template dibuat **flat** agar tidak bentrok wildcard `/:id` (pola WO-08 `re
 
 ## Pertanyaan Terbuka
 - [x] **O-1** ~~Periode di template~~ → **DIKUNCI**: **kolom `Periode` di sheet DATA** (bebas per baris, format `YYYY-MM`).
+- [x] **O-2** ~~Cakupan dropdown Nama Kebutuhan~~ → **DIKUNCI**: **(B) teks bebas + auto-create item & alias** (N-16).
 - [x] **O-3** ~~Satuan~~ → **DIKUNCI**: **daftar REFERENSI** (dropdown terbatas), dikelola sebagai daftar statis di `fields.yaml` (N-13).
+- [x] **O-4** ~~Alur pemenuhan~~ → **DIKUNCI**: **belum perlu** (N-18).
 - [x] **O-5** ~~Scope kategori~~ → **DIKUNCI**: **semua 7 kategori** masuk (baby needs, milk, food, stationery, medicine, housekeeping, linen).
+- [x] **O-6** ~~Format berkas~~ → **DIKUNCI**: `.xlsx`/`.csv` sebagai kontrak; `.xls` ditolak + instruksi pra-konversi (N-17).
 - [x] **O-7** ~~Data awal~~ → **DIKUNCI**: *"bikin sistem dulu"* → seed data awal **ditunda** (N-15).
-- [ ] **O-2** Cakupan dropdown `Nama Kebutuhan`: **(A)** dropdown dari master (item wajib ada dulu / fail-closed) atau **(B)** teks bebas + auto-create item & alias?
-- [ ] **O-4** Perlu alur pemenuhan/permintaan (status lanjutan) — di topik terpisah?
-- [ ] **O-6** Berkas berikutnya diminta `.xlsx`? Bila tetap `.xls`, importer wajib pra-konversi.
+
+**Konfirmasi struktur dokumen** (2026-10-29): SPEC ditulis **paralel di masing-masing topic**,
+dibedakan prefix plugin/tabel — **bukan** memakai topic induk.
+
+**Status dokumen:** `draft` — **menunggu review owner** sebelum `work-order.md` disusun.
 
 **Catatan lintas topik:** topic `needelectronics` (`1793265053246`) **ditunda** sampai data mentah
 kebutuhan elektronik tersedia (keputusan owner 2026-10-29). SPEC topik itu menyalin bentuk dokumen ini.

@@ -46,7 +46,7 @@ tags:
 | 5 | `WO-05-validator.md` | `POST /admin/sec-template/validate` (read-only, umpan-balik per baris) | WO-04 | complete |
 | 6 | `WO-06-importer.md` | `POST .../sec-template/import` staging → upsert, alias-first, auto-create (S-19), tolak `.xls` | WO-05 | complete |
 | 7 | `WO-07-seed-data-awal.md` | **_DITUNDA_** — impor berkas "Updated 22 SEPT 26" + laporan normalisasi (GAP-2/7) | WO-06 | pending |
-| 8 | `WO-08-ui-admin.md` | UI: Kategori, Item (+alias), Periode, Entri (matriks), Unduh/Impor | WO-03, WO-06 | pending |
+| 8 | `WO-08-ui-admin.md` | UI: Kategori, Item (+alias), Periode, Entri (matriks), Unduh/Impor | WO-03, WO-06 | complete |
 | 9 | `WO-09-swagger-docs-bruno.md` | Swagger + README + koleksi Bruno + paritas | WO-08 | pending |
 
 ## Definisi Selesai (topik)

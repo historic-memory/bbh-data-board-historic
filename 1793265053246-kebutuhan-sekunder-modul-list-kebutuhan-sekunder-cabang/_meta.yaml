@@ -49,7 +49,7 @@ files:
     - id: 01a18809-f199-7268-a702-8b45b7fbf660
       path: work-order.md
       type: file
-      status: draft
+      status: progress
 assets:
     - path: List Kebutuhan Elektronik BBH - Updated 22 SEPT 26 2026.xlsx
       type: xlsx

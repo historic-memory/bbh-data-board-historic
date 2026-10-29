@@ -1,7 +1,7 @@
 ---
 title: "Work Order (Master Index): Kebutuhan Sekunder"
 description: "Rencana implementasi plugin sec: skema kanonik, master kategori/item, periode & entri snapshot, template Excel ter-generate, validator, importer, UI admin, dan dokumentasi. Kembar dari plugin hsh."
-status: draft
+status: progress
 created: "2026-10-29"
 updated: "2026-10-29"
 tags:
@@ -59,7 +59,8 @@ tags:
 - **Seed data awal tetap ditunda** (WO-07) sampai diminta owner.
 
 ## Catatan
-- Topik **draft** — daftar WO dapat berubah setelah pelaksanaan.
+- **Status topik: `progress`** — WO-01..06, 08, 09 `complete`; **WO-07 (seed) ditunda** menunggu berkas/data dari owner. Topik belum ditutup.
+- Commit kode: WO-01 `5619cd4`, WO-02 `1fddd1c`, WO-03 `802a017`, WO-04 `02c1088`, WO-05 `7e1b79e`, WO-06 `6266264`, WO-08 `268693a`, WO-09 `09adf18` (lokal, **tanpa push**).
 - Urutan: **WO-01 → 02 → 03 → 04 → 05 → 06 → (07 ditunda) → 08 → 09**.
 - Topik kembar `hsh` (`1793265053300`) = **habis pakai/pokok**; `sec` = **barang tahan lama**
   (elektronik, peralatan, mainan). Batas domain ini dijaga konsisten di kedua plugin.

@@ -47,7 +47,7 @@ tags:
 | 6 | `WO-06-importer.md` | `POST .../template/import` staging → upsert, alias-first, auto-create (N-16), tolak `.xls` | WO-05 | **complete** (`532eb81`) |
 | 7 | `WO-07-seed-data-awal.md` | **_DITUNDA (N-15)_** — impor berkas SEPT–OKT + laporan normalisasi (GAP-2/7/8) | WO-06 | pending |
 | 8 | `WO-08-ui-admin.md` | UI: Kategori, Item (+alias), Periode, Entri (matriks), Unduh/Impor | WO-03, WO-06 | **complete** (`d554950`) |
-| 9 | `WO-09-swagger-docs-bruno.md` | Swagger + README + koleksi Bruno + paritas | WO-08 | pending |
+| 9 | `WO-09-swagger-docs-bruno.md` | Swagger + README + koleksi Bruno + paritas | WO-08 | **complete** (`37e7e1f`) |
 
 ## Definisi Selesai (topik)
 - Plugin `hsh` terpasang, migrasi jalan bersih dari DB kosong, 5 tabel + enum + 7 kategori.

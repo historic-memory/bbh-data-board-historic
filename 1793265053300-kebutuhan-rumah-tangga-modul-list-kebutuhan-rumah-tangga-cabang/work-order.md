@@ -39,7 +39,7 @@ tags:
 ## Daftar WO
 | # | File | Scope | Prasyarat | Status |
 |---|---|---|---|---|
-| 1 | `WO-01-skeleton-plugin-skema.md` | Skeleton `plugins/hsh`, `schema/fields.yaml`, migrasi 5 tabel + enum, seed 7 kategori (referensi) | — | pending |
+| 1 | `WO-01-skeleton-plugin-skema.md` | Skeleton `plugins/hsh`, `schema/fields.yaml`, migrasi 5 tabel + enum, seed 7 kategori (referensi) | — | **complete** (`cf6367f`) |
 | 2 | `WO-02-permission-crud-master.md` | Seed permission `hsh.*` di migrasi `auth`; CRUD kategori/item/alias + test | WO-01 | pending |
 | 3 | `WO-03-periode-entri.md` | CRUD periode + entri + query per periode (ringkasan urgen/enough) | WO-02 | pending |
 | 4 | `WO-04-generator-template.md` | `GET /admin/hsh-template?format=xlsx\|csv` dari `fields.yaml` + dropdown REFERENSI | WO-01 | pending |

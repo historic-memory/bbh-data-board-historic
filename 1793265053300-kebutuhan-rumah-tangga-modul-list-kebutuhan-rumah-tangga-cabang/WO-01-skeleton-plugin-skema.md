@@ -1,7 +1,7 @@
 ---
 title: "WO-01: Skeleton plugin & skema kanonik"
 description: "Buat plugin hsh, schema/fields.yaml, migrasi 5 tabel + enum status, dan seed daftar kategori referensi (7 kategori)."
-status: pending
+status: complete
 created: "2026-10-29"
 updated: "2026-10-29"
 tags:
@@ -53,3 +53,23 @@ tags:
 - Plugin terdaftar (muncul di registry), no-op service aman.
 - Skema sesuai SPEC; `fields.yaml` ↔ migrasi konsisten (test hijau).
 - Tidak ada kode fitur di `internal/`; tidak ada perubahan pada plugin lain.
+
+## Bukti Pelaksanaan (2026-10-29)
+- **Kode:** commit `cf6367f` (tanpa push). File baru: `plugins/hsh/{plugin,cli}.go`,
+  `model/{id,models}.go`, `services/service.go`, `handlers/handlers.go`,
+  `schema/{fields.yaml,schema.go,schema_test.go}`, dan migrasi
+  `migrations/postgres/2026_10_29_120100_create_hsh_core_tables.{up,down}.sql`.
+  File diubah: `cmd/server/main.go`, `cmd/console/main.go` (registrasi plugin).
+  **Tidak ada perubahan `internal/` maupun plugin lain.**
+- **Build/vet/test (container `app`):** `go build ./...` hijau;
+  `go vet ./plugins/hsh/... ./cmd/...` bersih; `go test ./plugins/hsh/...` hijau
+  (`schema` 7 test: fields↔migrasi, prefix `hsh_`, tanpa `ref_*`, CHECK status,
+  template refs, enum refs, units).
+- **Migrasi up dari DB kosong** (`hsh_mig_test`): `migrate --plugin hsh up` →
+  `hsh applied ... create_hsh_core_tables`. `pg_tables` → 5 tabel `hsh_*`;
+  `hsh_entries_status_code_check` = `CHECK (status_code = ANY
+  (ARRAY['URGENT','ENOUGH','UNKNOWN']))`; `SELECT code ... ORDER BY sort_order`
+  → 7 baris (`baby_needs`..`linen`).
+- **Migrasi down:** `migrate --plugin hsh down` → `rolled back version 1`;
+  `count(hsh_* tables)` = **0**.
+- **Registry:** `console hsh version` → `hsh plugin 0.1.0`.

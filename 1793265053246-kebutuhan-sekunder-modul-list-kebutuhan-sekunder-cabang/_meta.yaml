@@ -37,7 +37,7 @@ files:
     - id: 01a18809-f198-7c0d-9803-85e6ac6ebf0d
       path: WO-09-swagger-docs-bruno.md
       type: file
-      status: pending
+      status: complete
     - id: 01a186ed-5889-7656-a47a-959f099085cf
       path: notes.md
       type: file

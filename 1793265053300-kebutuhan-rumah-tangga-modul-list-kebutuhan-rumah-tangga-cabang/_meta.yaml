@@ -6,6 +6,10 @@ files:
       path: notes.md
       type: file
       status: progress
+    - id: 01a186ff-7ad9-7664-9a95-d0e1fdcf2ad7
+      path: spec.md
+      type: spec
+      status: draft
 assets:
     - path: List Kebutuhan RT  BBH  SEPT 19 OKT 26 d.xls
       type: xls

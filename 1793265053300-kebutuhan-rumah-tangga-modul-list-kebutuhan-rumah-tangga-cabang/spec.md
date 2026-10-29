@@ -70,6 +70,9 @@ kanonik**; SPEC topik elektronik menyalin bentuk yang sama (hanya isi kategori &
 | **N-10** | ID | `TEXT` berisi **UUID v7** dibuat di Go (`model.NewID`), tanpa `DEFAULT` DB. |
 | **N-11** | Template | **Digenerate** dari `schema/fields.yaml`, tidak di-maintain manual. |
 | **N-12** | Importer | **2 fasa**: staging → upsert. Kunci idempotensi `(period_code, item match)`. |
+| **N-13** | Satuan | Daftar **REFERENSI** (dropdown terbatas). Disimpan sebagai daftar **statis di `fields.yaml`**; dipromosikan ke tabel bila kelak perlu dikelola lewat UI. |
+| **N-14** | Dropdown template | Kolom `Kategori`, `Satuan`, `Status` memakai **Excel data validation** dari sheet `REFERENSI` (pola `resident`: `REFERENSI!$X$2:$X$n`). `Periode` = kolom bebas format `YYYY-MM`. |
+| **N-15** | Seed data awal | **Ditunda** ("bikin sistem dulu", 2026-10-29). Skema, master, template, importer dibangun lebih dulu. |
 
 ## Skema Kanonik
 
@@ -139,7 +142,10 @@ Index: `UNIQUE (period_id, item_id)`.
 | `ENOUGH` | Stok cukup | fill navy `FF003366` |
 | `UNKNOWN` | Tidak diketahui | tanpa fill / putih |
 
-## Seed Awal (dari berkas SEPT–OKT)
+## Seed Awal (dari berkas SEPT–OKT) — **DITUNDA (N-15)**
+
+> Keputusan owner 2026-10-29: *"kita bikin sistem dulu aja"*. Bagian ini tetap disimpan sebagai
+> **rencana**, dieksekusi setelah skema/master/template/importer siap (WO-07, statusnya ditunda).
 - **7 kategori** (dinormalkan; typo diperbaiki di data, bukan di kode):
   `baby_needs` (Baby Needs/Kebutuhan Bayi & Diaper), `milk`, `food`, `stationery`
   (Stationery & Educational Tools), `medicine` (Medicine & Vitamin),
@@ -158,19 +164,28 @@ Index: `UNIQUE (period_id, item_id)`.
 Sheet: **PETUNJUK** · **DATA** · **REFERENSI** · **CONTOH**.
 Kolom sheet DATA (header Bahasa Indonesia):
 
-| Kolom | Field | Wajib |
-|---|---|---|
-| Kategori | `categories.name` (atau `code` bila sudah ada) | ya |
-| Nama Kebutuhan | `items.name` | ya |
-| Satuan | `items.unit` | tidak |
-| Harga Satuan | `items.est_price` | tidak |
-| Status | `entries.status_code` | ya |
-| Jumlah | `entries.quantity` | tidak |
-| Catatan | `entries.note` | tidak |
+| Kolom | Field | Wajib | Kendali |
+|---|---|---|---|
+| Periode | `periods.code` (`YYYY-MM`) | ya | teks bebas (format divalidasi) |
+| Kategori | `categories.code` | ya | **dropdown** REFERENSI |
+| Nama Kebutuhan | `items.name` | ya | dropdown master **atau** teks bebas — **O-2, menunggu keputusan** |
+| Satuan | `items.unit` | tidak | **dropdown** REFERENSI |
+| Harga Satuan | `items.est_price` | tidak | angka |
+| Status | `entries.status_code` | ya | **dropdown** REFERENSI |
+| Jumlah | `entries.quantity` | tidak | angka |
+| Catatan | `entries.note` | tidak | teks |
 
-`REFERENSI` memuat daftar kategori (dan satuan bila ada) untuk dropdown; versi template ditulis di
+**Dropdown (N-14)**: kolom bertanda dropdown memakai Excel *data validation* berisi rumus ke sheet
+`REFERENSI` (pola yang sudah dipakai plugin `resident` untuk 6 kolom enum). Label dropdown memakai
+**Bahasa Indonesia**; validator memetakan balik ke `code`.
+
+**Catatan praktis dropdown Nama Kebutuhan**: bila dijadikan dropdown dari master, daftar bisa
+ratusan baris dan berkas yang sudah terunduh **tidak ikut ter-update** saat master berubah —
+operator harus **unduh ulang** template. Karena itu pilihan A (dropdown/fail-closed) vs B (teks bebas
+dengan auto-create) perlu keputusan O-2.
+
+`REFERENSI` memuat: kategori (semua 7 kategori), satuan, dan status. Versi template ditulis di
 `PETUNJUK` (`template_version`) supaya validator bisa menolak berkas versi usang.
-Dropdown Status memakai **label Indonesia**; validator memetakan balik ke `code`.
 
 ## Alur Impor
 ```mermaid
@@ -181,8 +196,8 @@ flowchart LR
   D --> E["Laporan: dibuat / diperbarui / dilewati / ditolak"]
 ```
 - Fasa staging menyimpan **laporan** agar impor bisa diaudit dan diulang (idempoten).
-- Kategori & item **auto-create** bila belum ada (keputusan sementara; lihat O-2).
-- Item dicocokkan dengan urutan: **alias** → **name persis (case/space-insensitive)** → **buat baru**.
+- **Cakupan auto-create ditentukan O-2**: pilihan (A) item wajib ada di master (fail-closed); pilihan (B) item baru dibuat otomatis + dicatat sebagai alias.
+- Item dicocokkan dengan urutan: **alias** → **name persis (case/space-insensitive)** → **buat baru** (bila O-2 = B).
 - Tidak menulis DB pada tahap validasi (`POST .../validate` read-only).
 
 ## API & Permission
@@ -230,13 +245,16 @@ Path template dibuat **flat** agar tidak bentrok wildcard `/:id` (pola WO-08 `re
 | GAP-9 | Prefix tabel & permission kembar dgn plugin elektronik | Konvensi `needhousehold_*` / `needelectronics_*` |
 
 ## Pertanyaan Terbuka
-- [ ] **O-1** Periode di template: kolom `Periode` di sheet DATA, atau parameter saat impor (1 berkas = 1 periode)?
-- [ ] **O-2** Item/kategori **auto-create** saat impor, atau wajib sudah ada di master (fail-closed)?
-- [ ] **O-3** Satuan: teks bebas atau daftar REFERENSI?
+- [x] **O-1** ~~Periode di template~~ → **DIKUNCI**: **kolom `Periode` di sheet DATA** (bebas per baris, format `YYYY-MM`).
+- [x] **O-3** ~~Satuan~~ → **DIKUNCI**: **daftar REFERENSI** (dropdown terbatas), dikelola sebagai daftar statis di `fields.yaml` (N-13).
+- [x] **O-5** ~~Scope kategori~~ → **DIKUNCI**: **semua 7 kategori** masuk (baby needs, milk, food, stationery, medicine, housekeeping, linen).
+- [x] **O-7** ~~Data awal~~ → **DIKUNCI**: *"bikin sistem dulu"* → seed data awal **ditunda** (N-15).
+- [ ] **O-2** Cakupan dropdown `Nama Kebutuhan`: **(A)** dropdown dari master (item wajib ada dulu / fail-closed) atau **(B)** teks bebas + auto-create item & alias?
 - [ ] **O-4** Perlu alur pemenuhan/permintaan (status lanjutan) — di topik terpisah?
-- [ ] **O-5** `Linen` & `Medicine & Vitamin` masuk scope "rumah tangga", atau dipindah/dipisah?
 - [ ] **O-6** Berkas berikutnya diminta `.xlsx`? Bila tetap `.xls`, importer wajib pra-konversi.
-- [ ] **O-7** Data awal: impor **kedua** periode (SEPT & 19 OKT) atau hanya yang terbaru?
+
+**Catatan lintas topik:** topic `needelectronics` (`1793265053246`) **ditunda** sampai data mentah
+kebutuhan elektronik tersedia (keputusan owner 2026-10-29). SPEC topik itu menyalin bentuk dokumen ini.
 
 ## Rencana Work Order (draft)
 | WO | Judul | Isi |
@@ -247,7 +265,7 @@ Path template dibuat **flat** agar tidak bentrok wildcard `/:id` (pola WO-08 `re
 | WO-04 | Generator template | `GET /admin/needhousehold-template?format=xlsx\|csv` dari `fields.yaml` |
 | WO-05 | Validator umpan-balik | `POST .../template/validate` (read-only, error per baris + header ringkasan) |
 | WO-06 | Importer | Staging → upsert, alias-first matching, laporan; pra-konversi `.xls` |
-| WO-07 | Seed data awal | Impor berkas SEPT–OKT + laporan normalisasi (GAP-2/7/8) |
+| WO-07 | Seed data awal **_(ditunda, N-15)_** | Impor berkas SEPT–OKT + laporan normalisasi (GAP-2/7/8) |
 | WO-08 | UI admin panel | Kategori, Item (+alias), Periode, Entri (matriks), Unduh/Impor |
 | WO-09 | Swagger + README + Bruno | Paritas dokumentasi & koleksi API |
 

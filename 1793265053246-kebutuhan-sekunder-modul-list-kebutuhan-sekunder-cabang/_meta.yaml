@@ -2,6 +2,42 @@ id: "1793265053246"
 title: Kebutuhan Sekunder — modul list kebutuhan sekunder cabang
 created: "2026-10-29"
 files:
+    - id: 01a18809-f196-7205-9284-f78c36db85a0
+      path: WO-01-skeleton-plugin-skema.md
+      type: file
+      status: pending
+    - id: 01a18809-f197-7779-b845-06611959aec6
+      path: WO-02-permission-crud-master.md
+      type: file
+      status: pending
+    - id: 01a18809-f197-76f0-8e59-1d1c8bff59cf
+      path: WO-03-periode-entri.md
+      type: file
+      status: pending
+    - id: 01a18809-f197-7f48-95cf-bfed610387db
+      path: WO-04-generator-template.md
+      type: file
+      status: pending
+    - id: 01a18809-f197-7c0b-b00e-8d72cb7e410f
+      path: WO-05-validator.md
+      type: file
+      status: pending
+    - id: 01a18809-f197-767d-92db-07890f08ecf2
+      path: WO-06-importer.md
+      type: file
+      status: pending
+    - id: 01a18809-f198-7daa-921c-cbbb977b72e3
+      path: WO-07-seed-data-awal.md
+      type: file
+      status: pending
+    - id: 01a18809-f198-7494-ba7e-1f034315322a
+      path: WO-08-ui-admin.md
+      type: file
+      status: pending
+    - id: 01a18809-f198-7c0d-9803-85e6ac6ebf0d
+      path: WO-09-swagger-docs-bruno.md
+      type: file
+      status: pending
     - id: 01a186ed-5889-7656-a47a-959f099085cf
       path: notes.md
       type: file
@@ -9,6 +45,10 @@ files:
     - id: 01a18802-e93f-7aa8-98ee-805fec088ba7
       path: spec.md
       type: spec
+      status: draft
+    - id: 01a18809-f199-7268-a702-8b45b7fbf660
+      path: work-order.md
+      type: file
       status: draft
 assets:
     - path: List Kebutuhan Elektronik BBH - Updated 22 SEPT 26 2026.xlsx

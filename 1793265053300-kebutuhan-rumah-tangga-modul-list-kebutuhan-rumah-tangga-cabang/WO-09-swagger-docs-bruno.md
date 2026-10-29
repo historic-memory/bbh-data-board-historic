@@ -177,3 +177,51 @@ Perbaikan di `plugins/hsh/services/period.go` (`CreatePeriod`): setelah
 `tx.Create`, tulis ulang `is_active=false` secara eksplisit dalam transaksi yang
 sama (pola yang sama dipakai importer untuk baris staging). Perubahan ikut di
 commit `37e7e1f`. Diverifikasi: run ulang Bruno hijau, `go test` hijau.
+
+### 8. Addendum B-1b — temuan review Manager (commit `a4d3fb0`)
+Review Manager membuktikan pola B-1 **masih hidup** di jalur create lain:
+
+```
+POST /api/admin/hsh/categories {"code":"zztest","name":"ZZ Test","is_active":false}
+→ "is_active": true          # SALAH
+POST /api/admin/hsh/items {...,"is_active":false}
+→ "is_active": true          # SALAH
+```
+
+Ketiga field `IsActive` di `plugins/hsh/model/models.go` (baris 12/26/52)
+bertag `default:true`. Jalur *update* aman karena memakai `Updates(map)`.
+
+**Koreksi diagnosis B-1**: GORM tidak sekadar "membuang zero value". Karena
+kolom bertag `default`, GORM menganggapnya belum diisi → tidak dikirim pada
+INSERT **dan** field in-memory di-*back-fill* dari DB (RETURNING), sehingga
+`row.IsActive` sudah bernilai `true` sesudah `Create`. Inilah sebabnya percobaan
+pertama B-1b (memeriksa `!row.IsActive` setelah create) **gagal** dan terdeteksi
+oleh test baru. Nilai yang diminta harus ditangkap **sebelum** `Create`.
+
+**Perbaikan** (`a4d3fb0`, 5 file, +167/−9):
+- `services/service.go`: helper `forceInactive(tx, table, id)` + dokumentasi
+  sebabnya.
+- `services/category.go`, `services/item.go`: create dalam satu transaksi
+  (insert → rewrite `is_active=false` bila diminta) dan mengembalikan `Get*`
+  sehingga response = state DB (sebelumnya `CreateCategory` mengembalikan struct
+  in-memory).
+- `services/period.go`: memakai helper yang sama (B-1 dirapikan).
+- `services/active_flag_db_test.go` (baru): `TestCreateHonoursInactiveFlag`
+  (kategori/item/periode → response **dan** kolom DB harus `false`) +
+  `TestCreateDefaultsToActive` (default tetap `true` bila flag dihilangkan).
+
+**Bukti**:
+- `gofmt -l plugins/hsh/` kosong, `go vet ./plugins/hsh/...` bersih,
+  `go test ./plugins/hsh/...` → semua paket `ok`; kedua test baru `--- PASS`
+  (bukan skip).
+- API nyata: kategori `zztest` → `is_active:false`, item `Item ZZ` →
+  `false`, periode `2097-03` → `false`; kategori tanpa flag → `true`.
+  Kolom DB dikonfirmasi `f` lewat psql, lalu data uji dihapus.
+- Regresi: `bru --tags=smoke` 6 req/15 test PASS; `bru needs` 14 req/36 test
+  PASS; DB baseline `7 kategori / 0 item / 0 alias / 0 periode / 0 entri /
+  0 batch`.
+
+**Catatan proses**: bug ini lolos karena tidak ada test yang menutup
+`is_active=false` **saat create** (Bruno & unit test hanya menguji update).
+Pelajaran umum: setiap kolom bertag `default:` di GORM perlu test create
+zero-value eksplisit.

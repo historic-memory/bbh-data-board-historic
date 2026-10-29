@@ -21,7 +21,7 @@ files:
     - id: 01a18809-f197-7c0b-b00e-8d72cb7e410f
       path: WO-05-validator.md
       type: file
-      status: pending
+      status: complete
     - id: 01a18809-f197-767d-92db-07890f08ecf2
       path: WO-06-importer.md
       type: file

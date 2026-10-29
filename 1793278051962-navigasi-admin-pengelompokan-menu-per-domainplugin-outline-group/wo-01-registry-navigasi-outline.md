@@ -1,7 +1,7 @@
 ---
 title: "WO-01: Registry navigasi & outline group di AdminLayout"
 description: "Membuat registry navigasi terpusat (data-driven) dan merender sidebar admin sebagai outline group collapsible dengan filter izin per group/item serta judul dokumen dari sumber yang sama."
-status: planned
+status: complete
 created: "2026-10-29"
 updated: "2026-10-29"
 tags:
@@ -58,3 +58,25 @@ collapsible yang siap di-expand.
 - Diff `AdminLayout.tsx` + file registry baru.
 - Output `npm run build` sukses.
 - Catatan verifikasi manual ringkas (bisa dilanjutkan di WO-02).
+
+## Bukti Pelaksanaan (2026-10-29)
+
+**Kode commit:** `c458f82` (repo kode, tanpa push).
+
+**Berkas:**
+- BARU `sub_app/webapp/src/navigation/menu.ts` — tipe `NavItem`/`NavGroup`,
+  `NAV_GROUPS` (4 group), `BASE_TITLE`, helper `isItemVisible`/`visibleGroups`/
+  `groupContainsPath`/`isPathInItem`/`titleFor`/`shortTitleFor`. Tanpa dependensi baru.
+- UBAH `sub_app/webapp/src/layouts/AdminLayout.tsx` — `NAV_ITEMS` & `TITLES`
+  DIHAPUS; merender `visibleGroups(hasPermission)` sebagai `NavGroupSection`
+  (heading tombol `aria-expanded` + daftar `NavLink`), `collapsed` dipersist ke
+  `localStorage` (`admin.nav.collapsed`), group rute aktif selalu terbuka,
+  `document.title` via `titleFor`. Handler baca aman terhadap JSON rusak.
+- UBAH `sub_app/webapp/README.md` — bagian "Navigasi admin — registry terpusat".
+
+**Build:** `cd sub_app/webapp && npm run build` → `tsc -b && vite build` SUKSES,
+147 modul, `dist/assets/index-DuxNVFHM.js` 425.75 kB (gzip 126.66 kB).
+`grep -rn "NAV_ITEMS\|TITLES" src` → kosong (AC-7).
+
+**Verifikasi ringkas (lihat detail di WO-02):** AC-1..AC-6 terverifikasi di
+browser dev (`http://localhost:5173/app/`) dengan akun root + akun terbatas.

@@ -1,7 +1,7 @@
 ---
 title: 'SPEC: Navigasi Admin — pengelompokan menu per domain/plugin (outline group)'
 description: 'Restrukturisasi sidebar admin menjadi outline group per domain bisnis (plugin), dengan registry navigasi terpusat yang data-driven sehingga domain/plugin baru cukup menambah entri — tanpa menyentuh layout.'
-status: draft
+status: complete
 created: "2026-10-29"
 updated: "2026-10-29"
 tags:

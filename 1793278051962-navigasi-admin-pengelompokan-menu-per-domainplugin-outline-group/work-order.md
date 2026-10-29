@@ -1,7 +1,7 @@
 ---
 title: "Work Order (Master Index): Navigasi Admin — outline group per domain/plugin"
 description: "Rencana implementasi restrukturisasi sidebar admin: registry navigasi terpusat (data-driven), render outline group collapsible, filter izin per group/item, dan verifikasi."
-status: draft
+status: complete
 created: "2026-10-29"
 updated: "2026-10-29"
 tags:
@@ -32,12 +32,23 @@ tags:
 ## Daftar WO
 | # | File | Scope | Prasyarat | Status |
 |---|---|---|---|---|
-| WO-01 | `WO-01-registry-navigasi-outline.md` | Registry navigasi + render outline group (collapsible) di `AdminLayout` | — | planned |
-| WO-02 | `WO-02-verifikasi-dokumentasi.md` | Verifikasi build/perilaku (izin, expand, mobile) + dokumentasi | WO-01 | planned |
+| WO-01 | `WO-01-registry-navigasi-outline.md` | Registry navigasi + render outline group (collapsible) di `AdminLayout` | — | complete |
+| WO-02 | `WO-02-verifikasi-dokumentasi.md` | Verifikasi build/perilaku (izin, expand, mobile) + dokumentasi | WO-01 | complete |
 
 ## Catatan Status
 - SEMUA keputusan SPEC (N-1..N-11) & pertanyaan (O-1, O-2) **terkunci** 2026-10-29.
-- WO-01 & WO-02 berstatus `planned` — **siap dieksekusi** oleh developer.
+- **WO-01 & WO-02 SELESAI (2026-10-29)** — kode commit `c458f82` (tanpa push).
+  AC-1..AC-7 WO-01 terverifikasi di browser dev (akun root + akun terbatas
+  `hsh.read`-only); dokumentasi ditambahkan di `sub_app/webapp/README.md`.
 - Topik ini **UI-only** (frontend `sub_app/webapp`); backend tidak disentuh.
 - Perubahan ini **bukan** plugin baru; ia merapikan *shell* admin yang menampung semua plugin.
+
+### Ringkasan Bukti
+- **Berkas:** BARU `src/navigation/menu.ts`; UBAH `src/layouts/AdminLayout.tsx`,
+  `sub_app/webapp/README.md`.
+- **Build:** `npm run build` SUKSES (147 modul); tidak ada sisa `NAV_ITEMS`/`TITLES`.
+- **Perilaku:** 4 group bernama; filter izin (group kosong disembunyikan);
+  collapsible + persist `localStorage`; group rute aktif auto-open;
+  `document.title` dari registry; drawer mobile utuh.
+- Rincian per-AC ada di `WO-01`/`WO-02` bagian "Bukti Pelaksanaan"/"Hasil Verifikasi".
 

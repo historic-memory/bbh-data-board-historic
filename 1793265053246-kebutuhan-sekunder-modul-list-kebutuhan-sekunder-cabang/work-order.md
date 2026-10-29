@@ -44,7 +44,7 @@ tags:
 | 3 | `WO-03-periode-entri.md` | CRUD periode + entri + query per periode (ringkasan status) | WO-02 | complete |
 | 4 | `WO-04-generator-template.md` | `GET /admin/sec-template?format=xlsx\|csv` dari `fields.yaml` + dropdown REFERENSI | WO-01 | complete |
 | 5 | `WO-05-validator.md` | `POST /admin/sec-template/validate` (read-only, umpan-balik per baris) | WO-04 | complete |
-| 6 | `WO-06-importer.md` | `POST .../sec-template/import` staging → upsert, alias-first, auto-create (S-19), tolak `.xls` | WO-05 | pending |
+| 6 | `WO-06-importer.md` | `POST .../sec-template/import` staging → upsert, alias-first, auto-create (S-19), tolak `.xls` | WO-05 | complete |
 | 7 | `WO-07-seed-data-awal.md` | **_DITUNDA_** — impor berkas "Updated 22 SEPT 26" + laporan normalisasi (GAP-2/7) | WO-06 | pending |
 | 8 | `WO-08-ui-admin.md` | UI: Kategori, Item (+alias), Periode, Entri (matriks), Unduh/Impor | WO-03, WO-06 | pending |
 | 9 | `WO-09-swagger-docs-bruno.md` | Swagger + README + koleksi Bruno + paritas | WO-08 | pending |

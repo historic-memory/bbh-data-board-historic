@@ -1,7 +1,7 @@
 ---
 title: "WO-03: Periode & entri (snapshot)"
 description: "API CRUD periode dan entri (kondisi per periode) + query ringkasan per periode."
-status: pending
+status: complete
 created: "2026-10-29"
 updated: "2026-10-29"
 tags:
@@ -49,3 +49,46 @@ tags:
 ## Kriteria Selesai
 - Riwayat per periode tersimpan tanpa overwrite; idempotensi `(period_id,item_id)` terbukti.
 - Kontrak list/summary konsisten; semua route ter-guard.
+
+## Bukti Pelaksanaan
+- **Commit kode:** `5645154` — `feat(hsh): periode & entri snapshot + ringkasan (WO-03)`.
+  File: `plugins/hsh/services/{period,entry,entry_test,entry_db_test,service}.go`,
+  `plugins/hsh/handlers/{period,entry}.go`, `plugins/hsh/plugin.go`.
+- **Kualitas:** `gofmt -l` bersih, `go build ./...` hijau, `go vet ./plugins/hsh/...` bersih,
+  `go test ./plugins/hsh/...` hijau — 3 test DB benar-benar jalan (bukan skip):
+  `TestUpsertEntryIsIdempotent`, `TestSingleActivePeriod`, `TestCreatePeriodUniqueCode` → PASS.
+- **Implementasi kunci:**
+  - `periodCodePattern = ^\d{4}-(0[1-9]|1[0-2])(-\d{2})?$`; `resolvePeriod` menerima **id atau code**
+    (400 bila tidak dikenal) supaya UI/CLI bisa pakai `?period_id=2026-09`.
+  - Aturan ≤1 periode aktif dijaga di service (`deactivateOtherPeriods` dalam satu transaksi).
+    Create tanpa `is_active` → aktif hanya jika belum ada periode aktif.
+  - `entrySelect` memakai `COALESCE(e.unit_price, i.est_price) AS effective_price`.
+  - `UpsertEntry` transaksional: SELECT existing → UPDATE, jika tidak ada → INSERT;
+    mengembalikan `UpsertResult{Entry, Created}` → handler membalas **201** saat dibuat, **200** saat update.
+  - `recorded_by` diisi otomatis dari `middleware.Admin(c).ID` bila tidak dikirim.
+  - `Summary` memakai `COUNT(*) FILTER (WHERE status_code='…')` sehingga ketiga kunci status
+    selalu ada (0 bila kosong); `by_category` mengikuti filter yang sama.
+  - Route `GET /entries/summary` didaftarkan **sebelum** `GET /entries/:id`.
+- **curl (server :8082, prefix `/api/admin/hsh`):**
+
+  | Langkah | Hasil |
+  |---|---|
+  | POST `/periods` `{code:"2026-09"}` | 201 |
+  | POST `/periods` `{code:"2026-10-19"}` | 201; `2026-09` auto nonaktif (`include_inactive=1` → `[('2026-10-19',True),('2026-09',False)]`) |
+  | GET `/periods` (aktif saja) | `total=1` |
+  | POST `/entries` (period,item) #1 | **201**, `recorded_by` terisi, `effective_price=55000` (fallback `est_price`) |
+  | POST `/entries` (period,item) #2 | **200**, `id` sama, status `ENOUGH`, qty 5, `unit_price=60000`, `effective_price=60000` |
+  | Hitung baris DB `hsh_entries` | **1** (idempoten terbukti) |
+  | POST `/entries` status `LOW` | **400** (validasi enum) |
+  | GET `/entries/summary?period_id=…` | `{total:1, by_status:{ENOUGH:1,UNKNOWN:0,URGENT:0}, by_category:[{…enough:1}]}` |
+  | DELETE `/periods/:id` (masih ada entri) | **409** `"periode masih punya 1 entri"` |
+  | PATCH `/entries/:id` | 200 |
+  | DELETE `/entries/:id`, lalu DELETE `/periods/:id` | 200 / 200 |
+  | GET `/entries` akhir | `{"items":[],"total":0}` |
+
+- **Guard (fail-closed):** admin grup `viewer` → `GET /periods` 200, `POST /periods` **403**,
+  `GET /entries/summary` 400 (periode uji sudah dihapus → validasi bisnis, guard lolos);
+  tanpa token → `GET /entries` **401**. Semua 6 route periode + 5 route entri memakai
+  `RequirePermission("hsh.read|write|delete")`.
+- **Dampak di luar plugin:** tidak ada. Semua perubahan di `plugins/hsh/` (tidak menyentuh `internal/`).
+- **Pembersihan:** data uji dihapus — `0 periode / 0 entri / 0 item` (kategori seed 7 baris tetap).

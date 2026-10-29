@@ -5,7 +5,7 @@ files:
     - id: 01a18809-f196-7205-9284-f78c36db85a0
       path: WO-01-skeleton-plugin-skema.md
       type: file
-      status: pending
+      status: complete
     - id: 01a18809-f197-7779-b845-06611959aec6
       path: WO-02-permission-crud-master.md
       type: file

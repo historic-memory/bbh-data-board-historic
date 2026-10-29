@@ -45,7 +45,7 @@ files:
     - id: 01a18802-e93f-7aa8-98ee-805fec088ba7
       path: spec.md
       type: spec
-      status: draft
+      status: complete
     - id: 01a18809-f199-7268-a702-8b45b7fbf660
       path: work-order.md
       type: file

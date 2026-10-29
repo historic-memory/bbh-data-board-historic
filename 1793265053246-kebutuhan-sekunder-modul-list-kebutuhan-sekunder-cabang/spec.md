@@ -1,7 +1,7 @@
 ---
 title: 'SPEC: Kebutuhan Sekunder — skema kanonik, template Excel & form input'
 description: 'Desain kanonik modul Kebutuhan Sekunder (elektronik, peralatan, mainan / durable goods): tabel kanonik berprefix sec_, kategori/katalog yang bisa dikurasi, snapshot per periode, template Excel yang digenerate, validator, importer, dan form input. Kembar dari plugin hsh.'
-status: draft
+status: complete
 created: "2026-10-29"
 updated: "2026-10-29"
 tags:
@@ -260,7 +260,8 @@ Path template dibuat **flat** agar tidak bentrok wildcard `/:id` (pola `hsh`/`re
 - [ ] **O-7** ~~Kategori final~~ → awal 2 kategori (`elektronik-peralatan`, `mainan-rekreasi`) — dapat ditambah saat review.
 - [ ] **O-8** Periode di template (kolom vs parameter) — usulan: **kolom `Periode`** di sheet DATA (konsisten `hsh`).
 
-**Status dokumen:** `draft` — **menunggu review owner** sebelum `work-order.md` disusun.
+**Status dokumen:** `complete` — desain final & terimplementasi (WO-01..06, 08, 09 selesai);
+hanya **WO-07 (seed data awal) yang ditunda** menunggu data owner.
 
 **Catatan lintas topik:** plugin `hsh` (topic `1793265053300`) adalah **kembar struktur** modul ini;
 perbedaannya hanya isi kategori & data. Batas domain: `hsh` = habis pakai/pokok, `sec` = tahan lama.

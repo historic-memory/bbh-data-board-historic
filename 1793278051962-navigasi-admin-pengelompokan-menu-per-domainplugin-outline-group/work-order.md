@@ -32,11 +32,12 @@ tags:
 ## Daftar WO
 | # | File | Scope | Prasyarat | Status |
 |---|---|---|---|---|
-| WO-01 | `WO-01-registry-navigasi-outline.md` | Registry navigasi + render outline group (collapsible) di `AdminLayout` | — | pending |
-| WO-02 | `WO-02-verifikasi-dokumentasi.md` | Verifikasi build/perilaku (izin, expand, mobile) + dokumentasi | WO-01 | pending |
+| WO-01 | `WO-01-registry-navigasi-outline.md` | Registry navigasi + render outline group (collapsible) di `AdminLayout` | — | planned |
+| WO-02 | `WO-02-verifikasi-dokumentasi.md` | Verifikasi build/perilaku (izin, expand, mobile) + dokumentasi | WO-01 | planned |
 
 ## Catatan Status
-- Semua WO masih `pending`; belum ada implementasi.
+- SEMUA keputusan SPEC (N-1..N-11) & pertanyaan (O-1, O-2) **terkunci** 2026-10-29.
+- WO-01 & WO-02 berstatus `planned` — **siap dieksekusi** oleh developer.
 - Topik ini **UI-only** (frontend `sub_app/webapp`); backend tidak disentuh.
 - Perubahan ini **bukan** plugin baru; ia merapikan *shell* admin yang menampung semua plugin.
 

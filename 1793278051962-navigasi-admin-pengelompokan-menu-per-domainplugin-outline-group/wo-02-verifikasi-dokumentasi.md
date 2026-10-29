@@ -1,7 +1,7 @@
 ---
 title: "WO-02: Verifikasi & dokumentasi navigasi outline group"
 description: "Memverifikasi perilaku sidebar hasil WO-01 (filter izin, collapsible, persistensi, mobile) dan mendokumentasikan cara menambah domain/plugin baru di registry."
-status: pending
+status: planned
 created: "2026-10-29"
 updated: "2026-10-29"
 tags:

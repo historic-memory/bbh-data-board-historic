@@ -60,7 +60,7 @@ menambah satu entri di registry, **tanpa menyentuh struktur layout**.
 | N-4 | **Section & isi** | `Utama` (Dashboard) · `Data Warga` (Resident, Fasilitas) · `Kebutuhan` (sub-menu hsh) · `Administrasi` (Admin, Grup & Permission, Permission). |
 | N-5 | **Filter izin** | Group tampil bila **minimal satu** item-nya lolos `hasPermission`; item tampil per izin item. Group tanpa item → tidak dirender. Item tanpa `permission` → selalu tampil. |
 | N-6 | **URL/rute** | **Tidak diubah** di WO ini. Perapian URL per domain dicatat sebagai GAP-2 (kandidat follow-up), bukan syarat. |
-| N-7 | **State buka/tutup** | Disimpan di `localStorage` (persist antar reload). Group yang memuat rute aktif **selalu terbuka**. |
+| N-7 | **State buka/tutup** | Disimpan di `localStorage` (persist antar reload). Group yang memuat rute aktif **selalu terbuka**. **O-1 DIKUNCI: persist ya.** |
 | N-8 | **Nesting** | Model mendukung **2 level** (group → item). Sub-sub-level tidak diperlukan; "Kebutuhan RT" jadi satu group berisi 5 item. |
 | N-9 | **Judul dokumen** | Diturunkan dari registry (`document.title` = label item + `BASE_TITLE`), menghapus array `TITLES` terpisah. |
 | N-10 | **Kontrol akses tetap di server** | Registry hanya **menyembunyikan** menu; otorisasi nyata tetap ditegakkan backend (fail-closed). Menyembunyikan menu **bukan** kontrol keamanan. |
@@ -87,11 +87,13 @@ cocok dengan `location.pathname` (helper di registry, mis. `titleFor(pathname)`)
 | GAP-4 | Label group berpotensi tidak konsisten dengan "plugin core business" | Label diputuskan saat review UI. |
 
 ## Pertanyaan Terbuka
-- **O-1** Persistensi `localStorage` (N-7) diperlukan, atau cukup selalu terbuka?
-- **O-2** Perlu ikon per group? (usulan: tidak, agar tidak menambah dependensi.)
+- **O-1 DIKUNCI (2026-10-29)** — persist buka/tutup di `localStorage` **diperlukan**.
+- **O-2 DIKUNCI (2026-10-29)** — **tanpa ikon** per group (hindari dependensi baru).
+
+Semua keputusan (N-1..N-11) dan pertanyaan (O-1, O-2) telah terkunci. SPEC siap.
 
 ## Rencana Work Order
 | # | File | Scope | Status |
 |---|---|---|---|
-| WO-01 | `WO-01-registry-navigasi-outline.md` | Registry navigasi + render outline group di `AdminLayout` | pending |
-| WO-02 | `WO-02-verifikasi-dokumentasi.md` | Verifikasi build/perilaku + dokumentasi | pending |
+| WO-01 | `WO-01-registry-navigasi-outline.md` | Registry navigasi + render outline group di `AdminLayout` | planned |
+| WO-02 | `WO-02-verifikasi-dokumentasi.md` | Verifikasi build/perilaku + dokumentasi | planned |

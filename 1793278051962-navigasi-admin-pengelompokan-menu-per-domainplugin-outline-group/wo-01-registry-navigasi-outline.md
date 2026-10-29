@@ -1,7 +1,7 @@
 ---
 title: "WO-01: Registry navigasi & outline group di AdminLayout"
 description: "Membuat registry navigasi terpusat (data-driven) dan merender sidebar admin sebagai outline group collapsible dengan filter izin per group/item serta judul dokumen dari sumber yang sama."
-status: pending
+status: planned
 created: "2026-10-29"
 updated: "2026-10-29"
 tags:

@@ -9,7 +9,7 @@ files:
     - id: 01a18809-f197-7779-b845-06611959aec6
       path: WO-02-permission-crud-master.md
       type: file
-      status: pending
+      status: complete
     - id: 01a18809-f197-76f0-8e59-1d1c8bff59cf
       path: WO-03-periode-entri.md
       type: file

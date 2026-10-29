@@ -1,7 +1,7 @@
 ---
 title: "WO-02: Permission & CRUD master (kategori, item, alias)"
 description: "Seed permission hsh.* via migrasi plugin auth, lalu API CRUD kategori, item, dan alias dengan service + test."
-status: pending
+status: complete
 created: "2026-10-29"
 updated: "2026-10-29"
 tags:
@@ -50,3 +50,40 @@ tags:
 ## Kriteria Selesai
 - Semua route ter-guard; fail-closed; kontrak API sesuai SPEC.
 - Tidak ada perubahan pada `internal/`; perubahan plugin `auth` hanya berupa migrasi seed.
+
+## Bukti Pelaksanaan (2026-10-29)
+- **Kode:** commit `8128072` (tanpa push).
+  - `plugins/auth/migrations/postgres/2026_10_29_120200_add_hsh_permissions.{up,down}.sql`
+    (satu-satunya perubahan plugin `auth`).
+  - `plugins/hsh/services/{service,category,item,alias}.go`,
+    `plugins/hsh/handlers/{handlers,errors}.go`, `plugins/hsh/plugin.go` (14 route ber-guard).
+  - Test: `services/validation_test.go` (normalizeCode/normalizeUnit/trimToNil/wrapUnique),
+    `handlers/errors_test.go` (list `[]` bukan `null`, peta status error).
+  - **Tidak ada perubahan `internal/`.**
+- **Build/vet/test (container `app`):** `go build ./...` hijau;
+  `go vet ./plugins/hsh/...` bersih; `go test ./plugins/hsh/...` hijau.
+- **Seed permission:** `SELECT key FROM permissions WHERE key LIKE 'hsh.%'` →
+  `hsh.delete`, `hsh.read`, `hsh.write`; `admin` → read+write, `viewer` → read.
+  Migrasi `auth down` → 0 baris, `auth up` → 3 baris (terbukti reversibel).
+- **curl (server :8082, root):**
+  | Uji | Hasil |
+  |---|---|
+  | `GET /api/admin/hsh/categories` tanpa token | **401** |
+  | `POST categories` code `Kitchen Test` (huruf besar/spasi) | **400** `code harus huruf kecil...` |
+  | `POST categories` valid | **201** |
+  | `POST categories` duplikat code | **409** |
+  | `GET items?category_id=` (kosong) | **200** `{"items":[],"total":0}` |
+  | `POST items` (`unit: PCS`, `est_price: 12500`) | **201** (`unit: pcs`, harga numerik terbaca) |
+  | `POST items` `unit: karung` | **400** `satuan tidak dikenal` |
+  | `POST items/:id/aliases` | **201** |
+  | alias duplikat beda huruf besar/kecil | **409** |
+  | `DELETE categories/:id` saat masih dipakai item | **409** |
+  | `PATCH items/:id` (est_price+note) | **200** |
+  | `PUT items/:id` tanpa `name` | **400** |
+  | `GET items?q=bubuk` (cari via alias) | **200** (1 baris) |
+  | viewer: `GET` / `POST` / `DELETE` | **200** / **403** / **403** |
+  | `DELETE aliases/:aliasId` lalu ulang | **200** lalu **404** |
+  | `DELETE items/:id` → `DELETE categories/:id` | **200** / **200** |
+  | `GET items/:id` setelah dihapus | **404** |
+- **Data uji dibersihkan:** sisa `hsh_categories` = 7 (seed), `hsh_items` = 0;
+  admin uji `hsh.viewer@test.local` dihapus.

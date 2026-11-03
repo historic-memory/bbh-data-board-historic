@@ -6,4 +6,8 @@ files:
       path: notes.md
       type: file
       status: draft
+    - id: 01a1a1d8-21cd-749e-9449-24f4d4d73444
+      path: spec.md
+      type: file
+      status: create
 assets: []

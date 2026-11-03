@@ -225,24 +225,43 @@ Kandidat yang diperiksa:
 
 ## Keputusan terkunci
 
-- (belum ada yang formal — owner meminta respons terkini DICATAT DULU (2026-11-03);
-  draf SPEC menunggu jawaban pertanyaan di bawah)
+Owner setuju dengan seluruh saran Manager (2026-11-03: "ok aku ikut saranmu"):
+
+- **D-1 PILOT = `visit`** (O-1) — data mentah paling rumit, ujian terbaik agent strict.
+- **D-2 LLM = API eksternal** (O-2) — dengan syarat lapisan privasi: kolom PII
+  dideidentifikasi via `deidentify` (secret key lokal) SEBELUM payload dikirim ke
+  provider; hasil dipetakan balik lokal (deterministik).
+- **D-3 JEV = adopsi POLA harness, bukan layanan TypeSafe asli** (O-10) — classifier
+  gate diimplement sendiri dengan antarmuka terabstraksi (bisa disimulasikan
+  deterministik saat dev/offline; bila kelak mau, provider TypeSafe bisa ditambah
+  sebagai implementasi antarmuka yang sama).
+- **D-4 deidentify TETAP dipakai, Presidio TIDAK dulu** (O-11) — tipe kolom eksplisit
+  dari mapping editor menghilangkan ketergantungan pada inferensi regex AS;
+  Presidio/sidecar Python hanya opsi lanjut bila kelak butuh NER bebas-teks.
+- **D-5 flag `is_encrypt` hanya boleh MENAMBAH proteksi** (O-12) — kolom yang wajib
+  di-PII oleh `fields.yaml` tidak bisa dilonggarkan oleh user; fail-closed.
+- **D-6 RBAC + audit WAJIB** (O-8) — semua tool tulis agent melewati RBAC dan audit
+  yang sama dengan HTTP handler; tidak ada jalur belakang.
 
 ### Snapshot status diskusi (2026-11-03, catatan Manager)
 
-Pertanyaan menunggu keputusan owner sebelum draf SPEC:
+Keputusan O-1/O-2/O-8/O-10/O-11/O-12 telah DIKUNCI (lihat bagian "Keputusan terkunci").
+Sisa yang perlu diputuskan saat penyusunan SPEC (akan diusulkan Manager dengan default,
+dapat diubah owner saat review):
 
-1. **O-10** — Jev: pakai layanan TypeSafe asli (API eksternal + `TYPESAFE_API_KEY`)
-   ATAU cukup adopsi POLA harness-nya (classifier gate diimplement sendiri, abstraksi
-   antarmuka, bisa disimulasi deterministik offline)?
-2. **O-11** — Presidio sebagai sidecar Python opsional (NER nama Indonesia): default
-   usulan Manager **TIDAK dulu** (Go-only terjaga); `deidentify` cukup karena tipe kolom
-   datang eksplisit dari mapping editor.
-3. **O-1** — pilot modul: usulan Manager `visit`.
-4. **O-2** — LLM API eksternal vs lokal (relevan dengan deidentify sebagai lapisan
-   privasi pra-LLM).
-5. Sisa O-3..O-9 (scope chat, MCP vs tool internal, nama plugin, UI, persistensi sesi,
-   RBAC/audit, editor tanpa chat).
+1. **O-3** — scope chat: usulan = chat khusus ingest dokumen dulu (scope ketat);
+   chat umum ke data = fase lanjutan.
+2. **O-4** — tool-calling internal ke service layer cukup untuk pilot; MCP ditunda
+   sampai kebutuhan agent eksternal nyata muncul.
+3. **O-5** — nama plugin: usulan `plugins/ingest` (mencakup sesi chat + mapping editor
+   + ekstraksi; komponen classifier di dalamnya).
+4. **O-6** — UI: embed di admin panel (`sub_app/webapp`), grup nav baru (mis. "Ingest").
+5. **O-7** — persistensi sesi: simpan state sesi di DB (bisa dilanjutkan bila tab
+   ditutup) — wajib karena sesi belajar bisa berlangsung lama.
+6. **O-9** — mapping editor bisa dibuka langsung tanpa chat (chat opsional) — upload
+   manual tetap tersedia; sesi tetap lewat state machine yang sama.
+
+Draf SPEC akan menyertakan usulan keputusan untuk O-3..O-9 di atas.
 
 ## Pertanyaan terbuka
 

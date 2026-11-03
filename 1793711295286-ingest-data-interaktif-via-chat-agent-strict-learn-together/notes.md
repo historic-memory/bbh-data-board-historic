@@ -113,6 +113,52 @@ sebagai gerbang yang tidak bisa dilewati:
 - Relevansi topic `1793096602507` (AI-ETL CopilotKit/ACP agent): keputusan D-1..D-9 yang
   masih terbuka di sana akan diadopsi/diputus ulang di topic ini.
 
+## Komponen rencana (owner, 2026-11-03)
+
+Tiga komponen yang disiapkan setelah konsep dasar:
+
+### 1. `deidentify` (deterministik) — github.com/aliengiraffe/deidentify
+
+Library **Go** open-source untuk deidentifikasi PII. Fakta dari repo (diverifikasi
+Manager 2026-11-03):
+
+- Replacement **deterministik**: input sama + secret key sama → output sama (HMAC-SHA256,
+  `deterministicHash`) → **referential integrity terjaga** antar record/run; join &
+  grouping tetap bekerja di data yang sudah dianonimkan.
+- Format-preserving per tipe: `TypeName`, `TypeEmail`, `TypePhone`, `TypeSSN`,
+  `TypeCreditCard`, `TypeAddress`, `TypeGeneric` (generic = nilai diteruskan apa adanya).
+- API: `Text` (teks bebas), `Table` (kolom terstruktur dengan tipe per kolom),
+  `Slices` (CSV-like `[][]string`, tipe kolom bisa di-infer).
+- Kolom name dipakai sebagai konteks → nilai identik di kolom beda dapat pengganti beda
+  (anti-korelasi). Thread-safe.
+
+**Peran di arsitektur kita (usulan Manager)**: lapisan privasi SEBELUM data dikirim ke
+LLM — terutama jika O-2 diputuskan LLM API eksternal. Alur: ekstrak kolom PII
+(nama bayi/ibu, NIK, phone) → deidentify dgn secret key lokal → payload yang dikirim ke
+LLM hanya berisi nilai anonim → hasil tebakan LLM dipetakan balik secara lokal
+(deterministik, jadi re-identifikasi bisa dilakukan). Catatan risiko untuk SPEC:
+pattern library-nya condong ke format AS (SSN/alamat US), nama Indonesia tidak dikenali
+oleh `TypeName` regex → perlu evaluasi kolom mana yang benar-benar di-deidentify dan
+tipe yang dipakai.
+
+### 2. Excel mapping editor
+
+Sudah dicatat di bagian "Tambahan owner: MAPPING EDITOR" di atas — dikonfirmasi sebagai
+komponen yang disiapkan (dibuat sendiri di React, bukan library eksternal).
+
+### 3. JEV model (LLM) — PENAMAAN MASIH PERLU DIKLARIFIKASI
+
+Owner: "jev model llm → diperlukan ketika coba insert pakai llm jadi bisa di-set kondisi".
+
+Interpretasi awal Manager (BELUM dikonfirmasi owner): lapisan **guard/validator
+terstruktur** untuk output LLM sebelum insert — LLM diminta menghasilkan payload
+terstruktur (mis. JSON yang mengikuti skema), lalu "kondisi" (aturan validasi) di-set
+terhadap payload itu sebelum data masuk pipeline. Prinsipnya sejalan dengan strictness:
+LLM tidak pernah menulis langsung ke DB; outputnya melewati gate deterministik.
+
+PERLU diklarifikasi owner: apa kepanjangan/ makna tepat **JEV** (singkatan tool, konsep,
+atau typo?) — dua kali ditanyakan, belum terjawab. O-10.
+
 ## Keputusan terkunci
 
 - (belum ada — topic baru dibuat)
@@ -136,3 +182,6 @@ sebagai gerbang yang tidak bisa dilewati:
   (tidak ada jalur belakang). Ini diasumsikan wajib — perlu konfirmasi owner.
 - O-9: Apakah user bisa langsung ke mapping editor TANPA sesi chat (chat opsional),
   atau editor selalu diluncurkan dari chat?
+- O-10: **Makna "JEV model LLM"** — kepanjangan/istilah yang dimaksud owner? Interpretasi
+  awal Manager: lapisan guard/validasi terstruktur atas output LLM sebelum insert
+  (kondisi bisa di-set). PERLU konfirmasi sebelum masuk SPEC.

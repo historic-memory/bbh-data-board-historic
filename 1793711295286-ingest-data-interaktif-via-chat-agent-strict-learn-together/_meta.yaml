@@ -14,4 +14,12 @@ files:
       path: spec-techstack.md
       type: file
       status: create
+    - id: 01a1a1e7-a01c-7a43-8d41-efa850f0ff78
+      path: work-order.md
+      type: file
+      status: create
+    - id: 01a1a1e7-a18a-7673-9d56-29b72446cf34
+      path: wo-01-setup-copilotkit-sandbox.md
+      type: file
+      status: create
 assets: []

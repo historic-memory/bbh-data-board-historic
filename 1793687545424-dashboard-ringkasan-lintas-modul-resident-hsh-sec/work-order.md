@@ -2,7 +2,7 @@
 title: "Work Order (Master Index): Dashboard Ringkasan Lintas Modul (resident + hsh + sec)"
 description: "Memperluas dashboard admin dengan endpoint agregat baru dan kartu ringkasan Kebutuhan Rumah Tangga (hsh) & Sekunder (sec) di samping resident."
 type: work-order
-status: complete
+status: progress
 created: "2026-11-03"
 updated: "2026-11-03"
 tags:
@@ -26,6 +26,7 @@ Semua keputusan teknis lihat SPEC; WO di bawah hanya rincian langkah + AC.
 | 1 | `WO-01-endpoint-agregat.md` | Plugin `plugins/dashboard` + permission `dashboard.read` (migrasi plugin `auth`) + endpoint agregat 3 blok | — | **complete** (`3e418f4`) |
 | 2 | `WO-02-ui-kartu.md` | UI: blok "Kebutuhan Rumah Tangga" & "Kebutuhan Sekunder" + tautan cepat di `DashboardPage.tsx` | WO-01 | **complete** (`66a6eb2`) |
 | 3 | `WO-03-verifikasi-dokumentasi.md` | Swagger, README, koleksi Bruno, uji RBAC end-to-end | WO-02 | **complete** (`8dba6c8`) |
+| 4 | `WO-04-template-per-segment-ui.md` | Unduh template per segment (hsh/sec) + rapikan kartu dashboard + housekeeping (`.env.example`, data uji resident) | WO-03 | pending |
 
 ## Catatan Penutup (Manager, 2026-11-03)
 - Semua WO complete; terverifikasi Manager (commit, endpoint 401/200, isi 3 blok,

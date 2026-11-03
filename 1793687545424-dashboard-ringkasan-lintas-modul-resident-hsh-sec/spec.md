@@ -2,7 +2,7 @@
 title: "SPEC: Dashboard Ringkasan Lintas Modul (resident + hsh + sec)"
 description: "Memperluas dashboard admin agar menampilkan ringkasan Kebutuhan Rumah Tangga (hsh) dan Kebutuhan Sekunder (sec) di samping resident, via satu endpoint agregat baru."
 type: spec
-status: complete
+status: progress
 created: "2026-11-03"
 updated: "2026-11-03"
 tags:

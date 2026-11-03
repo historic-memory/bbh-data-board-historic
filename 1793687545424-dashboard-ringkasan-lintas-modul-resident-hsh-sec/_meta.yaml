@@ -14,12 +14,16 @@ files:
       path: WO-03-verifikasi-dokumentasi.md
       type: file
       status: complete
+    - id: 01a1a048-12b7-7756-a9ff-771fdf20e217
+      path: WO-04-template-per-segment-ui.md
+      type: file
+      status: pending
     - id: 01a1a01c-d28e-7fbe-9ddb-74992954cb43
       path: spec.md
       type: spec
-      status: complete
+      status: progress
     - id: 01a1a020-86dd-7abb-b09a-242b5a7dc67d
       path: work-order.md
       type: file
-      status: complete
+      status: progress
 assets: []

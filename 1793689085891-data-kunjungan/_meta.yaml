@@ -2,6 +2,42 @@ id: "1793689085891"
 title: Data Kunjungan
 created: "2026-11-03"
 files:
+    - id: 01a1a03d-0853-7082-8a7f-60aa74b7ab01
+      path: WO-01-skeleton-plugin-skema.md
+      type: file
+      status: pending
+    - id: 01a1a03d-0853-70de-b85f-c2988add2bbe
+      path: WO-02-permission-crud.md
+      type: file
+      status: pending
+    - id: 01a1a03d-0853-7457-b56c-5b3cbef49112
+      path: WO-03-riwayat-status.md
+      type: file
+      status: pending
+    - id: 01a1a03d-0854-70f1-a2a4-946274bb1c95
+      path: WO-04-generator-template.md
+      type: file
+      status: pending
+    - id: 01a1a03d-0854-7a17-baca-a265b33580b2
+      path: WO-05-validator.md
+      type: file
+      status: pending
+    - id: 01a1a03d-0854-724e-8ad7-4cda3964d22b
+      path: WO-06-importer.md
+      type: file
+      status: pending
+    - id: 01a1a03d-0854-74c9-9cf4-758516fee375
+      path: WO-07-ui-admin.md
+      type: file
+      status: pending
+    - id: 01a1a03d-0854-7afc-86bf-4b5c07c2bb0d
+      path: WO-08-swagger-readme-bruno.md
+      type: file
+      status: pending
+    - id: 01a1a03d-0854-7e8c-9431-08fc1f4bba12
+      path: WO-09-impor-data-awal.md
+      type: file
+      status: pending
     - id: 01a1a036-a2d0-7e2b-963f-41f7c26f5647
       path: notes.md
       type: file
@@ -9,6 +45,10 @@ files:
     - id: 01a1a036-a2d0-7944-8f97-4b027bffced1
       path: spec.md
       type: spec
+      status: draft
+    - id: 01a1a03d-0854-7f52-85a2-fbb50878f948
+      path: work-order.md
+      type: file
       status: draft
 assets:
     - path: KUNJUNGAN HARI INI 33d90f1a8a5180228f80d17a10f57149_all.csv

@@ -80,11 +80,11 @@ erDiagram
     }
 ```
 
-> **Tiga tabel**, prefix `visit_*` (usulan — lihat O-1). Tidak ada tabel `branches` (R-3), tidak ada `ref_*` (R-4).
+> **Tiga tabel**, prefix `visit_*` (**D-2 DIKUNCI** owner 2026-11-03: EN, konsisten dgn `resident`/`hsh`/`sec`). Tidak ada tabel `branches` (R-3), tidak ada `ref_*` (R-4).
 
 ## 4. Definisi Tabel
 
-### 4.1 `visitors` — master pengunjung (usulan, tergantung O-2)
+### 4.1 `visitors` — master pengunjung (**D-3 DIKUNCI**: dua lapis, owner 2026-11-03)
 
 | Kolom | Tipe | Null | Keterangan |
 |---|---|---|---|
@@ -106,7 +106,7 @@ erDiagram
 |---|---|---|---|
 | `id` | UUID (v7) | no | PK |
 | `visitor_id` | UUID | no | FK → `visitors` |
-| `branch_key` | TEXT | no | → `endpoints.key`; default env `INSTANCE_KEY` (jika O-4 = per cabang) |
+| `branch_key` | TEXT | no | → `endpoints.key`; default env `INSTANCE_KEY` (D-10: per cabang) |
 | `party_size` | INT | yes | Hasil parse `Jumlah Pengunjung`; NULL bila tidak terparse |
 | `party_raw` | TEXT | yes | Teks asli kolom `Jumlah Pengunjung` (mis. `2-4`, `Just myself`) |
 | `status_code` | TEXT | no | enum — lihat §4.4; default `SCHEDULED` |
@@ -130,7 +130,7 @@ erDiagram
 
 > Status terkini = baris `effective_at` terbesar; pola sama dengan `resident_status_history`. Baris pertama dibuat otomatis saat booking masuk (impor/API) dengan status awal.
 
-### 4.4 Enum statis (usulan — menunggu O-3)
+### 4.4 Enum statis (**D-5 DIKUNCI**: lengkap 5 nilai, owner 2026-11-03)
 
 | Grup | Nilai baku | Dipetakan dari sumber |
 |---|---|---|
@@ -150,33 +150,37 @@ Kolom: `visits.status_code`, `visit_status_history.status_code`. CHECK constrain
 | `Waktu Kunjungan` | `visits.scheduled_at` | parse bulan ID+EN; `GMT+8` → UTC; kosong → NULL |
 | — (identitas ekspor) | — | **Idempotensi impor:** duplikat ekspor dikenali dari `(phone_e164, scheduled_at)` yang sama persis; kemunculan pertama menang, sisanya `skipped` |
 
-## 6. Keputusan (D) — diusulkan, menunggu konfirmasi owner
+## 6. Keputusan (D) — **SEMUA DIKUNCI** (owner 2026-11-03)
 
 | # | Keputusan | Usulan |
 |---|---|---|
 | D-1 | Bentuk data = booking (permintaan kunjungan), bukan log kehadiran | Ya |
-| D-2 | Prefix plugin/tabel = `visit` (`plugins/visit`, `visit_*`, `visit.*`, `/api/admin/visit/...`) | Usulan — O-1 |
-| D-3 | Dua entitas: `visitors` (master, dedup via phone_e164) + `visits` (booking) | Usulan — O-2 |
+| D-2 | Prefix = `visit` (`plugins/visit`, `visit_*`, `visit.*`, `/api/admin/visit/...`) | **DIKUNCI: `visit` (EN)** |
+| D-3 | Dua entitas: `visitors` (master, dedup via phone_e164) + `visits` (booking) | **DIKUNCI: A (dua lapis)** |
 | D-4 | Nilai tak terparse disimpan mentah (`party_raw`, `phone_raw`), kanonik boleh NULL | Ya |
-| D-5 | Status = enum statis `SCHEDULED/DONE/CANCELLED/NO_SHOW/RESCHEDULED` | Usulan — O-3 |
+| D-5 | Status = enum statis `SCHEDULED/DONE/CANCELLED/NO_SHOW/RESCHEDULED` | **DIKUNCI: 5 nilai** |
 | D-6 | Riwayat status append-only + status terkini agregasi | Ya |
 | D-7 | Waktu disimpan TIMESTAMPTZ UTC; zona sumber dianggap tetap GMT+8 | Ya |
 | D-8 | Idempotensi impor = duplikat ekspor persis di-skip; repeat visitor = baris `visits` baru | Ya |
 | D-9 | Template impor digenerate dari `fields.yaml`; kolom sumber dipertahankan sebagai header template agar round-trip Notion→sistem mulus | Ya |
+| D-10 | Kunjungan berdimensi cabang (`branch_key` → `endpoints.key`, default env `INSTANCE_KEY`) | **DIKUNCI: per cabang** |
+| D-11 | Sumber berikutnya = ekspor Notion manual (impor berkala via endpoint template) | **DIKUNCI** |
+| D-12 | Rentang `party_size` (mis. `2-4`) → `party_size` NULL + raw tersimpan | **DIKUNCI: NULL + raw** |
+| D-13 | Baris `Done` dari sumber diimpor sebagai `DONE` | **DIKUNCI: sebagai DONE** |
 
-## 7. Pertanyaan Terbuka (O) — bloker WO
+## 7. Pertanyaan Terbuka (O) — **SEMUA TERJAWAB** (owner 2026-11-03)
 
-| # | Pertanyaan | Opsi |
+| # | Pertanyaan | Hasil |
 |---|---|---|
-| O-1 | Nama plugin/prefix: `visit` (EN, konsisten dgn `resident`/`hsh`/`sec`) atau `kunjungan` (ID)? | A/B |
-| O-2 | Pakai master `visitors` + dedup (A) atau flat satu tabel `visits` tanpa master (B)? | A/B |
-| O-3 | Enum status final: cukup `SCHEDULED/DONE` seperti sumber, atau lengkap `+CANCELLED/NO_SHOW/RESCHEDULED`? | A/B |
-| O-4 | Apakah kunjungan berdimensi cabang (`branch_key`, seperti `residents`) atau tanpa cabang (seperti `hsh`/`sec`)? | A/B |
-| O-5 | Sumber berikutnya: masih ekspor Notion manual, atau Google Form/live? Menentukan kebutuhan impor berkala. | — |
-| O-6 | `Jumlah Pengunjung` rentang (`2-4`): simpan batas bawah sebagai `party_size`, atau NULL + raw saja? | A/B |
-| O-7 | Apakah 10 baris `Done` tetap diimpor sebagai `DONE`, atau status sumber diabaikan (semua `SCHEDULED`)? | A/B |
+| O-1 | Nama plugin/prefix | **`visit` (EN)** — konsisten plugin lain |
+| O-2 | Struktur pengunjung | **A: dua lapis** (`visitors` + `visits`) — dijelaskan awam, owner pilih A |
+| O-3 | Enum status | **5 nilai** (`SCHEDULED/DONE/CANCELLED/NO_SHOW/RESCHEDULED`) |
+| O-4 | Dimensi cabang | **Per cabang** (`branch_key`) |
+| O-5 | Sumber berikutnya | **Ekspor Notion manual** |
+| O-6 | Rentang `Jumlah Pengunjung` | **NULL + simpan raw** |
+| O-7 | Baris `Done` | **Diimpor sebagai `DONE`** |
 
-## 8. Rencana Work Order (usulan — dibuat setelah O-1..O-7 terkunci)
+## 8. Rencana Work Order (DIKUNCI — O-1..O-7 terjawab, owner 2026-11-03)
 
 Pola mengikuti plugin `hsh`/`sec` (terbukti):
 

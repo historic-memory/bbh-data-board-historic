@@ -58,6 +58,17 @@ Keputusan teknis mapping editor (analisa Manager, 2026-11-03):
   harus ditulis user; tombol "Ekstrak" terkunci sampai semua gate lolos.
 - Chat + editor = satu pasangan: chat untuk sesi belajar (pertanyaan bebas, aturan,
   pengecualian), editor untuk koreksi mapping (terstruktur).
+- **Fitur tambahan (ide owner, 2026-11-03): flag `is_encrypt` per kolom mapping.**
+  User bisa mencentang kolom untuk dipaksa terenkripsi/dideidentifikasi ketika diproses —
+  tidak bergantung deteksi otomatis. Implementasi yang disarankan: flag tersimpan di
+  dokumen profil (bagian dari mapping terkonfirmasi), saat ekstraksi kolom ber-flag
+  diproses lewat `deidentify` (HMAC deterministik) sebelum payload dibentuk; kolom
+  yang TIDAK di-flag tetap mematuhi kebijakan default per plugin (mis. PII kolom
+  wajib dari `fields.yaml`, lihat D-10/D-18 topic business: `--no-pii`).
+  Manfaat: pilihan privasi per-ekspor, reusable via dokumen profil, dan bisa ditindak
+  sebelum payload LLM (O-2) — konsisten dengan prinsip deidentify dulu baru keluar
+  data. Perlu keputusan SPEC: hubungannya dengan kebijakan PII wajib per field
+  (flag user bisa lebih ketat, TIDAK bisa lebih longgar dari policy bawaan — fail-closed).
 
 ### Sistem Prompt Agent (kontrak perilaku — diputuskan owner)
 
@@ -259,3 +270,6 @@ Pertanyaan menunggu keputusan owner sebelum draf SPEC:
 - O-11: Presidio sebagai sidecar Python opsional (untuk NER nama Indonesia) — butuh
   atau tidak? Default usulan Manager: TIDAK dulu (Go-only tetap terjaga); deidentify
   dipakai dengan tipe kolom eksplisit dari mapping editor.
+- O-12: Kebijakan flag `is_encrypt`: apakah flag user boleh MENGURANGI proteksi bawaan
+  (kolom PII wajib dari fields.yaml)? Usulan Manager: flag hanya boleh MENAMBAH
+  proteksi (lebih ketat), tidak bisa lebih longgar — fail-closed.

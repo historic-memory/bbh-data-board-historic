@@ -33,7 +33,7 @@ tambah dependensi baru hanya bila memang tidak ada padanannya.
 - Pemakaian: tipe kolom EKSPLISIT dari mapping editor (`Name`/`Phone`/generic);
   TIDAK bergantung inferensi regex bawaan (kekhawatiran pattern AS selesai). (D-4)
 
-### 2.2 LLM client (API eksternal) — abstraksi sendiri, TANPA SDK berat
+### 2.2 LLM client (API eksternal) — abstraksi sendiri + MODE PROXY
 
 - Antarmuka Go sendiri (mis. `services/llm.go`: `Complete(ctx, req) (resp, err)`),
   implementasi pertama: **OpenAI-compatible HTTP API** (chat completions) via
@@ -41,9 +41,29 @@ tambah dependensi baru hanya bila memang tidak ada padanannya.
 - Payload yang dikirim SELALU sudah dideidentifikasi (D-2).
 - Env baru: `INGEST_LLM_BASE_URL` (default api.openai.com), `INGEST_LLM_API_KEY`,
   `INGEST_LLM_MODEL`. Fail-closed bila tool membutuhkan LLM dan key kosong.
+- **MODE PROXY (ide owner, 2026-11-03 — DITERIMA)**: backend juga berfungsi sebagai
+  **proxy OpenAI-compatible**. Keputusan teknis:
+  1. **API key TIDAK PERNAH sampai ke klien** — klien (UI chat/editor, atau agent
+     apa pun) memanggil endpoint proxy di backend; backend menyuntikkan
+     `Authorization: Bearer $INGEST_LLM_API_KEY` sebelum meneruskan ke provider.
+  2. Titik injeksi: SATU titik (middleware/transport) sehingga tidak ada jalur
+     keluar tanpa injeksi — dan setiap request proxy tercatat di audit.
+  3. Guard proxy = `ingest.write` (bukan publik); tanpa izin → 403 sebelum
+     menyentuh provider.
+  4. **Gate deidentify tetap DI DEPAN proxy**: request yang melewati proxy wajib
+     sudah dideidentifikasi; proxy menolak payload yang mengandung kolom PII yang
+     belum di-deidentify (fail-closed, D-2/D-5) — proxy bukan celah untuk mem bypass
+     lapisan privasi.
+  5. Manfaat: kunci tidak tersebar di klien; provider bisa diganti via env tanpa
+     rebuild UI; rate-limit/budget bisa ditegakkan di satu titik.
+  6. Catatan: mode proxy ini jadi cikal-bakal antarmuka agent eksternal kelak
+     (kaitan MCP ditunda, O-4) — kontrak proxy dibuat konsisten dengan
+     OpenAI-compatible agar adopsi MCP/alat lain tidak menulis ulang.
 - **Streaming chat**: pakai **Server-Sent Events (SSE)** dari backend ke UI
   (gin `c.Stream`) — tanpa websocket, cukup untuk chat satu-arah streaming;
-  polling fallback bila SSE diblok proxy.
+  polling fallback bila SSE diblok proxy. Streaming proxy: backend meneruskan
+  stream dari provider → SSE ke klien (buffer per chunk, tetap tanpa PII karena
+  payload sudah dideidentifikasi).
 
 ### 2.3 Classifier gate (pola Jev) — implementasi sendiri (D-3)
 
@@ -95,5 +115,9 @@ Frontend: **tidak ada dependensi npm baru** yang wajib.
 
 - O-13: Provider LLM pertama mana? Usulan: apa pun yang OpenAI-compatible
   (mis. OpenAI / DeepSeek / dll — base URL configurable), agar bisa diganti via env.
+  (Mode proxy membuat pilihan ini nyaris bebas — hanya env.)
 - O-14: Retensi file upload & payload deidentify di `internal/storage` (hapus setelah
   `extracted`? retensi berapa hari?) — terkait pertanyaan 3 di spec.md bagian 10.
+- O-15: Proxy LLM — apakah boleh dipakai klien DI LUAR sesi ingest (mis. developer
+  menguji prompt via proxy), atau dikunci khusus sesi ingest aktif? Usulan Manager:
+  dikunci khusus sesi ingest aktif (scope ketat, audit bersih).

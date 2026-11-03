@@ -30,4 +30,8 @@ files:
       path: wo-03-mapping-editor.md
       type: file
       status: create
+    - id: 01a1a1eb-7b58-79c7-9b01-b39270d21de6
+      path: wo-04-integrasi-editor-copilotkit.md
+      type: file
+      status: create
 assets: []

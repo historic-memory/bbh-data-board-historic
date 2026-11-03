@@ -2,7 +2,7 @@
 title: "SPEC: Dashboard Ringkasan Lintas Modul (resident + hsh + sec)"
 description: "Memperluas dashboard admin agar menampilkan ringkasan Kebutuhan Rumah Tangga (hsh) dan Kebutuhan Sekunder (sec) di samping resident, via satu endpoint agregat baru."
 type: spec
-status: draft
+status: progress
 created: "2026-11-03"
 updated: "2026-11-03"
 tags:
@@ -53,15 +53,18 @@ endpoint agregat baru** (bukan SPA memanggil 3 endpoint terpisah).
 | D-8 | Tautan cepat | Tambah tautan cepat ke modul kebutuhan (gated `hsh.read` / `sec.read`) |
 | D-9 | Tanpa regresi | Kartu resident, sebaran cabang, 5 terbaru, error state (AC WO-07) TIDAK berubah perilakunya |
 
-## Pertanyaan Terbuka (untuk owner)
+## Pertanyaan Terbuka — DIKUNCI (owner setuju draft SPEC, 2026-11-03)
 
-- **O-1** — Apakah blok hsh/sec perlu menampilkan **item urgent per kategori**
-  (bar kategori) atau cukup angka total + urgent saja?
-- **O-2** — Bila periode aktif ada tetapi kosong entri: tampilkan `0` biasa atau
-  teks "belum ada entri periode ini"?
-- **O-3** — Perlu kartu tambahan lain (mis. dokumen resident, fasilitas) di iterasi
-  ini, atau cukup resident + hsh + sec dulu?
-- **O-4** — Nama route: `/api/admin/dashboard/summary` OK?
+- **O-1 — DIKUNCI**: blok hsh/sec menampilkan **bar ringkas per kategori** (dari
+  `by_category`) di samping angka total + URGENT yang ditonjolkan.
+- **O-2 — DIKUNCI**: periode aktif tapi kosong entri → tampilkan angka `0` biasa
+  (tanpa teks khusus), pola kartu tetap stabil.
+- **O-3 — DIKUNCI**: iterasi ini cukup **resident + hsh + sec**; kartu lain
+  (dokumen/fasilitas) menyusul bila diminta.
+- **O-4 — DIKUNCI**: nama route `GET /api/admin/dashboard/summary` final.
+
+Semua keputusan D-1..D-9 ikut terkunci bersama keempat poin di atas. Work order
+(WO-01..WO-03) dibuat di `work-order.md` + berkas WO terpisah (status `pending`).
 
 ## Rencana Work Order (draft, final menyusul setelah review SPEC)
 

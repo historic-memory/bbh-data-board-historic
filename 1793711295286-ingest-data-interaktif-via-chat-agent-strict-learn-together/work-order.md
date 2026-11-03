@@ -27,7 +27,8 @@ sebelumnya masuk ke rancangan).
 | WO | Judul | Status | Commit kode | Dok historic |
 |---|---|---|---|---|
 | WO-01 | Setup CopilotKit + proxy LLM + sandbox belajar | pending | — | — |
-| WO-02..(CP-2 dst) | dirinci SETELAH CP-1 selesai | — | — | — |
+| WO-02 | Sesi strict + real case `visit` via chat (tanpa editor) | pending | — | — |
+| WO-03..(CP-3 dst) | dirinci SETELAH checkpoint sebelumnya selesai | — | — | — |
 
 **Aturan lintas WO (pinned):**
 

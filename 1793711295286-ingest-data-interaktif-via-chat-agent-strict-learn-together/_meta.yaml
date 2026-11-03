@@ -22,4 +22,8 @@ files:
       path: wo-01-setup-copilotkit-sandbox.md
       type: file
       status: create
+    - id: 01a1a1e9-0fa9-74cd-9e3e-264c51a94904
+      path: wo-02-sesi-strict-realcase-visit.md
+      type: file
+      status: create
 assets: []

@@ -31,8 +31,9 @@ Semua keputusan teknis lihat SPEC; WO di bawah hanya rincian langkah + AC.
 ## Catatan Penutup (Manager, 2026-11-03)
 - WO-01..WO-04 semuanya complete; WO-04 diverifikasi Manager (commit, 0 baris
   backend, helper alias, gating tombol).
-- Keputusan terbuka T-1 di WO-04 (test vs data dev, opsi a/b/c) menunggu owner —
-  non-blocker untuk topik ini.
+- T-1 (test vs data dev) ditutup dengan keputusan owner: **dibiarkan dulu**
+  (opsi c, tanpa perubahan kode) — lihat WO-04.
+- TOPIC COMPLETE.
 
 ## Aturan Umum
 - Semua kode fitur di `plugins/dashboard/` — TIDAK menyentuh `internal/`.

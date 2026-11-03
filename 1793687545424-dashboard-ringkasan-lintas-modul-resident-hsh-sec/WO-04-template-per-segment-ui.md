@@ -72,7 +72,8 @@ tags:
 
 ## Keputusan Terbuka (butuh owner, non-blocker)
 
-- **T-1**: `GenerateResidentCode` pakai MAX+1 — resident baru via UI akan kembali
-  memakai `BBH-YY-P-001` sehingga `go test ./...` merah lagi di DB dev berisi data.
-  Opsi: (a) test pakai prefix kode terpisah, (b) test di DB terpisah, (c) dibiarkan
-  + catatan README test. Belum diputuskan (di luar scope WO-04).
+- **T-1 — DIKUNCI (owner, 2026-11-03)**: `GenerateResidentCode` pakai MAX+1 —
+  resident baru via UI akan kembali memakai `BBH-YY-P-001` sehingga `go test ./...`
+  merah lagi di DB dev berisi data. Keputusan owner: **dibiarkan dulu** (opsi c,
+  tanpa perubahan kode/test). Bila suatu saat suite merah di DB dev berisi data,
+  buka keputusan ini lagi (opsi a/b tetap tersedia).

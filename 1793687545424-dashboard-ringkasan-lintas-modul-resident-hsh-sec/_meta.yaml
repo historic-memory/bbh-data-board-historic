@@ -1,0 +1,9 @@
+id: "1793687545424"
+title: Dashboard Ringkasan Lintas Modul (resident + hsh + sec)
+created: "2026-11-03"
+files:
+    - id: 01a1a01c-d28e-7fbe-9ddb-74992954cb43
+      path: spec.md
+      type: spec
+      status: draft
+assets: []

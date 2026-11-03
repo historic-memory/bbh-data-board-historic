@@ -70,6 +70,22 @@ tambah dependensi baru hanya bila memang tidak ada padanannya.
   8. Batas: SDK TS HANYA bicara ke proxy internal (bukan langsung ke provider);
      `dangerouslyAllowBrowser`-style konfigurasi dievaluasi di WO terkait — prinsip
      tetap: tidak ada kunci di klien, semua lewat guard RBAC backend.
+  9. **CopilotKit kini KEMUNGKINAN (owner, 2026-11-03)**: karena proxy backend
+     OpenAI-compatible, **CopilotKit (React) bisa dipakai sebagai UI chat** —
+     arahkan endpoint CopilotRuntime ke proxy backend, yang lalu diteruskan ke
+     provider LLM. Rantai: CopilotKit UI → proxy (injeksi key + gate deidentify +
+     audit) → provider. Catatan keputusan:
+     - Manfaat: komponen chat siap-pakai (UI, streaming, generative UI), tidak perlu
+       membangun klien chat dari nol; konsisten dengan topik lama 1793096602507 yang
+       mencantumkan CopilotKit.
+     - Biaya: dependensi baru di frontend (CopilotKit runtime + React paket);
+       kontrak CopilotKit agak lebih dari sekadar OpenAI-compatible (runtime GraphQL
+       `useCopilotChat`), jadi proxy perlu layer adaptasi kecil.
+     - Prinsip tetap: strictness & gate TIDAK dijalankan oleh CopilotKit — tetap di
+       backend; CopilotKit hanya lapisan UI. Tool-calling klien DILARANG menulis
+       langsung; semua aksi tulis lewat tool API backend yang di-guard RBAC.
+     - Status: kandidat KUAT untuk WO-08 (chat UI), keputusan final saat review SPEC
+       (O-16). Alternatif: klien chat sendiri memakai paket `openai` di atas proxy.
 - **Streaming chat**: pakai **Server-Sent Events (SSE)** dari backend ke UI
   (gin `c.Stream`) — tanpa websocket, cukup untuk chat satu-arah streaming;
   polling fallback bila SSE diblok proxy. Streaming proxy: backend meneruskan
@@ -109,11 +125,16 @@ tambah dependensi baru hanya bila memang tidak ada padanannya.
 
 | Teknologi | Alasan |
 |-----------|--------|
-| LangChain / CopilotKit (Python/JS frameworks) | Ekosistem salah bahasa; konsepnya diadopsi, implement sendiri di Go/React |
+| LangChain (Python) | Ekosistem salah bahasa; konsepnya diadopsi, implement sendiri di Go |
 | MCP server | Ditunda (O-4) — tool-calling internal cukup utk pilot |
 | Presidio sidecar Python | Melanggar image Go-only (N-17); opsi lanjut saja (O-11/D-4) |
 | Websocket | SSE cukup; lebih sederhana di belakang proxy |
 | Library mapping editor / spreadsheet JS | D-8: buat sendiri, komponen kecil |
+
+Catatan revisi: **CopilotKit DIKELUARKAN dari daftar "tidak dipakai"** (2026-11-03)
+— sebelumnya dicoret karena topik lama memasangkannya dengan ACP/Jobmanager yang
+kompleks; kini dengan proxy OpenAI-compatible, CopilotKit sebagai UI chat menjadi
+kandidat realistis (lihat 2.2 poin 9, O-16).
 
 ## 4. Ringkasan dependensi baru yang akan masuk go.mod
 
@@ -132,3 +153,7 @@ Frontend: **tidak ada dependensi npm baru** yang wajib.
 - O-15: Proxy LLM — apakah boleh dipakai klien DI LUAR sesi ingest (mis. developer
   menguji prompt via proxy), atau dikunci khusus sesi ingest aktif? Usulan Manager:
   dikunci khusus sesi ingest aktif (scope ketat, audit bersih).
+- O-16: UI chat = **CopilotKit** (React, endpoint ke proxy backend) ATAU klien chat
+  sendiri (paket `openai` di atas proxy)? Usulan Manager: CopilotKit bila demo cepat
+  & generative UI diinginkan; klien sendiri bila ingin kontrol penuh & dependensi
+  minimum. Keduanya tetap di atas proxy — keputusan tidak memengaruhi backend.

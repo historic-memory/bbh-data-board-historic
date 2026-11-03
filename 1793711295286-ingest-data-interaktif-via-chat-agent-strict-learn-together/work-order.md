@@ -13,11 +13,14 @@ Sumber desain: `spec.md` (D-1..D-9 terkunci, pendekatan checkpoint bagian 9) +
 setiap checkpoint punya milestone yang bisa dites sebelum lanjut. File WO dibuat
 **partial** — hanya checkpoint berikutnya yang dirinci; WO checkpoint selanjutnya
 baru dibuat setelah checkpoint sebelumnya selesai (agar pembelajaran dari tahap
-sebelumnya masuk ke rancangan).
+sebelumnya masuk ke rancangan). **Pengecualian (keputusan owner, 2026-11-04):**
+CP-1 dipecah menjadi tiga sub-WO (WO-01a/b/c) yang semuanya dirinci sekarang,
+karena CP-1 adalah checkpoint belajar tanpa data bisnis — risikonya rendah dan
+milestone-nya sudah jelas sejak awal.
 
 | Checkpoint | Isi | Status | Bukti |
 |---|---|---|---|
-| CP-1 | Setup CopilotKit + proxy + sandbox belajar | `progress` (WO-01) | — |
+| CP-1 | Setup CopilotKit + proxy + sandbox belajar — **dipecah 3 sub-WO**: 01a proxy+chat → 01b tool+upload → 01c MCP+housekeeping | `progress` (WO-01a→01b→01c) | — |
 | CP-2 | Real case pertama `visit` via chat (tanpa editor) | dibuat setelah CP-1 | — |
 | CP-3 | Excel mapping editor (berdiri sendiri) | dibuat setelah CP-2 | — |
 | CP-4 | Integrasi editor ↔ CopilotKit | dibuat setelah CP-3 | — |
@@ -26,7 +29,9 @@ sebelumnya masuk ke rancangan).
 
 | WO | Judul | Status | Commit kode | Dok historic |
 |---|---|---|---|---|
-| WO-01 | Setup CopilotKit + proxy LLM + sandbox belajar | pending | — | — |
+| WO-01a | Proxy LLM + CopilotKit chat hidup (CP-1) | pending | — | — |
+| WO-01b | Tool dummy `sandbox_ping` + upload ke storage (CP-1) | pending | — | — |
+| WO-01c | Eksperimen MCP + housekeeping (CP-1) | pending | — | — |
 | WO-02 | Sesi strict + real case `visit` via chat (tanpa editor) | pending | — | — |
 | WO-03 | Excel mapping editor (berdiri sendiri) | pending | — | — |
 | WO-04 | Integrasi editor ↔ CopilotKit + housekeeping (CP-4 final) | pending | — | — |

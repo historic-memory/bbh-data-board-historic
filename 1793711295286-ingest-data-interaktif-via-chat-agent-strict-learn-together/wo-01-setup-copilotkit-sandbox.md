@@ -1,10 +1,24 @@
 ---
-title: WO-01 — Setup CopilotKit + proxy LLM + sandbox belajar
-description: "CP-1: CopilotKit di admin panel via proxy OpenAI-compatible; belajar skill/tool dummy, eksperimen MCP, testing upload. TANPA data bisnis."
+title: WO-01 — Setup CopilotKit + proxy LLM + sandbox belajar (DIPECAH — induk)
+description: "DOKUMEN INDUK — dipecah keputusan owner (2026-11-04) menjadi WO-01a/b/c; konten lama dipertahankan di bawah sebagai rujukan."
 status: pending
 created: "2026-11-03"
 ---
 # WO-01 — Setup CopilotKit + Proxy LLM + Sandbox Belajar (Checkpoint 1)
+
+> **⚠ DIPECAH (keputusan owner, 2026-11-04).** Checkpoint CP-1 terlalu besar untuk
+> satu WO — dipecah menjadi tiga sub-WO berurutan. Dokumen ini kini menjadi **induk**
+> (rujukan desain); yang dieksekusi adalah sub-WO-nya, masing-masing dengan AC
+> sendiri:
+>
+> | Sub-WO | Isi | AC yang diwarisi |
+> |---|---|---|
+> | **WO-01a** Proxy + chat hidup | skeleton plugin, proxy OpenAI-compatible, migrasi `ingest_messages`, CopilotKit sandbox page + streaming | AC-1, AC-2, AC-3, AC-6, AC-8 |
+> | **WO-01b** Tool + upload | tool dummy `sandbox_ping`, upload file ke storage (tanpa proses) | AC-4, AC-5, AC-6, AC-8 |
+> | **WO-01c** MCP + housekeeping | eksperimen MCP di luar jalur utama + catat temuan + rapikan dokumen | AC-7, AC-8 |
+>
+> Konten asli di bawah dipertahankan sebagai sumber rincian teknis untuk ketiga
+> sub-WO. Prasyarat sub-WO berikutnya: sub-WO sebelumnya lulus AC-nya.
 
 Checkpoint: **CP-1**. Sumber: `spec.md` §9 CP-1, `spec-techstack.md` §2.2/§2.3.
 

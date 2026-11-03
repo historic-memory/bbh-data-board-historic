@@ -34,4 +34,16 @@ files:
       path: wo-04-integrasi-editor-copilotkit.md
       type: file
       status: create
+    - id: 01a1a39c-c124-7a85-9923-754290de965d
+      path: wo-01a-proxy-chat-hidup.md
+      type: file
+      status: create
+    - id: 01a1a39c-e24f-71a7-acb0-83aa29a1c923
+      path: wo-01b-tool-upload.md
+      type: file
+      status: create
+    - id: 01a1a39c-e3bf-71e2-b8a6-d2e1102cd4d7
+      path: wo-01c-mcp-housekeeping.md
+      type: file
+      status: create
 assets: []

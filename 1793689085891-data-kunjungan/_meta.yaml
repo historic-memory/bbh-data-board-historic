@@ -45,11 +45,11 @@ files:
     - id: 01a1a036-a2d0-7944-8f97-4b027bffced1
       path: spec.md
       type: spec
-      status: draft
+      status: complete
     - id: 01a1a03d-0854-7f52-85a2-fbb50878f948
       path: work-order.md
       type: file
-      status: progress
+      status: complete
 assets:
     - path: KUNJUNGAN HARI INI 33d90f1a8a5180228f80d17a10f57149_all.csv
       type: csv

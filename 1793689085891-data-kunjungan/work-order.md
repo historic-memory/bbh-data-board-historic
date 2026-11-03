@@ -1,12 +1,10 @@
 ---
 title: Master Index Work Order — Modul Kunjungan (plugin visit)
 description: Induk seluruh work order plugin visit. Urutan, status, dan bukti commit tiap WO.
-type: work-order
-status: progress
+status: complete
 created: "2026-11-03"
 updated: "2026-11-03"
 ---
-
 # Master Index — Work Order Plugin `visit`
 
 Sumber desain: `spec.md` (D-1..D-13 terkunci, O-1..O-7 terjawab). Analisa data: `notes.md`.

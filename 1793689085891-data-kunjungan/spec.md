@@ -1,13 +1,10 @@
 ---
 title: 'SPEC: Modul Kunjungan — Skema & Rencana Plugin'
-description: 'Desain skema tabel kanonik untuk data booking kunjungan BBH + rencana work order plugin `visit`. Termasuk pemetaan dari CSV mentah Notion dan daftar keputusan terbuka.'
-type: spec
-status: draft
+description: Desain skema tabel kanonik untuk data booking kunjungan BBH + rencana work order plugin `visit`. Termasuk pemetaan dari CSV mentah Notion dan daftar keputusan terbuka.
+status: complete
 created: "2026-11-03"
 updated: "2026-11-03"
-revision: 1
 ---
-
 # SPEC: Modul Kunjungan — Skema & Rencana Plugin
 
 ## 1. Konteks & Tujuan

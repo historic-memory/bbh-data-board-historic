@@ -16,7 +16,7 @@ Sumber desain: `spec.md` (D-1..D-13 terkunci, O-1..O-7 terjawab). Analisa data: 
 | WO-01 | Skeleton plugin + migrasi 3 tabel + enum | complete | `d0ca37a` | `06d6a05` |
 | WO-02 | Permission + CRUD visitors & visits + dedup phone | complete | `2019f78` | `85cea34` |
 | WO-03 | Riwayat status kunjungan (append-only) | complete | `fd932bd` | `9637280` |
-| WO-04 | Generator template impor (xlsx/csv) | complete | `f6af156` | `PENDING` |
+| WO-04 | Generator template impor (xlsx/csv) | complete | `f6af156` | `702459f` |
 | WO-05 | Validator umpan balik | pending | — | — |
 | WO-06 | Importer 2 fasa + idempotensi | pending | — | — |
 | WO-07 | UI admin kunjungan | pending | — | — |

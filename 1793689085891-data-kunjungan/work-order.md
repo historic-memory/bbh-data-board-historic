@@ -13,7 +13,7 @@ Sumber desain: `spec.md` (D-1..D-13 terkunci, O-1..O-7 terjawab). Analisa data: 
 
 | WO | Judul | Status | Commit kode | Dok historic |
 |---|---|---|---|---|
-| WO-01 | Skeleton plugin + migrasi 3 tabel + enum | complete | `d0ca37a` | — |
+| WO-01 | Skeleton plugin + migrasi 3 tabel + enum | complete | `d0ca37a` | `06d6a05` |
 | WO-02 | Permission + CRUD visitors & visits + dedup phone | pending | — | — |
 | WO-03 | Riwayat status kunjungan (append-only) | pending | — | — |
 | WO-04 | Generator template impor (xlsx/csv) | pending | — | — |

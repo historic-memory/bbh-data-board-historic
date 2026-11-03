@@ -2,7 +2,7 @@
 title: "WO-04: Unduh template per segment + rapikan kartu dashboard"
 description: "Tambah tombol Unduh template pada tiap kartu kebutuhan (hsh/sec) dan resident, perbaikan visual kartu dashboard (grid status, badge dobel, warna urgent=0), commit .env.example, dan pembersihan data uji resident agar go test hijau."
 type: work-order
-status: pending
+status: complete
 created: "2026-11-03"
 updated: "2026-11-03"
 tags:
@@ -54,5 +54,25 @@ tags:
 - [AC-5] `go test ./...` hijau penuh setelah pembersihan data uji.
 - [AC-6] Tidak ada perubahan backend (0 baris di `plugins/` & `internal/`).
 
-## Hasil Implementasi
-(commit + bukti menyusul)
+## Hasil Implementasi (commit `0e4e1e8` + `b6e22a9`, 2026-11-03)
+
+- `0e4e1e8` (4 file UI): tombol "Unduh template" di header kartu hsh/sec (gated
+  `canDownload` = `hsh.read`/`sec.read`, loading per-segmen); `downloadHshTemplate`/
+  `downloadSecTemplate` = alias `downloadTemplate` (tanpa duplikasi helper blob);
+  grid status: kartu Total full-width (`sm:col-span-2 lg:col-span-4`) + 4 kartu
+  `h-full` (tanpa kartu yatim); `StatusBadge` redundan dihapus dari kartu status
+  (tetap dipakai di tabel terbaru); tinggi kartu seragam; Urgent merah hanya bila > 0
+  (0 → `bg-slate-50`/`text-slate-800`).
+- `b6e22a9`: `.env.example` `JWT_ACCESS_EXP_SECONDS` 900→7200 (commit terpisah, sesuai instruksi).
+- Bukti AC: endpoint template 200 XLSX valid (10.8–12.9 KB); build 482.63 kB, grep
+  host:port di `dist` = 0; `go test ./...` hijau penuh setelah pembersihan data uji.
+- Housekeeping: `DELETE FROM residents WHERE resident_code LIKE 'BBH-%-P-%' OR
+  resident_code LIKE 'BBH-%-L-%'` (DELETE 1 → 0 baris) di DB dev.
+- Verifikasi Manager: commit ada, diff backend 0 baris, helper alias, gating benar.
+
+## Keputusan Terbuka (butuh owner, non-blocker)
+
+- **T-1**: `GenerateResidentCode` pakai MAX+1 — resident baru via UI akan kembali
+  memakai `BBH-YY-P-001` sehingga `go test ./...` merah lagi di DB dev berisi data.
+  Opsi: (a) test pakai prefix kode terpisah, (b) test di DB terpisah, (c) dibiarkan
+  + catatan README test. Belum diputuskan (di luar scope WO-04).

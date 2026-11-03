@@ -17,7 +17,7 @@ Sumber desain: `spec.md` (D-1..D-13 terkunci, O-1..O-7 terjawab). Analisa data: 
 | WO-02 | Permission + CRUD visitors & visits + dedup phone | complete | `2019f78` | `85cea34` |
 | WO-03 | Riwayat status kunjungan (append-only) | complete | `fd932bd` | `9637280` |
 | WO-04 | Generator template impor (xlsx/csv) | complete | `f6af156` | `702459f` |
-| WO-05 | Validator umpan balik | complete | `adb20bb` | `PENDING` |
+| WO-05 | Validator umpan balik | complete | `adb20bb` | `84d0d37` |
 | WO-06 | Importer 2 fasa + idempotensi | pending | — | — |
 | WO-07 | UI admin kunjungan | pending | — | — |
 | WO-08 | Swagger + README + Bruno + RBAC e2e | pending | — | — |

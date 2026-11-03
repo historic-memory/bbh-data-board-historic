@@ -29,6 +29,57 @@ Bukan sekali-upload-langsung-dikerjakan, melainkan:
 4. **EKSTRAKSI** — baru data diambil, masuk pipeline validate → staging → import yang
    SUDAH ADA (gerbang tetap deterministik).
 
+### Tambahan owner (2026-11-03): MAPPING EDITOR sebagai UI konfirmasi
+
+Alur diperkaya: upload langsung masuk backend (auto-upload), lalu LLM membalas dengan
+**link ke mapping editor** — halaman visual khusus untuk menyunting mapping kolom
+(source column → target field). User tidak menuliskan pemetaan lewat teks di chat;
+chat menjadi **dispatcher** yang mengarahkan ke editor.
+
+Alur final:
+
+1. User upload Excel/CSV → langsung tersimpan di backend (sesi ingest dibuat).
+2. Agent membaca header/sample, menyusun **tebakan mapping awal** (diberi label
+   "belum dikonfirmasi" — tidak ada yang lolos tanpa aksi user).
+3. Agent membalas di chat dengan **link ke mapping editor**
+   (mis. `/ingest/sessions/:id/map`).
+4. User mengoreksi mapping di editor (kolom kiri = kolom Excel terdeteksi, kolom kanan
+   = target field dari `fields.yaml`, dropdown + preview ±5 baris).
+5. Konfirmasi di editor → ekstraksi via pipeline validate → staging → import.
+
+Keputusan teknis mapping editor (analisa Manager, 2026-11-03):
+
+- **TIDAK mengadopsi library eksternal** (react-data-mapper, Handsontable, dll) —
+  semuanya berat/keberatan dan sangat konteks-spesifik. Editor dibuat sendiri di React:
+  komponen kecil, dan semua sumber kebenaran sudah ada (`schema/fields.yaml`,
+  `schema.Template.Columns`).
+- Target field di editor = otomatis dari `fields.yaml` per plugin.
+- Prinsip strict tetap berlaku di editor: kolom tanpa makna = `skip`; pengecualian
+  harus ditulis user; tombol "Ekstrak" terkunci sampai semua gate lolos.
+- Chat + editor = satu pasangan: chat untuk sesi belajar (pertanyaan bebas, aturan,
+  pengecualian), editor untuk koreksi mapping (terstruktur).
+
+### Sistem Prompt Agent (kontrak perilaku — diputuskan owner)
+
+**Intinya: agent ini DIBERI SYSTEM PROMPT agar mendukung semua solusi di atas.** Strictness,
+prinsip learn-together, dan perilaku "chat sebagai dispatcher ke mapping editor" DITEGAKKAN
+LEWAT SYSTEM PROMPT agent, bukan hanya kode. Artinya system prompt agent wajib memuat
+minimal:
+
+1. Kontrak learn-together: jangan pernah mengekstrak tanpa konsens; selalu mulai dari
+   introduksi dokumen.
+2. Kontrak strict (5 gerbang di atas): tidak menebak; kolom tak dijelaskan → `skip`;
+   pengecualian hanya dari pernyataan user; konfirmasi wajib; fail-closed tanpa mode paksa.
+3. Kontrak dispatcher: setelah upload & tebakan mapping siap, agent WAJIB menyertakan
+   link mapping editor — bukan memaksa user menuliskan mapping di chat.
+4. Kontrak batas wewenang: agent hanya penerjemah/penyusun profil; kebenaran akhir dari
+   user; validasi tetap oleh pipeline deterministik.
+5. Kontrak output terstruktur: setiap keputusan sesi ditulis ke dokumen profil dalam
+   bentuk terstruktur (state machine), bukan hanya narasi percakapan.
+
+Catatan desain: karena perilaku juga ditopang state machine backend, system prompt adalah
+lapisan kedua — pelanggaran prompt tetap tertahan oleh gate backend (defense in depth).
+
 ### Keputusan owner: AGENT STRICT
 
 Agent yang diciptakan adalah **strict** — user HARUS menjelaskan dengan baik. Operasional
@@ -53,8 +104,9 @@ sebagai gerbang yang tidak bisa dilewati:
   yang sama berikutnya (BBH mengekspor data yang sama berulang — sesi belajar pertama
   mahal/interaktif, selanjutnya otomatis).
 - "Strictness" harus **deterministik** (conversation contract + state machine sesi di
-  backend: `introduced → clarifying → profile_ready → confirmed → extracted`), tidak
-  bergantung perkataan model.
+  backend: `uploaded → introduced → mapping_draft → mapping_confirmed → extracting →
+  extracted`), tidak bergantung perkataan model. Lapisan kedua: system prompt agent
+  (lihat bagian "Sistem Prompt Agent").
 - AI tidak pernah jadi penentu kebenaran: hanya penerjemah yang dikoreksi bersama.
   Validasi tetap deterministik via `fields.yaml` + staging 2-fasa yang sudah ada
   (`*_import_batches`/`*_import_rows`).
@@ -77,7 +129,10 @@ sebagai gerbang yang tidak bisa dilewati:
   ini, atau MCP tetap dipisah (mis. agent provider eksternal)?
 - O-5: Penamaan plugin: usulan awal `plugins/ingest` (atau `plugins/ai`). Atau plugin agent
   dipisah dari jalur ekstraksi.
-- O-6: Bentuk UI chat: embed di admin panel (`sub_app/webapp`) vs halaman tersendiri.
+- O-6: Bentuk UI chat + mapping editor: embed di admin panel (`sub_app/webapp`, grup nav
+  baru mis. "Ingest") vs halaman tersendiri.
 - O-7: Persistensi sesi: simpan session state chat di DB (bisa lanjut bila tab ditutup)?
 - O-8: Keamanan: semua tool tulis wajib melewati RBAC + audit yang sama dengan HTTP handler
   (tidak ada jalur belakang). Ini diasumsikan wajib — perlu konfirmasi owner.
+- O-9: Apakah user bisa langsung ke mapping editor TANPA sesi chat (chat opsional),
+  atau editor selalu diluncurkan dari chat?

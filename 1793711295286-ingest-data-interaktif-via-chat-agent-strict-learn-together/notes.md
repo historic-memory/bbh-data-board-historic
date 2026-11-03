@@ -214,7 +214,24 @@ Kandidat yang diperiksa:
 
 ## Keputusan terkunci
 
-- (belum ada — topic baru dibuat)
+- (belum ada yang formal — owner meminta respons terkini DICATAT DULU (2026-11-03);
+  draf SPEC menunggu jawaban pertanyaan di bawah)
+
+### Snapshot status diskusi (2026-11-03, catatan Manager)
+
+Pertanyaan menunggu keputusan owner sebelum draf SPEC:
+
+1. **O-10** — Jev: pakai layanan TypeSafe asli (API eksternal + `TYPESAFE_API_KEY`)
+   ATAU cukup adopsi POLA harness-nya (classifier gate diimplement sendiri, abstraksi
+   antarmuka, bisa disimulasi deterministik offline)?
+2. **O-11** — Presidio sebagai sidecar Python opsional (NER nama Indonesia): default
+   usulan Manager **TIDAK dulu** (Go-only terjaga); `deidentify` cukup karena tipe kolom
+   datang eksplisit dari mapping editor.
+3. **O-1** — pilot modul: usulan Manager `visit`.
+4. **O-2** — LLM API eksternal vs lokal (relevan dengan deidentify sebagai lapisan
+   privasi pra-LLM).
+5. Sisa O-3..O-9 (scope chat, MCP vs tool internal, nama plugin, UI, persistensi sesi,
+   RBAC/audit, editor tanpa chat).
 
 ## Pertanyaan terbuka
 

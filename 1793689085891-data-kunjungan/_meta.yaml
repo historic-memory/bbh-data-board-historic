@@ -29,7 +29,7 @@ files:
     - id: 01a1a03d-0854-74c9-9cf4-758516fee375
       path: WO-07-ui-admin.md
       type: file
-      status: pending
+      status: complete
     - id: 01a1a03d-0854-7afc-86bf-4b5c07c2bb0d
       path: WO-08-swagger-readme-bruno.md
       type: file

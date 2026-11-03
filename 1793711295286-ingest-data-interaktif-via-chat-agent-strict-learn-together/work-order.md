@@ -28,7 +28,8 @@ sebelumnya masuk ke rancangan).
 |---|---|---|---|---|
 | WO-01 | Setup CopilotKit + proxy LLM + sandbox belajar | pending | — | — |
 | WO-02 | Sesi strict + real case `visit` via chat (tanpa editor) | pending | — | — |
-| WO-03..(CP-3 dst) | dirinci SETELAH checkpoint sebelumnya selesai | — | — | — |
+| WO-03 | Excel mapping editor (berdiri sendiri) | pending | — | — |
+| WO-04..(CP-4) | dirinci SETELAH checkpoint sebelumnya selesai | — | — | — |
 
 **Aturan lintas WO (pinned):**
 

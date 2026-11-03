@@ -26,4 +26,8 @@ files:
       path: wo-02-sesi-strict-realcase-visit.md
       type: file
       status: create
+    - id: 01a1a1ea-4ce4-7af3-b3da-aa8f47d65747
+      path: wo-03-mapping-editor.md
+      type: file
+      status: create
 assets: []

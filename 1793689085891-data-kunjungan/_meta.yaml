@@ -1,0 +1,15 @@
+id: "1793689085891"
+title: Data Kunjungan
+created: "2026-11-03"
+files:
+    - id: 01a1a036-a2d0-7e2b-963f-41f7c26f5647
+      path: notes.md
+      type: file
+      status: complete
+    - id: 01a1a036-a2d0-7944-8f97-4b027bffced1
+      path: spec.md
+      type: spec
+      status: draft
+assets:
+    - path: KUNJUNGAN HARI INI 33d90f1a8a5180228f80d17a10f57149_all.csv
+      type: csv

@@ -35,16 +35,30 @@ Sandbox — BUKAN fitur final; tidak ada data bisnis tersentuh.
 
 ### Frontend — CopilotKit sandbox page
 
+**Keputusan UI (owner, 2026-11-04):** penempatan chat = **Opsi 1 — halaman chat
+khusus (dedicated page)**; design kit **standar**: ada daftar sesi (session list)
+dan kotak pesan chat (chat message box). Bukan chat global melayang, bukan chat
+ter-embed di halaman domain (kandidat CP-4/lanjutan).
+
 - Tambah dependensi CopilotKit (runtime + React) — satu-satunya penambahan npm baru
   di sub-WO ini; base URL runtime → proxy backend.
-- Rute sandbox (grup nav baru "Ingest", guard `ingest.read` membuka / `ingest.write`
-  memakai): chat dasar + streaming tampil.
+- Rute (grup nav baru "Ingest" via `NAV_GROUPS` di `navigation/menu.ts`, guard
+  `ingest.read` membuka / `ingest.write` memakai):
+  - `/ingest` — daftar sesi chat (session list: judul/waktu, tombol buka sesi);
+  - `/ingest/:id/chat` — halaman chat: panel pesan (bubble user/agent, indikator
+    streaming, kotak input) — CopilotKit di-mount per halaman ini saja, tidak di
+    `AdminLayout` (sandbox terisolasi).
+- Gaya visual: pakai komponen `components/ui/*` + Tailwind v4 yang ada; UI default
+  CopilotKit boleh dipakai di sandbox tanpa skinning (polish ditunda ke CP-4).
 
 ## Acceptance Criteria
 
 - AC-1 Chat dasar + streaming hidup: UI → proxy → provider, balasan mengalir SSE.
 - AC-2 API key TIDAK muncul di response/network klien (grep respons & devtools).
 - AC-3 Tanpa key env → proxy 503 fail-closed dengan pesan jelas.
+- AC-9 Halaman `/ingest` menampilkan daftar sesi (session list) dan halaman
+  `/ingest/:id/chat` berisi kotak pesan standar (bubble + input + streaming);
+  CopilotKit TIDAK di-mount di `AdminLayout` (isolasi per halaman).
 - AC-6 Tanpa token (401) / tanpa `ingest.write` (403) → proxy ditolak.
 - AC-8 `go vet`/`go test` hijau; `npm run build` hijau; swagger berisi route proxy.
 

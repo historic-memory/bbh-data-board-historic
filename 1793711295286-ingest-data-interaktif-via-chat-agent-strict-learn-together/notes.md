@@ -242,6 +242,14 @@ Owner setuju dengan seluruh saran Manager (2026-11-03: "ok aku ikut saranmu"):
   di-PII oleh `fields.yaml` tidak bisa dilonggarkan oleh user; fail-closed.
 - **D-6 RBAC + audit WAJIB** (O-8) — semua tool tulis agent melewati RBAC dan audit
   yang sama dengan HTTP handler; tidak ada jalur belakang.
+- **D-10 Penempatan & desain UI chat (owner, 2026-11-04)** — chat di admin panel
+  sebagai **halaman khusus (dedicated page)**: grup nav "Ingest" → `/ingest` (daftar
+  sesi) + `/ingest/:id/chat` (halaman chat). Design kit STANDAR: session list +
+  kotak pesan chat (bubble, input, streaming). CopilotKit di-mount per halaman,
+  BUKAN di `AdminLayout` (sandbox terisolasi). Bukan chat global melayang; chat
+  ter-embed di halaman domain = kandidat CP-4/lanjutan. Gaya visual: komponen
+  `components/ui/*` + Tailwind v4; default CopilotKit tanpa skinning di sandbox
+  (polish CP-4). Tercatat di `wo-01a-proxy-chat-hidup.md` (AC-9).
 
 ### Snapshot status diskusi (2026-11-03, catatan Manager)
 

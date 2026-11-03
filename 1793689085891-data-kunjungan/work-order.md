@@ -2,7 +2,7 @@
 title: Master Index Work Order — Modul Kunjungan (plugin visit)
 description: Induk seluruh work order plugin visit. Urutan, status, dan bukti commit tiap WO.
 type: work-order
-status: draft
+status: progress
 created: "2026-11-03"
 updated: "2026-11-03"
 ---
@@ -13,7 +13,7 @@ Sumber desain: `spec.md` (D-1..D-13 terkunci, O-1..O-7 terjawab). Analisa data: 
 
 | WO | Judul | Status | Commit kode | Dok historic |
 |---|---|---|---|---|
-| WO-01 | Skeleton plugin + migrasi 3 tabel + enum | pending | — | — |
+| WO-01 | Skeleton plugin + migrasi 3 tabel + enum | complete | `d0ca37a` | — |
 | WO-02 | Permission + CRUD visitors & visits + dedup phone | pending | — | — |
 | WO-03 | Riwayat status kunjungan (append-only) | pending | — | — |
 | WO-04 | Generator template impor (xlsx/csv) | pending | — | — |

@@ -2,7 +2,7 @@
 title: WO-01 — Skeleton plugin visit + migrasi skema
 description: Plugin plugins/visit, model, stub service/handler, migrasi 3 tabel (visitors, visits, visit_status_history) + enum statis.
 type: work-order
-status: pending
+status: complete
 created: "2026-11-03"
 updated: "2026-11-03"
 ---
@@ -33,3 +33,12 @@ updated: "2026-11-03"
 
 - Tidak ada tabel `branches` (R-3) dan `ref_*` (R-4).
 - GORM `default:` jebakan B-1b (hsh) — catat untuk WO-02.
+
+## Bukti
+
+- Kode commit `d0ca37a` (14 file, +747/−2).
+- `go build ./...` + `go vet ./plugins/visit/...` + `go test ./...` hijau di container `app`.
+- `console migrate --plugin visit up` → 3 tabel + 2 CHECK + 5 index (termasuk partial UNIQUE `phone_e164`); `down` → 0 tabel; `up` ulang idempoten (`current=1`, tanpa apply kedua).
+- `console visit version` → `visit plugin 0.1.0`.
+- `go test ./plugins/visit/schema` lulus: cakupan field vs migrasi, prefix `visit_`, tanpa `ref_*`, CHECK 5 nilai, partial unique index, urutan enum.
+- Tabel final: `visit_visitors`, `visit_visits`, `visit_status_history`. Konstanta enum di `model/enums.go`.

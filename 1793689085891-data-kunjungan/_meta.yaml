@@ -5,7 +5,7 @@ files:
     - id: 01a1a03d-0853-7082-8a7f-60aa74b7ab01
       path: WO-01-skeleton-plugin-skema.md
       type: file
-      status: pending
+      status: complete
     - id: 01a1a03d-0853-70de-b85f-c2988add2bbe
       path: WO-02-permission-crud.md
       type: file
@@ -49,7 +49,7 @@ files:
     - id: 01a1a03d-0854-7f52-85a2-fbb50878f948
       path: work-order.md
       type: file
-      status: draft
+      status: progress
 assets:
     - path: KUNJUNGAN HARI INI 33d90f1a8a5180228f80d17a10f57149_all.csv
       type: csv

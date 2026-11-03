@@ -146,18 +146,71 @@ tipe yang dipakai.
 Sudah dicatat di bagian "Tambahan owner: MAPPING EDITOR" di atas — dikonfirmasi sebagai
 komponen yang disiapkan (dibuat sendiri di React, bukan library eksternal).
 
-### 3. JEV model (LLM) — PENAMAAN MASIH PERLU DIKLARIFIKASI
+### 3. JEV model (TypeSafe AI) — TERKLARIFIKASI (2026-11-03)
 
-Owner: "jev model llm → diperlukan ketika coba insert pakai llm jadi bisa di-set kondisi".
+Sumber: blog LangChain "Building a Harness with Jev" (link dari owner).
 
-Interpretasi awal Manager (BELUM dikonfirmasi owner): lapisan **guard/validator
-terstruktur** untuk output LLM sebelum insert — LLM diminta menghasilkan payload
-terstruktur (mis. JSON yang mengikuti skema), lalu "kondisi" (aturan validasi) di-set
-terhadap payload itu sebelum data masuk pipeline. Prinsipnya sejalan dengan strictness:
-LLM tidak pernah menulis langsung ke DB; outputnya melewati gate deterministik.
+**JEV = model "System One" dari TypeSafe AI** — BUKAN LLM teks. Ia tidak menghasilkan
+teks; ia **mengevaluasi keadaan (state) dan mengembalikan jawaban TERTYPE + PROBABILITAS**.
+Dilatih dengan RLCD (reinforcement learning for calibrated decisions). Klaim vendor:
+inferensi ±200× lebih cepat, biaya ±400× lebih murah dari LLM untuk tugas klasifikasi.
 
-PERLU diklarifikasi owner: apa kepanjangan/ makna tepat **JEV** (singkatan tool, konsep,
-atau typo?) — dua kali ditanyakan, belum terjawab. O-10.
+Cara kerja: kirim `state` + satu/lebih `questions` dalam SATU permintaan (dievaluasi
+paralel). Tiga jenis pertanyaan:
+
+- **Choice** — pilih dari opsi, kembalikan probabilitas per opsi + skor kepercayaan.
+- **Score** — rating kontinu terurut (rendah/sedang/tinggi) + distribusi + confidence.
+- **Noul** — ya/tidak, kembalikan probabilitas kebenaran pernyataan.
+
+Integrasi LangChain: `TypeSafeClassifier` (paket `langchain-typesafe`, env
+`TYPESAFE_API_KEY`). Use case di blog: model routing (pilih model murah vs kuat) dan
+**Auto Mode** — guardrail yang menilai tool call berisiko dan MEMBLOK sebelum dieksekusi.
+
+**Makna untuk arsitektur kita (owner: "bisa di set kondisi")**: JEV = lapisan
+**keputusan terstruktur/harness** di jalur insert-via-LLM — bukan penghasil konten.
+Pemakaian yang disarankan di SPEC:
+
+1. **Gate tool-call**: sebelum tool insert dieksekusi, tanya JEV (noul): "apakah payload
+   ini konsisten dengan mapping yang dikonfirmasi?" / "apakah ini aksi berisiko?" →
+   skor/probabilitas jadi kondisi keputusan (set-able oleh owner).
+2. **Klasifikasi baris/kolom ambigu** di fase clarify (choice: "kolom ini termasuk
+   kategori apa?") — jauh lebih murah dari full-LLM per keputusan.
+3. **Routing**: keputusan sepele → Jev; penalaran terbuka (menyusun pertanyaan clarify,
+   menghasilkan tebakan mapping) → tetap LLM penuh.
+
+Catatan risiko: produk baru (TypeSafe, dirilis ±2026-09, tergantung API eksternal
+`TYPESAFE_API_KEY`) → di SPEC perlu abstraksi antarmuka classifier agar bisa diganti
+(atau di-simulasi deterministik saat dev/offline).
+
+### Evaluasi alternatif `deidentify` (riset Manager, 2026-11-03)
+
+Konteks: kekhawatiran owner — pattern `deidentify` condong ke format AS.
+Kandidat yang diperiksa:
+
+1. **Presidio** (microsoft → kini data-privacy-stack; Python, 11.7k★, aktif) — framework
+   PII paling lengkap: NLP + regex + checksum, multi-bahasa (ada recognizer Jerman dll),
+   recognizer custom bisa ditambahkan untuk nama/NIK Indonesia, ada `presidio-structured`.
+   **Kons: Python** — container `app` kita Go-only (aturan N-17: image tetap Go-only);
+   memakai Presidio berarti sidecar container Python terpisah (kompleksitas deploy naik).
+2. **ferret-scan** (awslabs; Go, aktif) — CLI + library Go, deteksi PII/secrets offline,
+   confidence context-aware, redaksi format-preserving, "nothing leaves your host".
+   Lebih lengkap dari deidentify utk deteksi, namun fokusnya secrets/leak-scan, bukan
+   deidentifikasi terstruktur dengan referential-integrity seperti kasus kita.
+3. **privacy-filter** (Go, LLM privacy gateway) & **kiji-proxy** (Go) — fokus redaksi
+   request LLM secara umum, tidak punya model mapping kolom-typed yang kita butuhkan.
+4. **arcjet-js / top_secret (Ruby) / Octopii** — bahasa/pola tidak pas dengan stack Go.
+
+**Kesimpulan Manager (usulan)**: TETAP pakai `deidentify` sebagai basis deterministik
+(Go-native, referential integrity, pas pola Table/Slices), DENGAN mitigasi:
+
+- Karena **mapping editor memberi kita tipe kolom secara eksplisit**, kita TIDAK
+  tergantung inferensi regex AS-nya — panggil metode per tipe (`Name`/`Phone`) berdasar
+  hasil mapping yang dikonfirmasi user.
+- Nilai yang tidak dikenal pola tetap bisa dipaksa lewat tipe (mis. seluruh kolom nama
+  di-`TypeName` walau regex tak mengenalinya) — replacement tetap deterministik dari
+  HMAC secret key.
+- Bila butuh NER nyata multi-bahasa (nama Indonesia bebas-teks), barulah pertimbangkan
+  **Presidio sebagai sidecar Python opsional** — keputusan diperlukan saat SPEC (O-11).
 
 ## Keputusan terkunci
 
@@ -182,6 +235,10 @@ atau typo?) — dua kali ditanyakan, belum terjawab. O-10.
   (tidak ada jalur belakang). Ini diasumsikan wajib — perlu konfirmasi owner.
 - O-9: Apakah user bisa langsung ke mapping editor TANPA sesi chat (chat opsional),
   atau editor selalu diluncurkan dari chat?
-- O-10: **Makna "JEV model LLM"** — kepanjangan/istilah yang dimaksud owner? Interpretasi
-  awal Manager: lapisan guard/validasi terstruktur atas output LLM sebelum insert
-  (kondisi bisa di-set). PERLU konfirmasi sebelum masuk SPEC.
+- O-10: **Makna "JEV model LLM"** — TERKLARIFIKASI (lihat bagian 3 di atas):
+  Jev = model System-One TypeSafe AI untuk keputusan terstruktur (noul/choice/score).
+  Terbuka: apakah kita memang akan memakai layanan TypeSafe (API eksternal + API key)
+  atau hanya mengadopsi POLA harness-nya (classifier gate bisa diimplement sendiri)?
+- O-11: Presidio sebagai sidecar Python opsional (untuk NER nama Indonesia) — butuh
+  atau tidak? Default usulan Manager: TIDAK dulu (Go-only tetap terjaga); deidentify
+  dipakai dengan tipe kolom eksplisit dari mapping editor.

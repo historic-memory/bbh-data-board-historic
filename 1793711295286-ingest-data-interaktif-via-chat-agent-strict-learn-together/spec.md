@@ -134,21 +134,57 @@ Defense in depth: pelanggaran prompt tetap tertahan oleh gate state machine back
 | O-7 | Sesi persist di DB | Sesi belajar bisa lama |
 | O-9 | Editor bisa dibuka tanpa chat (chat opsional) | Upload manual tetap hidup |
 
-## 9. Rencana Work Order (usulan, draft — final menyusul setelah review)
+## 9. Pendekatan Work Order: CHECKPOINT BERTAHAP (keputusan owner, 2026-11-03)
 
-- **WO-01** Skeleton plugin `ingest` + migrasi tabel sesi/profil + seed permission
-  `ingest.*` via plugin auth.
-- **WO-02** Sesi & state machine (`uploaded→…→extracted`) + API sesi + audit.
-- **WO-03** Upload file + parsing header/sample (CSV/XLSX) + penyimpanan.
-- **WO-04** LLM client (abstraksi) + system prompt agent + tebakan mapping awal +
-  deidentify pra-payload (D-2/D-4) + secret key env fail-closed.
-- **WO-05** Classifier gate (pola Jev, antarmuka + implementasi deterministic) —
-  gate tool-call & klasifikasi clarify (D-3).
-- **WO-06** Ekstraksi: mapping terkonfirmasi → validate → staging → import plugin
-  `visit` (pilot) + laporan hasil.
-- **WO-07** Mapping editor UI + daftar sesi + flag `is_encrypt` (D-5/D-8).
-- **WO-08** Chat UI embed + persistensi sesi (O-6/O-7).
-- **WO-09** Swagger + README + koleksi Bruno + RBAC e2e.
+Owner menegaskan: **WO tidak bisa langsung on-target (langsung fitur penuh)**.
+Pendekatan = **checkpoint** — setiap tahap punya milestone yang bisa dites/dilihat
+hasilnya sebelum lanjut. Rancangan tahap (urutan final di work-order.md):
+
+### Checkpoint 1 — Setup CopilotKit + lingkungan belajar (sandbox/study)
+
+- Setup CopilotKit di admin panel → endpoint proxy backend (yang menginjeksi API key
+  & meneruskan ke provider LLM).
+- Tujuan tahap: **menguji dasar-dasarnya dulu sebagai pembelajaran**, bukan fitur:
+  - konversi chat dasar + streaming;
+  - menambah **skill/tool** sederhana (mis. tool dummy/echo) — belajar cara CopilotKit
+    memanggil aksi backend;
+  - eksperimen koneksi **MCP** (dari topik lama) di luar jalur utama — dipelajari,
+    tidak dijadikan standar;
+  - **testing upload** file melalui UI chat (masuk storage, tidak diproses).
+- Bukti checkpoint: chat hidup end-to-end (UI → proxy → provider), tool dummy
+  terpanggil, file upload tersimpan. TIDAK menyentuh data bisnis.
+
+### Checkpoint 2 — Real case pertama (tanpa editor)
+
+- Setelah CP-1 kelar: coba **real case** di modul pilot `visit` — agent membaca file
+  nyata (header/sample), sesi strict (identitas→clarify→konfirmasi) di chat, hasil
+  mapping disepakati di percakapan (TANPA editor dulu), lalu ekstraksi ke pipeline
+  validate → staging → import.
+- Bukti checkpoint: satu file nyata berhasil diimpor lewat chat dengan laporan
+  created/updated/skipped/rejected; percobaan dengan file ambigu terhenti oleh gate.
+
+### Checkpoint 3 — Excel mapping editor
+
+- Membangun mapping editor (D-8) — kiri kolom Excel, kanan target field, flag
+  `is_encrypt`, preview 5 baris, tombol Ekstrak terkunci bila gate belum lolos.
+- Pada tahap ini editor berdiri sendiri (bisa dipakai tanpa chat, O-9).
+
+### Checkpoint 4 — Integrasi editor ↔ CopilotKit
+
+- Menghubungkan dua dunia: agent di chat menghasilkan tebakan mapping → link editor;
+  keputusan di editor tersinkron ke dokumen profil yang sama dibaca agent; konfirmasi
+  & ekstraksi bisa dari editor ATAU chat; state machine backend tetap penegak tunggal.
+- Bukti checkpoint (final): alur lengkap upload → chat → editor → ekstraksi → laporan.
+
+Catatan: WO per checkpoint akan dirinci di `work-order.md` (draft menyusul setelah
+review SPEC); checkpoint 1 & 2 sengaja TIDAK menulis fitur final — ini sesuai prinsip
+"belajar dulu, baru on-target" yang diminta owner.
+
+## 9a. Rencana Work Order lama (USANG — digantikan checkpoint di atas)
+
+(Rencana WO-01..WO-09 lama dihapus karena pendekatan berubah menjadi checkpoint;
+simpan sebagai referensi singkat: skeleton/migrasi/permission, state machine, upload,
+LLM client+deidentify, classifier gate, ekstraksi, editor UI, chat UI, swagger/README/Bruno.)
 
 ## 10. Pertanyaan terbuka untuk review owner
 

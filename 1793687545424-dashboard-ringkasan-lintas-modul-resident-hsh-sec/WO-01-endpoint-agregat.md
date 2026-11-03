@@ -2,7 +2,7 @@
 title: "WO-01: Endpoint agregat dashboard"
 description: "Plugin `plugins/dashboard` (skeleton tanpa tabel sendiri), seed permission `dashboard.read` via migrasi plugin auth, dan endpoint `GET /api/admin/dashboard/summary` yang menggabungkan resident + hsh + sec."
 type: work-order
-status: pending
+status: complete
 created: "2026-11-03"
 updated: "2026-11-03"
 tags:
@@ -64,5 +64,14 @@ tags:
 - [AC-8] Route terdaftar SEBELUM wildcard apa pun yang bisa menelan `summary`
   (pelajari pola summary-existing).
 
-## Hasil Implementasi
-(commit + bukti menyusul)
+## Hasil Implementasi (commit `3e418f4`, 2026-11-03)
+
+- 9 file: `plugin.go` (ID `dashboard`, route flat `summary` guard `dashboard.read`),
+  `cli.go`, `service.go`, `services/summary.go` (206 baris, SQL langsung tanpa
+  import antar-plugin), `handlers.go` (+anotasi swagger), migrasi plugin auth
+  `2026_11_03_090000_add_dashboard_permissions.{up,down}.sql`, registrasi di kedua `main.go`.
+- AC-1 build/vet/gofmt hijau; `go test` hanya gagal di test resident pre-existing
+  (DB dev berisi `BBH-26-P-001`) — bukan regresi (lihat catatan terbuka).
+- AC-2 migrate up auth v9 → `dashboard.read` ter-link admin+viewer; down bersih; up ulang idempoten.
+- AC-3/4/5 terbukti via curl; AC-6/7 paritas angka dengan endpoint existing cocok;
+  AC-8 route statis tanpa wildcard.

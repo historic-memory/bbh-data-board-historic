@@ -2,7 +2,7 @@
 title: "WO-03: Verifikasi & dokumentasi dashboard agregat"
 description: "Swagger (endpoint agregat), README (plugin dashboard), koleksi Bruno (smoke + folder dashboard), dan uji RBAC end-to-end 3 blok."
 type: work-order
-status: pending
+status: complete
 created: "2026-11-03"
 updated: "2026-11-03"
 tags:
@@ -48,5 +48,18 @@ tags:
 - [AC-4] Skenario RBAC 1-4 di atas terbukti (bukti respons JSON dicatat di WO).
 - [AC-5] Data/akun uji dibersihkan setelah uji.
 
-## Hasil Implementasi
-(commit + bukti menyusul)
+## Hasil Implementasi (commit `8dba6c8`, 2026-11-03)
+
+- 11 file: anotasi swagger handler (5 definisi baru: `Summary`, `NeedsBlock`,
+  `ResidentsBlock`, `Period`, `CategorySummary`); README seksi "Plugin `dashboard`";
+  Bruno folder `dashboard/` (7 request: summary, baseline stats, paritas stats/hsh/sec,
+  viewer, limited) + `smoke/09-Get-dashboard-summary.bru`; `bruno.json` + README koleksi.
+- AC-1 `build.sh --verify-docs` exit 0 → total **69 path / 113 operasi**; regen byte-identik.
+- AC-3 Bruno: `--tags=smoke` 9 req/26 test PASS; `dashboard` 7 req/16 test PASS
+  (06/07 auto-skip bila modul tanpa periode aktif).
+- AC-4 RBAC e2e: root/viewer 3 blok; limited (`dashboard.read`+`sec.read`) →
+  `hsh: null` + sec terisi.
+- AC-5 data & akun uji (`dashviewer@`, `dashlimited2@`, grup uji, entri/periode/item
+  sec) dibersihkan; master `sec` kembali 2 kategori / 0 item / 0 periode.
+- Verifikasi Manager (2026-11-03): curl root → 3 blok benar (hsh `2026-11` total 1/
+  urgent 1; sec `period: null`); tanpa token → 401.

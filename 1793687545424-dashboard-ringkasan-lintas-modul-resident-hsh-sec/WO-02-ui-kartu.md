@@ -2,7 +2,7 @@
 title: "WO-02: UI kartu dashboard lintas modul"
 description: "Tambah blok 'Kebutuhan Rumah Tangga' dan 'Kebutuhan Sekunder' (periode aktif) + tautan cepat modul kebutuhan di DashboardPage.tsx, konsumsi endpoint agregat WO-01."
 type: work-order
-status: pending
+status: complete
 created: "2026-11-03"
 updated: "2026-11-03"
 tags:
@@ -51,5 +51,15 @@ tags:
 - [AC-5] Error state per-blok + coba lagi pulih; kartu resident tidak ikut rusak.
 - [AC-6] Tautan cepat baru hanya muncul bila permission dimiliki.
 
-## Hasil Implementasi
-(commit + bukti menyusul)
+## Hasil Implementasi (commit `66a6eb2`, 2026-11-03)
+
+- 3 file: BARU `src/api/dashboard.ts` + `src/pages/admin/dashboard/NeedsSummaryCard.tsx`;
+  UBAH `src/pages/admin/DashboardPage.tsx`.
+- Satu sumber angka = endpoint agregat; kartu hsh/sec (Total+Urgent ditonjolkan,
+  bar CSS per kategori, label periode, tautan "Kelola" gated); blok `null` tidak
+  dirender; periode kosong → "Belum ada periode aktif" + 0; `block.error` → alert +
+  Coba lagi; `residents.error` → angka disembunyikan (tanpa angka palsu).
+- AC-1 build hijau (162 modul), grep host:port di `dist` = 0 baris.
+- AC-2..6 diverifikasi dev; diverifikasi ulang Manager via browser dengan akun
+  terbatas (`dashboard.read`+`sec.read`): kartu hsh hilang, kartu sec + resident
+  tetap tampil, "Belum ada periode aktif" tampil tanpa error.

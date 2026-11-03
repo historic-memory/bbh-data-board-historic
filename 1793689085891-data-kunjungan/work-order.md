@@ -20,8 +20,8 @@ Sumber desain: `spec.md` (D-1..D-13 terkunci, O-1..O-7 terjawab). Analisa data: 
 | WO-05 | Validator umpan balik | complete | `adb20bb` | `84d0d37` |
 | WO-06 | Importer 2 fasa + idempotensi | complete | `b6c4002` | `9576962` |
 | WO-07 | UI admin kunjungan | complete | `6c197f1` | `d0cfe85` |
-| WO-08 | Swagger + README + Bruno + RBAC e2e | pending | — | — |
-| WO-09 | Impor data awal 1.622 baris + laporan kualitas | pending | — | — |
+| WO-08 | Swagger + README + Bruno + RBAC e2e | complete | `4bd62f7` | PENDING |
+| WO-09 | Impor data awal 1.622 baris + laporan kualitas | complete | PENDING | PENDING |
 
 **Urutan:** WO-01 → WO-02 → WO-03 → WO-04 → WO-05 → WO-06 → WO-07 → WO-08 → WO-09.
 

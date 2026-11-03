@@ -33,11 +33,11 @@ files:
     - id: 01a1a03d-0854-7afc-86bf-4b5c07c2bb0d
       path: WO-08-swagger-readme-bruno.md
       type: file
-      status: pending
+      status: complete
     - id: 01a1a03d-0854-7e8c-9431-08fc1f4bba12
       path: WO-09-impor-data-awal.md
       type: file
-      status: pending
+      status: complete
     - id: 01a1a036-a2d0-7e2b-963f-41f7c26f5647
       path: notes.md
       type: file

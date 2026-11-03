@@ -59,6 +59,17 @@ tambah dependensi baru hanya bila memang tidak ada padanannya.
   6. Catatan: mode proxy ini jadi cikal-bakal antarmuka agent eksternal kelak
      (kaitan MCP ditunda, O-4) — kontrak proxy dibuat konsisten dengan
      OpenAI-compatible agar adopsi MCP/alat lain tidak menulis ulang.
+  7. **Konsekuensi frontend (owner, 2026-11-03): karena proxy-nya OpenAI-compatible,
+     di TypeScript (frontend) KITA BISA MEMAKAI BENTUK/SDK OpenAI-compatible** —
+     mis. paket `openai` (openai-compatible client) diarahkan ke
+     `baseURL: /api/admin/ingest/llm-proxy` dengan `apiKey: "proxy"` (dummy — key
+     asli tetap disuntik backend). Artinya: streaming (SSE), format pesan, dan
+     tool-calling mengikuti bentuk OpenAI di sisi klien tanpa menulis klien chat
+     kustom — SATU dependensi npm yang kini RELEVAN (revisi catatan "tanpa
+     dependensi npm baru": boleh 1, hanya client-compat, tanpa SDK provider lain).
+  8. Batas: SDK TS HANYA bicara ke proxy internal (bukan langsung ke provider);
+     `dangerouslyAllowBrowser`-style konfigurasi dievaluasi di WO terkait — prinsip
+     tetap: tidak ada kunci di klien, semua lewat guard RBAC backend.
 - **Streaming chat**: pakai **Server-Sent Events (SSE)** dari backend ke UI
   (gin `c.Stream`) — tanpa websocket, cukup untuk chat satu-arah streaming;
   polling fallback bila SSE diblok proxy. Streaming proxy: backend meneruskan

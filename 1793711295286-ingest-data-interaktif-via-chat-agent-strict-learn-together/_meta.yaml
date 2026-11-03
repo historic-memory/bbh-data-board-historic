@@ -10,4 +10,8 @@ files:
       path: spec.md
       type: file
       status: create
+    - id: 01a1a1db-59fa-7eb1-b901-1de136e29898
+      path: spec-techstack.md
+      type: file
+      status: create
 assets: []

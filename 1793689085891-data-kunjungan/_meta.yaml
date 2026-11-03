@@ -13,7 +13,7 @@ files:
     - id: 01a1a03d-0853-7457-b56c-5b3cbef49112
       path: WO-03-riwayat-status.md
       type: file
-      status: pending
+      status: complete
     - id: 01a1a03d-0854-70f1-a2a4-946274bb1c95
       path: WO-04-generator-template.md
       type: file

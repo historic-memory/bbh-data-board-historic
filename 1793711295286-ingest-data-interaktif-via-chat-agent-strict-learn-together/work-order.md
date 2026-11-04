@@ -21,7 +21,7 @@ milestone-nya sudah jelas sejak awal.
 | Checkpoint | Isi | Status | Bukti |
 |---|---|---|---|
 | CP-1 | Setup CopilotKit + proxy + sandbox belajar — **dipecah 3 sub-WO**: 01a proxy+chat → 01b tool+upload → 01c MCP+housekeeping | **complete** (2026-11-04) | e4f4ea9, a019c26, a22c03b, f00e542, 397fbff |
-| CP-2 | Real case pertama `visit` via chat (tanpa editor) | TERBUKA (rancangan WO-02 disusun Manager) | — |
+| CP-2 | Real case pertama `visit` via chat (tanpa editor) | TERBUKA — WO-02 DIREVISI (D-11/O-18/O-19) siap eksekusi | — |
 | CP-3 | Excel mapping editor (berdiri sendiri) | dibuat setelah CP-2 | — |
 | CP-4 | Integrasi editor ↔ CopilotKit | dibuat setelah CP-3 | — |
 
@@ -32,7 +32,7 @@ milestone-nya sudah jelas sejak awal.
 | WO-01a | CopilotKit chat hidup (CP-1) — **DIREVISI D-11** | complete (2026-11-04) | e4f4ea9, a019c26, a22c03b | — |
 | WO-01b | Tool dummy `sandbox_ping` + upload ke storage (CP-1) | complete (2026-11-04) | f00e542 | — |
 | WO-01c | Eksperimen MCP + housekeeping (CP-1) | complete (2026-11-04) — CP-1 DITUTUP | 397fbff | a017ba2 |
-| WO-02 | Sesi strict + real case `visit` via chat (tanpa editor) | pending | — | — |
+| WO-02 | Sesi strict + real case `visit` via chat (tanpa editor) — **DIREVISI pasca CP-1** | pending (siap eksekusi) | — | — |
 | WO-03 | Excel mapping editor (berdiri sendiri) | pending | — | — |
 | WO-04 | Integrasi editor ↔ CopilotKit + housekeeping (CP-4 final) | pending | — | — |
 | WO-05.. | tidak ada — CP-4 adalah checkpoint terakhir | — | — | — |

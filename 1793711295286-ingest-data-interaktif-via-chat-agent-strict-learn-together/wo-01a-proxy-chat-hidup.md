@@ -1,10 +1,13 @@
 ---
 title: WO-01a — CopilotKit chat hidup (CP-1, sub 1/3) [DIREVISI D-11]
 description: "Sub-checkpoint CP-1: skeleton plugin ingest + CopilotKit (runtime Node) chat hidup; Go = data service. TANPA tool/upload/MCP."
-status: pending
+status: complete
 created: "2026-11-03"
 ---
 # WO-01a — CopilotKit Chat Hidup (Sub-Checkpoint CP-1, 1/3) — DIREVISI D-11
+
+**COMPLETE (owner, 2026-11-04)** — semua AC-1..AC-10 lulus; commit kode
+`e4f4ea9`, `a019c26`, `a22c03b`. WO-01b terbuka.
 
 Induk: `wo-01-setup-copilotkit-sandbox.md` (dipecah 2026-11-04). Urutan: **1a → 1b
 → 1c**; prasyarat sub berikutnya = sub sebelumnya lulus AC. Sumber: `spec.md` §9

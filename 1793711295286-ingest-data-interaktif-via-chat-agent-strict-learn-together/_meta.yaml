@@ -6,44 +6,44 @@ files:
       path: notes.md
       type: file
       status: draft
-    - id: 01a1a1d8-21cd-749e-9449-24f4d4d73444
-      path: spec.md
-      type: file
-      status: create
     - id: 01a1a1db-59fa-7eb1-b901-1de136e29898
       path: spec-techstack.md
-      type: file
-      status: create
-    - id: 01a1a1e7-a01c-7a43-8d41-efa850f0ff78
-      path: work-order.md
-      type: file
-      status: create
+      type: spec
+      status: draft
+    - id: 01a1a1d8-21cd-749e-9449-24f4d4d73444
+      path: spec.md
+      type: spec
+      status: draft
     - id: 01a1a1e7-a18a-7673-9d56-29b72446cf34
       path: wo-01-setup-copilotkit-sandbox.md
       type: file
-      status: create
-    - id: 01a1a1e9-0fa9-74cd-9e3e-264c51a94904
-      path: wo-02-sesi-strict-realcase-visit.md
-      type: file
-      status: create
-    - id: 01a1a1ea-4ce4-7af3-b3da-aa8f47d65747
-      path: wo-03-mapping-editor.md
-      type: file
-      status: create
-    - id: 01a1a1eb-7b58-79c7-9b01-b39270d21de6
-      path: wo-04-integrasi-editor-copilotkit.md
-      type: file
-      status: create
+      status: pending
     - id: 01a1a39c-c124-7a85-9923-754290de965d
       path: wo-01a-proxy-chat-hidup.md
       type: file
-      status: create
+      status: pending
     - id: 01a1a39c-e24f-71a7-acb0-83aa29a1c923
       path: wo-01b-tool-upload.md
       type: file
-      status: create
+      status: pending
     - id: 01a1a39c-e3bf-71e2-b8a6-d2e1102cd4d7
       path: wo-01c-mcp-housekeeping.md
       type: file
-      status: create
+      status: pending
+    - id: 01a1a1e9-0fa9-74cd-9e3e-264c51a94904
+      path: wo-02-sesi-strict-realcase-visit.md
+      type: file
+      status: pending
+    - id: 01a1a1ea-4ce4-7af3-b3da-aa8f47d65747
+      path: wo-03-mapping-editor.md
+      type: file
+      status: pending
+    - id: 01a1a1eb-7b58-79c7-9b01-b39270d21de6
+      path: wo-04-integrasi-editor-copilotkit.md
+      type: file
+      status: pending
+    - id: 01a1a1e7-a01c-7a43-8d41-efa850f0ff78
+      path: work-order.md
+      type: file
+      status: draft
 assets: []

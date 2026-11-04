@@ -353,6 +353,20 @@ Draf SPEC akan menyertakan usulan keputusan untuk O-3..O-9 di atas.
   restart. **Timing implementasi: CP-2** (setelah CP-1 selesai — sesi real case
   `visit` baru di sana yang bisa panjang); akan masuk rancangan WO-02.
   - O-11: Presidio sebagai sidecar Python opsional (untuk NER nama Indonesia) — butuh
+- **O-19 (BARU, 2026-11-04): pemisahan runtime CopilotKit ke `sub_app/ingest_runtime/`
+  — TERPUTUSKAN (owner): PISAH, eksekusi AWAL CP-2 (sebelum WO-02 dieksekusi).**
+  Latar: runtime kini menumpang di `sub_app/webapp/` (`runtime/*.ts` + deps
+  CopilotKit di package.json yang sama) — menimbulkan kebingungan (owner: "biar
+  junior paham juga"). Bentuk yang disetujui: **npm workspaces** di `sub_app/`
+  — `sub_app/webapp` (SPA) + `sub_app/ingest_runtime` (service CopilotKit) sebagai
+  package terpisah, SATU lockfile di root agar versi CopilotKit react-core/runtime
+  tetap sinkron (protokol AG-UI sensitif versi). Konsekuensi: Dockerfile.runtime
+  hanya meng-install deps workspace runtime (image lebih ramping); service compose
+  `ingest-runtime` tidak berubah perilaku; D-11 tidak berubah (Node tetap tipis,
+  kebijakan tetap Go). Termasuk housekeeping kecil: perbarui komentar header
+  `docker-compose.yml` yang masih menulis "ingest-runtime IDLE, DEV-ONLY spike"
+  (usang sejak D-11 final). Dipindah SEBELUM WO-02 agar CP-2 dimulai dari struktur
+  yang final.
   atau tidak? Default usulan Manager: TIDAK dulu (Go-only tetap terjaga); deidentify
   dipakai dengan tipe kolom eksplisit dari mapping editor.
 - O-12: Kebijakan flag `is_encrypt`: apakah flag user boleh MENGURANGI proteksi bawaan

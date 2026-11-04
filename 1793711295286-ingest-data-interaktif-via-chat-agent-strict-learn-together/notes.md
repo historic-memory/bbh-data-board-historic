@@ -287,13 +287,21 @@ Draf SPEC akan menyertakan usulan keputusan untuk O-3..O-9 di atas.
   `localStorage` (`lib/ingestSessions.ts`) — WAJIB diganti API `ingest_messages`
   saat backend jadi. Kode spike BELUM di-commit (menunggu review tim). Build hijau,
   chunk chat terpisah (lazy + Suspense), bundle utama 1,4 MB, tanpa URL backend.
-  **TERPUTUSKAN (owner, 2026-11-04 → D-11): opsi (B) — Node runtime container
-  diterima sebagai keharusan infrastruktur ("enggak masalah, emang keharusan");
-  owner menunggu tim dev bekerja dulu. Implikasi dicatat: N-17 (image Go-only)
-  dilonggarkan khusus service runtime Node ini; strictness/gate tetap WAJIB
-  dijaga di backend Go — Node runtime diperlakukan sebagai lapisan transport
-  CopilotKit, bukan tempat kebijakan. Revisi `spec-techstack.md` §2.2 + WO-01a
-  menyusul setelah konfirmasi owner.**
+  **TERPUTUSKAN & DIREVISI (owner, 2026-11-04 → D-11 FINAL): opsi (B) DIPERLUAS —
+  runtime Node CopilotKit pegang SELURUH jalur chat AI (pemanggil provider LLM);
+  proxy OpenAI-compatible di Go DIHAPUS dari jalur chat. Go (bbh app) menjadi
+  DATA SERVICE murni.** Syarat wajib yang menjaga keputusan lain tetap utuh:
+  1. API key hanya di Node runtime — tidak pernah keluar ke klien.
+  2. Semua keputusan bertanggung jawab TETAP di Go: tool calls (mapping/confirm/
+     extract) → API plugin `ingest` Go (RBAC + audit + state machine); Node TIDAK
+     pernah menulis profil.
+  3. Gate deidentify tetap di Go — Node meminta Go "menyiapkan payload aman"
+     (deidentify + secret key tetap Go), TIDAK direplikasi di Node.
+  4. Audit: Node mengirim event audit ke endpoint Go (`ingest_audit` tetap pusat).
+  Implikasi: N-17 dilonggarkan permanen (service Node produksi); aturan pinned
+  "API key tidak pernah keluar dari backend Go" ditulis ulang menjadi "tidak pernah
+  keluar ke klien; dipegang runtime Node". Revisi SPEC/techstack/WO-01a dieksekusi
+  2026-11-04 (dok ini).**
 
 - O-1: Modul perintis (pilot) untuk sesi belajar pertama? Usulan Manager: `visit`
   (data mentah paling rumit — ujian terbaik agent strict; sumber: ekspor Notion kunjungan).

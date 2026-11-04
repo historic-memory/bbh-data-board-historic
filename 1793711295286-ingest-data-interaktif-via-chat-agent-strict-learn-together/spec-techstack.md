@@ -33,64 +33,45 @@ tambah dependensi baru hanya bila memang tidak ada padanannya.
 - Pemakaian: tipe kolom EKSPLISIT dari mapping editor (`Name`/`Phone`/generic);
   TIDAK bergantung inferensi regex bawaan (kekhawatiran pattern AS selesai). (D-4)
 
-### 2.2 LLM client (API eksternal) — abstraksi sendiri + MODE PROXY
+### 2.2 LLM client & backend chat — COPILORKIT RUNTIME NODE (D-11 FINAL, 2026-11-04)
 
-- Antarmuka Go sendiri (mis. `services/llm.go`: `Complete(ctx, req) (resp, err)`),
-  implementasi pertama: **OpenAI-compatible HTTP API** (chat completions) via
-  `net/http` bawaan — tanpa SDK pihak ketiga (jaga image Go-only & kontrol payload).
-- Payload yang dikirim SELALU sudah dideidentifikasi (D-2).
-- Env baru: `INGEST_LLM_BASE_URL` (default api.openai.com), `INGEST_LLM_API_KEY`,
-  `INGEST_LLM_MODEL`. Fail-closed bila tool membutuhkan LLM dan key kosong.
-- **MODE PROXY (ide owner, 2026-11-03 — DITERIMA)**: backend juga berfungsi sebagai
-  **proxy OpenAI-compatible**. Keputusan teknis:
-  1. **API key TIDAK PERNAH sampai ke klien** — klien (UI chat/editor, atau agent
-     apa pun) memanggil endpoint proxy di backend; backend menyuntikkan
-     `Authorization: Bearer $INGEST_LLM_API_KEY` sebelum meneruskan ke provider.
-  2. Titik injeksi: SATU titik (middleware/transport) sehingga tidak ada jalur
-     keluar tanpa injeksi — dan setiap request proxy tercatat di audit.
-  3. Guard proxy = `ingest.write` (bukan publik); tanpa izin → 403 sebelum
-     menyentuh provider.
-  4. **Gate deidentify tetap DI DEPAN proxy**: request yang melewati proxy wajib
-     sudah dideidentifikasi; proxy menolak payload yang mengandung kolom PII yang
-     belum di-deidentify (fail-closed, D-2/D-5) — proxy bukan celah untuk mem bypass
-     lapisan privasi.
-  5. Manfaat: kunci tidak tersebar di klien; provider bisa diganti via env tanpa
-     rebuild UI; rate-limit/budget bisa ditegakkan di satu titik.
-  6. Catatan: mode proxy ini jadi cikal-bakal antarmuka agent eksternal kelak
-     (kaitan MCP ditunda, O-4) — kontrak proxy dibuat konsisten dengan
-     OpenAI-compatible agar adopsi MCP/alat lain tidak menulis ulang.
-  7. **Konsekuensi frontend (owner, 2026-11-03): karena proxy-nya OpenAI-compatible,
-     di TypeScript (frontend) KITA BISA MEMAKAI BENTUK/SDK OpenAI-compatible** —
-     mis. paket `openai` (openai-compatible client) diarahkan ke
-     `baseURL: /api/admin/ingest/llm-proxy` dengan `apiKey: "proxy"` (dummy — key
-     asli tetap disuntik backend). Artinya: streaming (SSE), format pesan, dan
-     tool-calling mengikuti bentuk OpenAI di sisi klien tanpa menulis klien chat
-     kustom — SATU dependensi npm yang kini RELEVAN (revisi catatan "tanpa
-     dependensi npm baru": boleh 1, hanya client-compat, tanpa SDK provider lain).
-  8. Batas: SDK TS HANYA bicara ke proxy internal (bukan langsung ke provider);
-     `dangerouslyAllowBrowser`-style konfigurasi dievaluasi di WO terkait — prinsip
-     tetap: tidak ada kunci di klien, semua lewat guard RBAC backend.
-  9. **CopilotKit kini KEMUNGKINAN (owner, 2026-11-03)**: karena proxy backend
-     OpenAI-compatible, **CopilotKit (React) bisa dipakai sebagai UI chat** —
-     arahkan endpoint CopilotRuntime ke proxy backend, yang lalu diteruskan ke
-     provider LLM. Rantai: CopilotKit UI → proxy (injeksi key + gate deidentify +
-     audit) → provider. Catatan keputusan:
-     - Manfaat: komponen chat siap-pakai (UI, streaming, generative UI), tidak perlu
-       membangun klien chat dari nol; konsisten dengan topik lama 1793096602507 yang
-       mencantumkan CopilotKit.
-     - Biaya: dependensi baru di frontend (CopilotKit runtime + React paket);
-       kontrak CopilotKit agak lebih dari sekadar OpenAI-compatible (runtime GraphQL
-       `useCopilotChat`), jadi proxy perlu layer adaptasi kecil.
-     - Prinsip tetap: strictness & gate TIDAK dijalankan oleh CopilotKit — tetap di
-       backend; CopilotKit hanya lapisan UI. Tool-calling klien DILARANG menulis
-       langsung; semua aksi tulis lewat tool API backend yang di-guard RBAC.
-     - Status: kandidat KUAT untuk WO-08 (chat UI), keputusan final saat review SPEC
-       (O-16). Alternatif: klien chat sendiri memakai paket `openai` di atas proxy.
-- **Streaming chat**: pakai **Server-Sent Events (SSE)** dari backend ke UI
-  (gin `c.Stream`) — tanpa websocket, cukup untuk chat satu-arah streaming;
-  polling fallback bila SSE diblok proxy. Streaming proxy: backend meneruskan
-  stream dari provider → SSE ke klien (buffer per chunk, tetap tanpa PII karena
-  payload sudah dideidentifikasi).
+> **Revisi besar (keputusan owner, 2026-11-04, D-11 final):** desain awal "proxy
+> OpenAI-compatible di Go" DIGANTI — **runtime Node CopilotKit (`@copilotkit/runtime`)
+> menjadi backend chat AI penuh**: ia satu-satunya komponen yang memanggil provider
+> LLM. Aplikasi Go (bbh app) menjadi **data service murni**. Alasan: CopilotKit v2
+> membutuhkan protokol AG-UI + runtime Node WAJIB (spike WO-01a terbukti); memelihara
+> proxy Go paralel berarti 2 hop + normalisasi ganda tanpa manfaat.
+
+Arsitektur jalur chat:
+
+1. **CopilotKit UI (React)** → **Runtime Node** (`ingest-runtime`, basePath
+   `/api/copilotkit`) → **provider LLM** (env `INGEST_LLM_BASE_URL` /
+   `INGEST_LLM_API_KEY` / `INGEST_LLM_MODEL` di Node).
+2. **API key TIDAK PERNAH sampai ke klien** — hanya dipegang runtime Node.
+3. **Go = data service**: semua aksi berdampak data lewat API plugin `ingest` di Go
+   (RBAC + audit + state machine tetap di Go). Runtime Node memanggil API Go untuk:
+   - **tool calls** (mapping/confirm/extract/upload) — Node TIDAK pernah menulis
+     profil; state machine backend Go tetap penegak tunggal;
+   - **payload aman**: sebelum prompt berisi data dikirim ke provider, Node meminta
+     Go menyiapkan payload yang sudah dideidentifikasi (deidentify + secret key
+     tetap di Go — TIDAK direplikasi ke Node);
+   - **audit**: Node mengirim event audit (`ingest_audit` di Go tetap pusat) —
+     path/status/provider/durasi, tanpa body/token.
+4. RBAC: klien membawa JWT; runtime Node meneruskan token ke API Go untuk tiap
+   tool call; endpoint Go fail-closed tanpa token/izin (401/403) — sudah terbukti
+   di WO-01a.
+5. Dependensi & infrastruktur: `@copilotkit/react-core` + `@copilotkit/runtime`
+   (npm), runtime dev via `npm run dev:runtime` (`runtime/copilot-runtime.ts`),
+   **service baru `ingest-runtime` di docker-compose (Node)** — N-17 (image
+   Go-only) dilonggarkan khusus service ini (D-11).
+6. **Sisa Go proxy yang tetap dipakai**: endpoint OpenAI-compatible yang sudah
+   dibangun di WO-01a (`POST /api/admin/ingest/llm-proxy/*`) JATUH TEMPO dihapus/
+   di-tandai deprecated dari jalur chat — dipertahankan hanya bila berguna untuk
+   eksperimen internal non-CopilotKit (keputusan di housekeeping WO-01c).
+7. Streaming: AG-UI stream dari runtime Node (SSE) — bukan lagi SSE buatan Go.
+8. Identitas: `identifyUser` dari JWT (temuan spike: `/threads` 403 tanpa itu);
+   telemetri CopilotKit dimatikan (`COPILOTKIT_TELEMETRY_DISABLED=true`) di
+   housekeeping WO-01c.
 
 ### 2.3 Classifier gate (pola Jev) — implementasi sendiri (D-3)
 

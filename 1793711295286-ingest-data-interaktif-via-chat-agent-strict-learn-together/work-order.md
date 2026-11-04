@@ -29,7 +29,7 @@ milestone-nya sudah jelas sejak awal.
 
 | WO | Judul | Status | Commit kode | Dok historic |
 |---|---|---|---|---|
-| WO-01a | Proxy LLM + CopilotKit chat hidup (CP-1) | pending | — | — |
+| WO-01a | CopilotKit chat hidup (CP-1) — **DIREVISI D-11** | progress (spike+backend terverifikasi; sisa: audit Node→Go, migrasi ingest_messages, service compose) | e4f4ea9, a019c26 | — |
 | WO-01b | Tool dummy `sandbox_ping` + upload ke storage (CP-1) | pending | — | — |
 | WO-01c | Eksperimen MCP + housekeeping (CP-1) | pending | — | — |
 | WO-02 | Sesi strict + real case `visit` via chat (tanpa editor) | pending | — | — |
@@ -41,9 +41,15 @@ milestone-nya sudah jelas sejak awal.
 
 - Kode fitur hanya di `plugins/ingest/` + UI di `sub_app/webapp/src/pages/admin/ingest/`;
   migrasi permission di plugin `auth` (fail-closed).
-- Strictness = state machine backend + system prompt agent; CopilotKit hanya lapisan
-  UI; tool-calling klien tidak pernah menulis langsung.
-- API key LLM tidak pernah keluar dari backend; proxy menolak payload PII yang belum
-  dideidentifikasi (fail-closed).
-- Dependensi baru wajib direkam di `spec-techstack.md` (saat ini: `deidentify` di Go,
-  `openai`-compat client / CopilotKit di frontend).
+- **(D-11 final, 2026-11-04)** Runtime Node CopilotKit = **backend chat AI penuh**
+  (satu-satunya pemanggil provider LLM; key hanya di Node); **Go = data service** —
+  semua keputusan bertanggung jawab tetap di Go: tool calls + state machine +
+  deidentify (Node meminta payload aman dari Go) + audit (`ingest_audit` pusat).
+  Node TIDAK pernah menulis profil. N-17 dilonggarkan khusus service
+  `ingest-runtime`. Proxy Go OpenAI-compatible keluar dari jalur chat (nasib akhir
+  diputuskan di WO-01c).
+- Strictness = state machine backend Go + system prompt agent; CopilotKit hanya
+  lapisan UI + transport; tool-calling klien maupun Node tidak pernah menulis profil
+  langsung — semua lewat action API Go yang di-guard RBAC.
+- Dependensi baru wajib direkam di `spec-techstack.md` (kini: `deidentify` di Go,
+  CopilotKit `react-core`+`runtime` di frontend/Node, service `ingest-runtime`).

@@ -1,10 +1,14 @@
 ---
 title: WO-01c — Eksperimen MCP + housekeeping (CP-1, sub 3/3)
 description: "Sub-checkpoint CP-1: eksperimen MCP di luar jalur utama, catat temuan, rapikan dokumen & keputusan lanjut sebelum CP-2."
-status: progress
+status: complete
 created: "2026-11-03"
 ---
 # WO-01c — Eksperimen MCP + Housekeeping (Sub-Checkpoint CP-1, 3/3)
+
+**COMPLETE (owner + Manager review, 2026-11-04)** — commit `397fbff` (dok historic
+`a017ba2`). AC-7/8 lulus; keputusan MCP = TIDAK dipakai (bertentangan dengan D-11);
+proxy Go dihapus; CP-1 **DITUTUP** → CP-2 terbuka.
 
 Induk: `wo-01-setup-copilotkit-sandbox.md` (dipecah 2026-11-04). Urutan: 1a → 1b
 → **1c** (terakhir di CP-1). **Prasyarat: WO-01b lulus AC-nya.**

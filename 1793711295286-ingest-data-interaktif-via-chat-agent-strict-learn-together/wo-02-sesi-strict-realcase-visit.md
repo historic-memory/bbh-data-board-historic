@@ -1,7 +1,7 @@
 ---
 title: WO-02 — Sesi strict + real case `visit` via chat (tanpa editor) [REVISI CP-1]
 description: "CP-2 (REVISI): pemisahan runtime (O-19), state machine sesi di Go, agent strict via CopilotKit (D-11), deidentify nyata, classifier gate, compact O-18, ekstraksi visit via service layer"
-status: pending
+status: progress
 created: "2026-11-03"
 ---
 # WO-02 — Sesi Strict + Real Case `visit` via Chat (Checkpoint 2) — REVISI
@@ -130,3 +130,98 @@ lalu hasil ekstraksi masuk pipeline deterministik yang sudah ada.
 - Kebijakan duplikasi tanpa HP wajib diklarifikasi user di sesi (lihat D bagian batasan).
 - Tambalan `provider-compat.ts` adalah ketergantungan eksternal (perilaku gateway)
   — pantau; hapus begitu gateway benar.
+
+---
+
+## Progres Implementasi — 2026-11-04 (Dev)
+
+Status: **implementasi inti selesai**, sisa satu langkah yang butuh berkas asli BBH
+(upload file nyata lewat UI chat + verifikasi laporan di layar). Semua kode sudah
+terpasang, build/test hijau, dan jalur data sudah diuji dengan data **sintetis**.
+
+### 0. Struktur (O-19) — selesai
+
+- Runtime pindah ke `sub_app/ingest_runtime/`; `sub_app/package.json` = workspace
+  tunggal (`webapp` + `ingest_runtime`), satu `package-lock.json`.
+- `Dockerfile.runtime` meng-install hanya deps workspace runtime; compose
+  `ingest-runtime` perilakunya sama; komentar header compose diperbarui.
+- Bukti regresi nol (AC-0): chat + tool setelah semua perubahan →
+  `TOOL_CALL_RESULT` `pong: ping backend`, `RUN_FINISHED` normal.
+
+### A. State machine (Go) — selesai
+
+- Migrasi v2 `2026_11_04_130000_create_ingest_sessions_profiles` (applied sebagai
+  version 4): `ingest_sessions` (7 state, CHECK), `ingest_profiles` (append-only,
+  UNIQUE `(session_id, version)`).
+- `model/session.go`: tabel transisi + `ActionComplete` (internal,
+  `extracting → extracted`, tidak diekspos ke klien).
+- `services/session_state.go` + `services/profile.go`: transisi atomik
+  (`UPDATE ... WHERE state = ?`), gate konfirmasi mensyaratkan profil non-kosong.
+- Bukti: `introduce` 200 → `confirm` 200 `mapping_confirmed` → `extract` 200 →
+  `extracted`; lompatan gate & state terminal ditolak 409.
+
+### B. Agent strict (D-11) — selesai
+
+- `plugins/ingest/prompt/agent.md`: system prompt sebagai berkas (5 kontrak:
+  belajar bersama, 5 gate, dispatcher tipis, batas kewenangan, output terstruktur).
+  Dimuat runtime via `INGEST_PROMPT_PATH` (fallback in-code bila berkas hilang).
+- 3 tool Go (`POST /api/admin/ingest/tools/*`, guard `ingest.write`, audit
+  `provider='ingest-tool'`): `get_mapping_guess` (via safe-payload),
+  `confirm_mapping`, `run_extraction`. Tanpa MCP.
+
+### C. Deidentify nyata (Go) — selesai, terbukti dengan data sintetis
+
+- `services/table.go` (CSV/XLSX, `.xls` ditolak), `services/deidentify.go`
+  (tipe eksplisit `name/phone/email/address/ssn/credit_card/generic`; `generic`
+  = mask HMAC deterministik), `services/payload.go` (sample ≤5 baris).
+- Endpoint `POST /admin/ingest/sessions/:id/safe-payload` = satu-satunya jalur isi
+  berkas ke LLM; `INGEST_DEIDENTIFY_KEY` kosong → **503 fail-closed**.
+- Bukti (CSV sintetis 2 baris): nama/HP/email/alamat keluar sebagai nilai sintetis
+  (`Sky Chavez`, `memberuser3422@anonymous.net`), kolom non-PII utuh.
+- Keputusan dicatat: **tidak ada peta re-identifikasi** — Go memegang berkas asli
+  dan mengekstrak dari aslinya, jadi tidak ada yang perlu dibalik (lebih aman).
+
+### D. Ekstraksi `visit` — selesai
+
+- `services/extraction.go`: state `mapping_confirmed → extracting → extracted` lewat
+  service layer `visit` (`ImportTemplate`), `batch_id` + ringkasan dikembalikan.
+- **Dedup wajib eksplisit**: `dedup_policy` kosong/tak dikenal → 400. Bukti:
+  request tanpa `dedup_policy` → 400 `butuh session_id & dedup_policy`.
+- Bukti impor: `api-tests/fixtures/visit-valid-template.csv` →
+  `batch_id 01a1a5d7-…`, `summary {total:2, created:2, rejected:0}`, state `extracted`.
+  `dry_run` mengembalikan state ke `mapping_confirmed` (latihan tidak mengunci).
+
+### Compact (O-18) — selesai sebagai modul + wiring
+
+- `sub_app/ingest_runtime/compact.ts`: ambang 70% dari `INGEST_LLM_CONTEXT_LIMIT`
+  (default 32k), `INGEST_COMPACT_KEEP_LAST` (default 8), keputusan `[LOCKED]`/
+  role `decision` **tidak pernah** diringkas, ringkasan disimpan via Go
+  (`role=summary`, `client_id` deterministik → idempoten).
+- 9 unit test (`npm run test` di workspace runtime) hijau.
+- Batasan jujur: compact berjalan pada event `RUN_STARTED` dan menyimpan ringkasan
+  ke Go; pemendekan prompt in-flight tetap milik runtime CopilotKit (bukan kode
+  kita) — dicatat di notes.
+
+### AC — status bukti
+
+| AC | Status | Bukti |
+|----|--------|-------|
+| AC-0 regresi nol | ✅ | chat + `sandbox_ping` `pong` setelah semua perubahan; upload 201 |
+| AC-1 laporan ekstraksi di chat | ✅ (API) | `batch_id` + `summary` pada respons tool |
+| AC-2 gate identitas | ✅ | `introduce` hanya dari `uploaded`; `confirm` dari `uploaded` → 409 |
+| AC-3 gate mapping | ✅ | profil wajib non-kosong sebelum `confirm` |
+| AC-4 gate aturan | ⏳ | rules disimpan di profil; penegakan per-rule belum diuji |
+| AC-5 gate konfirmasi | ✅ | `extract` dari state selain `mapping_confirmed` → 409 |
+| AC-6 deidentify | ✅ | sample sintetis keluar tanpa PII asli (uji `deidentify_test.go`) |
+| AC-7 gate fail-closed | ✅ | key kosong → 503; test `DeidentifyColumnsFailsClosedWithoutKey` |
+| AC-8 idempotensi re-impor | ⏳ | `dedup_policy` diteruskan, uji berkas sama 2x belum dijalankan |
+| AC-9 RBAC + audit | ✅ | guard `ingest.write`; audit `ingest-tool`/`ingest-payload` terisi |
+| AC-10 compact | ✅ | 9 unit test; ringkasan disimpan via Go |
+| AC-11 build/test/swagger/Bruno | ✅ | `go build`, `go test ./plugins/ingest/...`, `tsc`, swagger berisi 4 route baru, Bruno 08–10 |
+
+### Sisa pekerjaan (butuh keputusan/berkas dari Manager)
+
+1. Uji dengan **berkas asli BBH** (177 baris tanpa `phone_e164`) lewat UI chat:
+   pastikan agent benar-benar berhenti dan menanyakan kebijakan dedup.
+2. Jalankan skenario AC-8 (impor berkas sama dua kali) dengan kebijakan yang sama.
+3. AC-4: definisikan penegakan rules (`rules` masih pasif).

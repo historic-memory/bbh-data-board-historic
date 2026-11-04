@@ -563,3 +563,34 @@ Diukur dari percakapan nyata CP-1, bukan estimasi:
 - Verifikasi: `POST /api/admin/ingest/llm-proxy/chat/completions` → **404**,
   `/api/copilotkit/info` tetap 401 (guard hidup), swagger diregenerasi dan tidak
   lagi memuat path proxy.
+
+## Catatan keputusan CP-2 (WO-02, 2026-11-04)
+
+- **Deidentify tidak butuh peta reversibel.** Library `deidentify` v1.0.4 tidak
+  punya API balik. Keputusan: Go memegang berkas ASLI dan mengekstrak dari
+  aslinya, jadi "re-identifikasi" tidak pernah diperlukan. Ini lebih aman dan
+  lebih sederhana daripada menyimpan tabel token→nilai (yang justru menjadi
+  sasaran baru). Deidentify hanya berlaku untuk payload yang dilihat LLM.
+- **Fail-closed di `prepare_safe_payload`.** `INGEST_DEIDENTIFY_KEY` kosong →
+  `/sessions/:id/safe-payload` membalas 503, bukan mengirim sel mentah. Gate ini
+  menggantikan gate proxy lama yang hilang bersama proxy di WO-01c.
+- **Tipe PII eksplisit, bukan tebakan.** `kind` per kolom berasal dari mapping
+  yang dikonfirmasi (`name/phone/email/address/ssn/credit_card/generic/none`).
+  `generic` = HMAC deterministik `anon-<12 hex>`: deterministik (LLM masih bisa
+  melihat "orang yang sama") tapi tidak bisa dibalik.
+- **Sample ≤5 baris** (`MaxSampleRows`); nilai lebih besar dipotong di Go, bukan
+  dipercaya dari klien.
+- **Dedup wajib eksplisit.** `run_extraction` menolak (`400`) tanpa
+  `dedup_policy ∈ {phone_then_time, time_only, none}`. Alasan konkret: berkas
+  real case BBH punya 177 baris tanpa `phone_e164`; menebak = data ganda.
+- **`complete` internal.** Aksi `extracting → extracted` hanya dipanggil Go
+  setelah impor selesai dan tidak muncul di `allowed_actions` klien.
+- **Dry run tidak mengunci.** `dry_run=true` mengembalikan sesi ke
+  `mapping_confirmed` supaya pengguna bisa memperbaiki mapping/berkas.
+- **Compact (O-18) batasnya jujur.** `compact.ts` memicu pada 70% limit,
+  mempertahankan N pesan terakhir + semua `[LOCKED]`, lalu menyimpan ringkasan
+  lewat Go (`role=summary`). Pemendekan prompt *in-flight* masih milik runtime
+  CopilotKit; yang kita kendalikan adalah ringkasan tersimpan + keputusan
+  terkunci yang tidak pernah hilang.
+- **Prompt sebagai berkas** (`plugins/ingest/prompt/agent.md`, env
+  `INGEST_PROMPT_PATH`) supaya aturan agent bisa di-review seperti aturan bisnis.

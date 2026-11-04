@@ -26,7 +26,7 @@ butuh berkas asli dari owner & keputusan desain rules.
 |---|---|---|---|
 | CP-1 | Setup CopilotKit + proxy + sandbox belajar — **dipecah 3 sub-WO**: 01a proxy+chat → 01b tool+upload → 01c MCP+housekeeping | **complete** (2026-11-04) | e4f4ea9, a019c26, a22c03b, f00e542, 397fbff |
 | CP-2 | Real case pertama `visit` via chat (tanpa editor) | **complete (sebagian, 2026-11-04)** — inti selesai; sisa: uji berkas asli BBH + AC-8 + AC-4 | 032941e |
-| CP-3 | Excel mapping editor (berdiri sendiri) + rules O-20 + prasyarat verifikasi sisa CP-2 | TERBUKA — WO-03 rancangan final, siap eksekusi | — |
+| CP-3 | Excel mapping editor + rules O-20 + prasyarat sisa CP-2 | **complete (sebagian, 2026-11-04)** — §0.2/A/B/C/D ✅; sisa §0.1 AC-0 butuh berkas asli owner | 2f7cf07 |
 | CP-4 | Integrasi editor ↔ CopilotKit | dibuat setelah CP-3 | — |
 
 ## Daftar WO aktif
@@ -37,7 +37,7 @@ butuh berkas asli dari owner & keputusan desain rules.
 | WO-01b | Tool dummy `sandbox_ping` + upload ke storage (CP-1) | complete (2026-11-04) | f00e542 | — |
 | WO-01c | Eksperimen MCP + housekeeping (CP-1) | complete (2026-11-04) — CP-1 DITUTUP | 397fbff | a017ba2 |
 | WO-02 | Sesi strict + real case `visit` via chat (tanpa editor) — **DIREVISI pasca CP-1** | complete (sebagian, 2026-11-04) — sisa AC-4/AC-8 + uji berkas asli | 032941e |
-| WO-03 | Excel mapping editor (berdiri sendiri) — §0 prasyarat sisa CP-2 + §D rules O-20 | pending (rancangan final) | — | — |
+| WO-03 | Excel mapping editor — §0 prasyarat sisa CP-2 + §D rules O-20 | complete (sebagian, 2026-11-04) — sisa §0.1 AC-0 (berkas asli) | 2f7cf07 | — |
 | WO-04 | Integrasi editor ↔ CopilotKit + housekeeping (CP-4 final) | pending | — | — |
 | WO-05.. | tidak ada — CP-4 adalah checkpoint terakhir | — | — | — |
 

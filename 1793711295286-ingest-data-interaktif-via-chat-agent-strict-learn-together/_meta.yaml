@@ -37,7 +37,7 @@ files:
     - id: 01a1a1ea-4ce4-7af3-b3da-aa8f47d65747
       path: wo-03-mapping-editor.md
       type: file
-      status: pending
+      status: progress
     - id: 01a1a1eb-7b58-79c7-9b01-b39270d21de6
       path: wo-04-integrasi-editor-copilotkit.md
       type: file

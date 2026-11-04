@@ -1,7 +1,7 @@
 ---
 title: WO-03 — Excel mapping editor (berdiri sendiri)
 description: "CP-3: UI editor mapping kolom (React, tanpa library), flag is_encrypt, preview, tombol Ekstrak terkunci; API profil mapping; skema+panel rules (O-20); prasyarat verifikasi sisa CP-2"
-status: pending
+status: complete
 created: "2026-11-03"
 ---
 # WO-03 — Excel Mapping Editor, Berdiri Sendiri (Checkpoint 3)
@@ -176,3 +176,129 @@ machine + pola tool API Go terbukti), (b) keputusan O-20 (skema rules),
 Urutan eksekusi disarankan: §0 → §A+§D (backend) → §B (frontend) → §C (jembatan).
 Effort kasar: §0 ±0,5 hari (butuh berkas owner); §A+§D ±2–3 hari; §B ±2–3 hari;
 §C ±1 hari.
+
+---
+
+## Progres Implementasi — 2026-11-04 (Dev)
+
+Status: **§0.2, §A, §B, §C, §D selesai & teruji**; §0.1 (berkas asli BBH) masih
+**TERBLOKIR** menunggu berkas dari owner — tidak diganti fixture tiruan.
+
+### §0 Prasyarat sisa CP-2
+
+- **§0.2 AC-8 (re-impor idempoten) — SELESAI & terbukti.** Berkas sama diimpor 2×
+  dengan kebijakan dedup sama: impor-1 `created=2`, impor-2 `created=0, skipped=2`
+  ("sudah ada di database (HP + waktu kunjungan sama)"). Batch:
+  `01a1a616-177f-75bd-9c35-fe558cfcba40` (impor-1) dan
+  `01a1a616-17f8-7ea5-8294-e59521900dc2` (impor-2). Dicatat di dok WO-02 §Progres.
+- **§0.1 (berkas asli BBH 177 baris via UI chat) — TERBLOKIR.** Menunggu berkas
+  asli dari owner. Sesuai instruksi Manager, TIDAK diverifikasi dengan fixture
+  tiruan karena tujuan AC-0 justru perilaku agent pada data nyata.
+
+### §D Rules O-20 — selesai
+
+- **Katalog satu sumber:** `plugins/visit/schema/exceptions.yaml` (v1, 4 entri:
+  `phone_e164.required`, `phone_raw.lenient_format`, `scheduled_at.custom_format`,
+  `scheduled_at.warn_when_empty`), di-`embed` oleh
+  `plugins/visit/schema/exceptions.go` (`LoadExceptions/MustLoadExceptions/
+  Sorted/Lookup/AllowsAction`). Dipakai BERSAMA oleh penegak Go dan editor
+  (dropdown via `GET /admin/ingest/mapping/options`) — mustahil memilih rule yang
+  "tidak dikenal" saat runtime.
+- **Model rule:** `plugins/ingest/model/rules.go` (+ tes) — `Validate` fail-closed:
+  `violates` tak dikenal (`ErrUnknownRule`), aksi ilegal, scope tak dikenal,
+  duplikat, semua → error sebelum data disentuh.
+- **PII policy (D-5):** `schema.Field.Encrypt` + `encrypt: true` pada
+  `full_name`, `phone_raw`, `phone_e164` di `fields.yaml`. Editor hanya boleh
+  MENAMBAH proteksi; `kind: none` pada field PII → 400 `ErrPolicyRelaxed`.
+- **Penegak:** `plugins/ingest/services/rules.go` → `EnforceMappingRules`
+  memvalidasi dokumen mapping + rules, memeriksa baris, lalu memancarkan CSV
+  **terproyeksi ke header template** (`<nama>-enforced.csv`). Baris skip/reject
+  TIDAK pernah masuk staging; laporan `enforcement` jadi satu-satunya jejak.
+- Bukti (uji API): `violates` tak dikenal → 400; relax PII → 400; target tak
+  dikenal → 400; baris tanpa HP tanpa rule → gate `rules` gagal & confirm 409;
+  setelah rule `skip` ditambahkan → confirm 200 dan baris 3 muncul di
+  `enforcement.skipped`.
+
+### §A API mapping + validasi server — selesai
+
+- `model/mapping.go` (+ tes): dokumen mapping **v2** (bentuk daftar) disimpan di
+  jsonb `ingest_profiles.mapping` yang SAMA dengan bentuk legacy `{"kolom":"field"}`.
+  `ParseMappingDocument` menerima keduanya; `MergeIntoLegacy()` mengembalikan ke
+  bentuk legacy supaya agent/ekstraksi lama tetap jalan (tidak ada salinan kedua).
+  Validasi: kolom kosong, sumber duplikat, target tak dikenal, PK ditolak,
+  duplikat target hanya bila `kind`+`is_encrypt` identik.
+- `services/mapping.go`: `GetMappingView` (kolom terdeteksi + sample
+  TERDEIDENTIFIKASI + targets + rules + katalog + 4 gate + `extract_ready`),
+  `SaveMapping` (validasi penuh, append versi profil, `introduced →
+  mapping_draft`, dan `revise` bila sebelumnya sudah dikonfirmasi),
+  `ConfirmMappingDoc` (gate fail-closed, `409` + daftar gate), `MappingOptions`.
+- `handlers/mapping.go` + route (guard `ingest.read`/`ingest.write` + audit):
+  `GET /admin/ingest/mapping/options`, `GET|PUT /admin/ingest/sessions/:id/mapping`,
+  `POST .../mapping/confirm`, `POST .../mapping/extract`.
+- State machine: aksi baru **`revise`** (`mapping_confirmed → mapping_draft`)
+  supaya mengubah mapping setelah konfirmasi membatalkan persetujuan lama
+  (tidak ada jalan pintas gate).
+- Ekstraksi: `RunExtraction` kini menegakkan rules lebih dulu lalu menyerahkan
+  CSV terfilter ke `ImportTemplate`; laporan membawa `enforcement`. `dedup_policy`
+  tetap WAJIB (400 bila kosong) — editor memilih, bukan mengarang.
+
+### §B UI editor — selesai
+
+- `webapp/src/api/ingest.ts`: tipe `MappingView/Target/Column/Rule/Exception/Gate`
+  + `getMappingView/saveMapping/confirmMapping/extractMapping` + `DEDUP_POLICIES`.
+- `webapp/src/pages/admin/ingest/IngestMappingPage.tsx` (rute `/ingest/:id/map`):
+  tabel kolom sumber + sample + dropdown field tujuan (termasuk `lewati`), badge
+  "tebakan — belum dikonfirmasi", checkbox enkripsi (wajib & terkunci untuk PII),
+  panel pengecualian (dropdown dari API katalog + aksi allow/skip), panel gate
+  4 status, dan tombol **Ekstrak terkunci** dengan tooltip sampai
+  `extract_ready` + kebijakan dedup dipilih (+ opsi dry run).
+
+### §C Jembatan chat → editor — selesai
+
+- Satu arah, profil sama: tautan "Buka editor mapping →" di `IngestChatPage` dan
+  tombol "Mapping" per sesi di `IngestSessionListPage`. Tidak ada penyalinan
+  sesi/profil (AC-1).
+- Bukti UI (Tailscale `http://100.125.175.34:5173/app/ingest/<id>/map`): editor
+  menampilkan 3 kolom + sample terdeidentifikasi, 4 gate, katalog pengecualian;
+  "Simpan draft" → 200, state kembali `mapping_draft` (versi baru). Tidak ada
+  error konsol.
+
+### Verifikasi teknis
+
+- `go build ./...` hijau; `go test ./plugins/ingest/... ./plugins/visit/...` hijau
+  (termasuk tes baru `rules_test.go`, `mapping_test.go`, `exceptions_test.go`).
+- `npx tsc --noEmit` & `npm run build` (webapp) hijau.
+- Swagger diregenerasi (rute mapping ikut terdokumentasi).
+- Bruno: `11-Mapping-get`, `12-Mapping-put`, `13-Mapping-confirm`,
+  `14-Mapping-extract`, `15-Mapping-options`.
+
+---
+
+## Review Manager — 2026-11-04 (laporan dev diproses, commit kode `2f7cf07`)
+
+Laporan dev diterima dan di-review. **WO-03 §0.2/§A/§B/§C/§D: COMPLETE** —
+AC-R1..R4, AC-1..AC-8 ✅ (§0.2 idempoten terbukti: impor-1 `created=2` →
+impor-2 `created=0, skipped=2`). Gate hijau; Bruno 11–15; UI via Tailscale
+tanpa error konsol. **CP-3 = complete (sebagian)** — sisa satu: **§0.1 AC-0**
+(uji berkas asli BBH via chat), TERBLOKIR menunggu berkas dari owner.
+
+**Catatan review:**
+- `exceptions.yaml` satu sumber (embed, dipakai penegak + dropdown) persis
+  desain §D — risiko desinkron turun sesuai catatan risiko.
+- Aksi `revise` (batal konfirmasi → mapping_draft) tepat: tanpa jalan pintas
+  gate; state machine tetap penegak tunggal.
+- CSV `-enforced.csv` diproyeksikan ke header template: baris skip/reject
+  tidak pernah masuk staging; laporan `enforcement` = jejak tunggal.
+- Mapping v2 kompatibel legacy di jsonb yang sama (`MergeIntoLegacy`) — tidak
+  ada salinan kedua; ekstraksi lama tetap jalan.
+- Katalog visit 4 entri (dua di luar starter usulan Manager:
+  `phone_raw.lenient_format`, `scheduled_at.warn_when_empty`) — DITERIMA,
+  selama tetap satu-sumber dengan penegak.
+- `dedup_policy` tetap wajib; editor memilih, bukan mengarang.
+
+**Sisa (1):** §0.1/AC-0 — berkas asli BBH via UI chat (agent berhenti +
+bertanya kebijakan dedup tanpa HP). Verifikasi terakhir CP-3.
+
+**Konsekuensi master index:** CP-4 (WO-04) BOLEH disusun rancangannya sekarang
+(prinsip partial), namun eksekusinya idealnya SETELAH §0.1 terverifikasi agar
+keputusan desain integrasi editor↔chat memakai hasil percakapan data nyata.

@@ -255,3 +255,31 @@ Bruno 08–10 + AC-0 regresi nol — semua hijau.
   v2/v3 — tidak masalah, hanya catatan.
 - `provider-compat.ts` masih dikeluarkan bersama runtime (tambalan gateway)
   — tetap dalam daftar pantau untuk penghapusan saat gateway benar.
+
+---
+
+## Verifikasi sisa CP-2 (WO-03 §0) — 2026-11-04
+
+### 0.1 Berkas asli BBH via UI chat — **TERBLOKIR**
+
+Berkas asli (177 baris tanpa `phone_e164`) belum diterima dari owner/Manager.
+Sesuai instruksi WO-03, tidak ada fixtures tiruan sebagai pengganti. Begitu
+berkas diterima: upload lewat `/ingest/:id/chat`, pastikan agent berhenti di
+`mapping_confirmed` dan **bertanya kebijakan dedup** sebelum `run_extraction`
+(gate di Go sudah terbukti 400 tanpa `dedup_policy`, CP-2).
+
+Pengecekan fail-closed deidentify **dijalan ulang** otomatis saat pengujian
+(CP-2: tanpa `INGEST_DEIDENTIFY_KEY` → 503).
+
+### 0.2 AC-8 — re-impor berkas sama 2× → idempoten — **LULUS (2026-11-04)**
+
+Uji dengan berkas segar (2 baris, nomor HP + tanggal unik, `dedup_policy=
+phone_then_time`, dua sesi terpisah):
+- Impor-1 → `batch 01a1a616-177f-75bd-9c35-fe558cfcba40`, `created=2, skipped=0`.
+- Impor-2 → `batch 01a1a616-17f8-7ea5-8294-e59521900dc2`, `created=0, skipped=2`,
+  pesan baris: `sudah ada di database (HP + waktu kunjungan sama)`.
+
+Idempotensi terbukti pada level pipeline (`findVisitByKey` skip, tanpa duplikat).
+Saat berkas asli BBH tiba (0.1), AC-8 di-assert ulang pada berkas itu sebagai
+bukti akhir. (Uji awal dengan fixture lama juga menunjukkan `skipped=2` pada
+kedua impor karena barisnya sudah terlanjur ada dari pengujian CP-2.)

@@ -615,3 +615,33 @@ Diukur dari percakapan nyata CP-1, bukan estimasi:
   terkunci yang tidak pernah hilang.
 - **Prompt sebagai berkas** (`plugins/ingest/prompt/agent.md`, env
   `INGEST_PROMPT_PATH`) supaya aturan agent bisa di-review seperti aturan bisnis.
+
+## CP-3 — keputusan teknis editor mapping (2026-11-04)
+
+- **Satu profil, dua wajah.** Editor menulis dokumen mapping v2 (daftar) ke jsonb
+  `ingest_profiles.mapping` yang sama dengan bentuk legacy `{"kolom":"field"}`.
+  `ParseMappingDocument` menerima keduanya dan `MergeIntoLegacy()` mengembalikan
+  bentuk legacy untuk agent/ekstraksi — tidak ada salinan data kedua (C-4/AC-1).
+- **Katalog pengecualian = satu file sumber** (`plugins/visit/schema/exceptions.yaml`,
+  `//go:embed`). Penegak Go dan dropdown editor memakai loader yang sama, jadi
+  rule "tidak dikenal" tidak mungkin lahir dari UI (O-20/AC-R3).
+- **Penegakan mengeluarkan berkas baru, bukan flag.** `EnforceMappingRules`
+  memancarkan `<nama>-enforced.csv` yang **diproyeksikan ke header template** dan
+  membuang baris skip/reject. Importer hanya pernah melihat CSV itu — tidak ada
+  jalur di mana baris tolak tetap masuk staging.
+- **Proyeksi header adalah inti editor.** Berkas nyata berheader bebas
+  ("Nama Lengkap", "No HP"); importer menuntut header template ("Nama",
+  "Nomor HP"). Sebelum proyeksi ini ada, impor menolak semua baris dengan
+  "kolom wajib tidak ditemukan" — jadi mapping tanpa proyeksi = fitur setengah.
+- **Policy PII hanya boleh diperketat** (D-5). `encrypt: true` di `fields.yaml`
+  + validasi `ErrPolicyRelaxed`: editor tidak bisa mematikan deidentifikasi field
+  yang sudah dilindungi.
+- **`revise` membatalkan persetujuan.** Mengubah mapping setelah `mapping_confirmed`
+  memindahkan state ke `mapping_draft`, sehingga pengguna wajib konfirmasi ulang.
+  Tanpa ini, "sudah konfirmasi" bisa dipakai untuk menyelundupkan mapping baru.
+- **Gate dikembalikan sebagai daftar, bukan boolean.** `409 {gates:{...}}` memberi
+  UI alasan konkret (baris ke berapa, kolom apa), bukan sekadar "belum siap".
+- **Dedup tetap milik manusia.** Editor menyediakan pilihan `dedup_policy`, tapi
+  nilainya tetap wajib dikirim — Go menolak (400) bila kosong. Tombol Ekstrak
+  mengunci sampai gate + kebijakan siap.
+

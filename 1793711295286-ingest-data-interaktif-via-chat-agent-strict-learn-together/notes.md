@@ -417,3 +417,135 @@ Bukti AC-4/AC-5/AC-6 dengan runtime dev `ingest-runtime` + Go data service (D-11
   server (user `go`, uid 1000) gagal `mkdir storage/ingest: permission denied`.
   Perbaikan: pastikan direktori dimiliki user container (atau set
   `STORAGE_ROOT`). Folder `storage/` sudah masuk `.gitignore`.
+
+## Temuan eksperimen MCP + keputusan (WO-01c, 2026-11-04)
+
+Eksperimen dijalankan **di luar jalur utama**: satu server MCP kecil, dinyalakan
+manual (bukan di `docker-compose`), dimatikan setelah pengukuran.
+
+### Yang dipakai
+
+- `BuiltInAgent` sudah mendukung MCP native: `mcpServers: [{ type: 'http', url }]`
+  (atau `type: 'sse'` + `headers`). Karena agent dibuat per request
+  (factory di `CopilotRuntime`), server MCP juga di-resolve per request.
+- `@modelcontextprotocol/sdk@1.32.2` **sudah ada** di `node_modules` sebagai
+  dependency transitif CopilotKit → eksperimen ini **tidak menambah dependency**.
+- Server uji: `sub_app/webapp/runtime/mcp-experiment/server.ts` (±90 LOC,
+  `StreamableHTTPServerTransport` stateless, satu tool `mcp_echo`).
+- Integrasi di runtime bersifat opt-in: aktif hanya bila
+  `INGEST_MCP_EXPERIMENT_URL` diisi (compose mengunci nilainya `""`).
+  Default = **MCP tidak dipakai**, jalur tool tetap API Go.
+
+### Hasil
+
+- Tool terbaca dan terpanggil: prompt "pakai tool `exp_mcp_echo`" menghasilkan
+  `TOOL_CALL_START/ARGS/END` → `TOOL_CALL_RESULT` berisi `mcp-pong: halo-mcp`
+  → `TEXT_MESSAGE_*` → `RUN_FINISHED`. Nama tool otomatis diberi prefix nama
+  server (`exp_<tool>`), jadi prompt/model harus tahu nama ber-prefix itu.
+- **Tidak** bertabrakan dengan shim provider (`provider-compat.ts`): MCP
+  memakai JSON-RPC/HTTP sendiri, bukan SSE format OpenAI. Catatan: shim membungkus
+  `globalThis.fetch`, jadi request non-provider WAJIB di-passthrough apa adanya
+  (sudah begitu sejak WO-01b).
+- Kegagalan MCP bersifat **graceful**: saat server mati, runtime hanya menulis
+  `MCP server ... failed to connect — skipping it for this run` dan chat tetap
+  jalan (tool MCP saja yang hilang).
+- Jebakan implementasi (memakan 1 siklus debug): satu instance `Server` MCP tidak
+  boleh di-`connect` ke lebih dari satu transport. Pada mode stateless transport
+  dibuat per request → **server juga harus per request**, kalau tidak proses
+  crash `Already connected to a transport`. MCP stateful (session id) menambah
+  kerumitan lain: lifecycle, cleanup, dan penyimpanan sesi.
+- **Celah guard/audit:** panggilan tool MCP **tidak menghasilkan baris
+  `ingest_audit`** (yang tercatat hanya run-level `POST /api/copilotkit/...`)
+  dan **tidak melewati RBAC Go** — tool dieksekusi penuh di proses Node.
+  Bandingkan dengan tool WO-01b: selalu ada baris `provider='ingest-tool'` +
+  guard `ingest.write`.
+
+### Effort: MCP vs tool backend biasa
+
+| Aspek | Tool backend (WO-01b) | MCP (WO-01c) |
+| --- | --- | --- |
+| Kode baru | endpoint Go + service + tests + handler + API client + UI | ±90 LOC server + 3 baris config agent |
+| Infrastruktur | tidak ada (HTTP yang sudah ada) | proses/port tambahan + lifecycle + (stateful) session store |
+| Guard & audit | otomatis (middleware + `ingest_audit`) | **tidak ada**, harus dibangun manual |
+| Validasi input | di service Go (unit-tested) | schema tool saja, tanpa enforcement server-side kita |
+| Observability | audit + log Go | log proses terpisah |
+| Waktu | 1 WO kecil penuh (dengan bukti AC) | ±1 jam untuk echo tool |
+| Nilai jangka panjang | dipakai CP-2+ | hanya jika butuh server MCP pihak ketiga |
+
+Kesimpulan effort: MCP lebih cepat untuk **membungkus tool yang sudah ada di
+server lain (ekosistem)**, tetapi untuk backend internal sendiri ia lebih mahal
+begitu guard/audit/lifecycle dihitung.
+
+### KEPUTUSAN (terekam, AC-8)
+
+**MCP TIDAK dipakai** untuk CP-2 dan seterusnya. Jalur tool tetap: model →
+tool `BuiltInAgent` → endpoint Go (guard + audit). Alasan:
+
+1. D-11 mewajibkan semua tulisan/aksi data lewat Go; tool MCP yang berjalan di
+   Node akan **melewati guard RBAC dan audit** — risiko yang tidak bisa
+   diterima untuk data residen.
+2. Tidak ada kebutuhan nyata: hanya ada satu backend (Go) yang memang kita
+   kendalikan sendiri; tidak ada server MCP eksternal yang perlu dikonsumsi.
+3. Biaya operasional (proses + lifecycle + session state) tidak sebanding.
+
+Kode eksperimen **dipertahankan** (bukan dihapus) karena kecil, mati secara
+default, dan berguna sebagai bukti bila keputusan ditinjau ulang. Pemicu
+tinjau-ulang: muncul kebutuhan mengonsumsi server MCP pihak ketiga
+(mis. konektor Drive/Sheets) — dan itu pun tetap harus lewat guard Go.
+
+## Rekaman effort adaptasi CopilotKit (masukan CP-4, WO-01c)
+
+Diukur dari percakapan nyata CP-1, bukan estimasi:
+
+1. **Salah pilih arsitektur (WO-01a)**: rencana awal "Go sebagai proxy
+   OpenAI-compatible + CopilotKit di frontend" menghabiskan siklus implementasi
+   penuh lalu gagal — CopilotKit v2 bicara **AG-UI**, butuh runtime Node.
+   Biaya: 1 WO + 1 redesign. Pelajaran CP-4: verifikasi protokol klien
+   (`/info`, `/agent/*`) sebelum membangun backend.
+2. **Responses API tidak tersedia di gateway** (405) — 1 siklus debug.
+3. **Non-compliance provider** (tanpa `index` pada `delta.tool_calls`) → seluruh
+   run `RUN_ERROR`; butuh shim `provider-compat.ts`. Ini jenis bug yang harus
+   diasumsikan ada di gateway internal: sediakan titik patch + rencana hapus.
+4. **Streaming persist**: menulis `String(chunk)` untuk `Uint8Array` membuat
+   pesan tersimpan sebagai daftar byte. Butuh `TextDecoder` — 1 siklus debug.
+5. **Tool loop** (WO-01b): pola factory-per-request + guard/audit di Go langsung
+   stabil; effort kecil karena arsitekturnya sudah benar.
+6. Untuk CP-4 (editor/komponen kaya) yang belum ada: renderer hasil tool
+   (`useRenderTool`), state editor ↔ model, dan streaming artifact. Belum ada
+   bukti apa pun — anggarkan waktu eksplorasi terpisah, jangan menempel ke WO
+   fitur.
+
+## Checklist readiness CP-2 (WO-01c)
+
+- [x] **Env aman**: `INGEST_LLM_*` hanya di container `ingest-runtime`; container
+  `app` (Go) menimpanya dengan string kosong di `docker-compose.yml`. Go tidak
+  lagi membaca env itu sama sekali (proxy dihapus di WO-01c) — lapisan kosong
+  dipertahankan sebagai pertahanan berlapis.
+- [x] **Permission seed**: `ingest.read`/`ingest.write` hanya di-seed migrasi
+  plugin `auth`; route plugin gagal-tertutup (401 tanpa token, 403 tanpa izin,
+  403 untuk admin soft-deleted) — sudah diuji di WO-01a/b.
+- [x] **Tidak ada data bisnis lewat sandbox**: isi `ingest_messages`/`ingest_audit`
+  hanya teks uji ("halo", "pong: …", "halo-mcp"); upload hanya fixture CSV
+  contoh. Tidak ada nama/NIK residen.
+- [x] **Telemetri mati**: `COPILOTKIT_TELEMETRY_DISABLED=true` di compose.
+- [x] **Migrasi**: `ingest_messages`, `ingest_audit`, `ingest_uploads` sudah
+  `up`; tidak ada migrasi menggantung.
+- [x] **Permukaan endpoint sandbox**: `/api/admin/ingest/{sessions,messages,
+  audit-events,tools/sandbox_ping,uploads}` + `/api/copilotkit/*`. Proxy
+  `/api/admin/ingest/llm-proxy/*` **sudah dihapus** (404) — kode mati dibersihkan
+  sebelum CP-2 menambah logika bisnis.
+- [x] **Koleksi Bruno** `api-tests/ingest/` meng-cover semua endpoint sandbox
+  (tool, upload sukses/ditolak, sesi, pesan, audit).
+
+## Housekeeping lain (WO-01c)
+
+- Nasib proxy Go `/api/admin/ingest/llm-proxy/*`: **DIHAPUS** (keputusan owner).
+  Alasan: D-11 menjadikan runtime Node satu-satunya pemanggil LLM, sehingga
+  endpoint itu selalu fail-closed 503 (kode mati) tetapi tetap menambah
+  permukaan serangan dan menyiratkan jalur yang tidak ada. Handler
+  `LLMProxy` + `injectDefaultModel` + `Config`/`Configured` + konstanta
+  `EnvBaseURL/EnvAPIKey/EnvModel` ikut dibuang. Implementasi lama tetap ada di
+  riwayat git (commit `a019c26`) bila suatu saat dibutuhkan.
+- Verifikasi: `POST /api/admin/ingest/llm-proxy/chat/completions` → **404**,
+  `/api/copilotkit/info` tetap 401 (guard hidup), swagger diregenerasi dan tidak
+  lagi memuat path proxy.

@@ -31,7 +31,7 @@ milestone-nya sudah jelas sejak awal.
 |---|---|---|---|---|
 | WO-01a | CopilotKit chat hidup (CP-1) — **DIREVISI D-11** | complete (2026-11-04) | e4f4ea9, a019c26, a22c03b | — |
 | WO-01b | Tool dummy `sandbox_ping` + upload ke storage (CP-1) | complete (2026-11-04) | f00e542 | — |
-| WO-01c | Eksperimen MCP + housekeeping (CP-1) | TERBUKA (prasyarat 1b lulus) | — | — |
+| WO-01c | Eksperimen MCP + housekeeping (CP-1) | progress (Dev Agent, 2026-11-04) — menunggu review Manager | lihat catatan commit | — |
 | WO-02 | Sesi strict + real case `visit` via chat (tanpa editor) | pending | — | — |
 | WO-03 | Excel mapping editor (berdiri sendiri) | pending | — | — |
 | WO-04 | Integrasi editor ↔ CopilotKit + housekeeping (CP-4 final) | pending | — | — |
@@ -46,8 +46,11 @@ milestone-nya sudah jelas sejak awal.
   semua keputusan bertanggung jawab tetap di Go: tool calls + state machine +
   deidentify (Node meminta payload aman dari Go) + audit (`ingest_audit` pusat).
   Node TIDAK pernah menulis profil. N-17 dilonggarkan khusus service
-  `ingest-runtime`. Proxy Go OpenAI-compatible keluar dari jalur chat (nasib akhir
-  diputuskan di WO-01c).
+  `ingest-runtime`. Proxy Go OpenAI-compatible **dihapus** di WO-01c (keputusan
+  owner): Go tidak lagi memegang/membaca `INGEST_LLM_*` sama sekali.
+- **(WO-01c, 2026-11-04) MCP TIDAK dipakai** (default ditegakkan): tool tetap
+  lewat endpoint Go agar guard RBAC + audit tidak terlewati. Detail + alasan di
+  `notes.md` ("Temuan eksperimen MCP + keputusan").
 - Strictness = state machine backend Go + system prompt agent; CopilotKit hanya
   lapisan UI + transport; tool-calling klien maupun Node tidak pernah menulis profil
   langsung — semua lewat action API Go yang di-guard RBAC.

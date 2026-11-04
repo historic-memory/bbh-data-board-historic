@@ -273,6 +273,24 @@ Draf SPEC akan menyertakan usulan keputusan untuk O-3..O-9 di atas.
 
 ## Pertanyaan terbuka
 
+- **O-14 (USULAN RESMI Manager, 2026-11-04, MENUNGGU KEPUTUSAN owner)** — retensi
+  & cleanup sesi/file (dibutuhkan bagian D WO-04):
+  1. Sesi non-`extracted` yang idle ≥ **90 hari** → dihapus bersama pesan & file-nya.
+  2. File upload (key `ingest/uploads/<session>/...` di `internal/storage`) dihapus
+     **30 hari** setelah ekstraksi sukses (`extracted`) — payload aman/deidentify
+     ikut (tidak ada kebutuhan pasca-ekstraksi).
+  3. Sesi `extracted`: **profil disimpan TAK TERBATAS** — dipakai ulang untuk ekspor
+     format sama (inti learn-together; sesi belajar pertama mahal).
+  4. Implementasi: job periodik (Go), env konfigurabel
+     (`INGEST_RETENTION_SESSION_DAYS`, `INGEST_RETENTION_UPLOAD_DAYS`, 0 = disable),
+     setiap penghapusan tercatat di `ingest_audit`.
+- **O-13 (terjawab oleh praktik, 2026-11-04):** provider = gateway OpenAI-compatible
+  (`donis-agent.rolldev.my.id/v1`, base URL & model via env `INGEST_LLM_*`) — sesuai
+  usulan; pilihan provider bebas via env. KUTERIMA-TERJAWAB tanpa dokumen baru.
+- **O-15 (MOOT, 2026-11-04):** proxy Go LLM DIHAPUS di WO-01c — pertanyaan cakupan
+  proxy tidak relevan lagi.
+- **O-16 (terjawab oleh praktik, 2026-11-04):** UI chat = **CopilotKit** (dipakai
+  sejak CP-1, runtime Node D-11). KUTERIMA-TERJAWAB tanpa dokumen baru.
 - **O-17 (BARU, dari spike WO-01a tim dev, 2026-11-04): strategi adapter CopilotKit
   runtime.** Temuan spike: CopilotKit v2 = protokol AG-UI + runtime Node WAJIB —
   proxy Go OpenAI-compatible saja TIDAK cukup untuk jadi backend CopilotKit. Opsi:

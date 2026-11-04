@@ -1,7 +1,7 @@
 ---
 title: WO-02 — Sesi strict + real case `visit` via chat (tanpa editor) [REVISI CP-1]
 description: "CP-2 (REVISI): pemisahan runtime (O-19), state machine sesi di Go, agent strict via CopilotKit (D-11), deidentify nyata, classifier gate, compact O-18, ekstraksi visit via service layer"
-status: progress
+status: complete
 created: "2026-11-03"
 ---
 # WO-02 — Sesi Strict + Real Case `visit` via Chat (Checkpoint 2) — REVISI
@@ -225,3 +225,33 @@ terpasang, build/test hijau, dan jalur data sudah diuji dengan data **sintetis**
    pastikan agent benar-benar berhenti dan menanyakan kebijakan dedup.
 2. Jalankan skenario AC-8 (impor berkas sama dua kali) dengan kebijakan yang sama.
 3. AC-4: definisikan penegakan rules (`rules` masih pasif).
+
+---
+
+## Review Manager — 2026-11-04 (laporan dev diproses, commit kode `032941e`)
+
+Laporan Dev Agent diterima dan di-review. **WO-02 inti: COMPLETE** — 0 (O-19),
+A (state machine v4), B (agent strict + 3 tool Go), C (deidentify fail-closed,
+tanpa peta reversibel — keputusan bagus, catat di notes), D (ekstraksi visit via
+service layer + `dedup_policy` wajib), compact O-18 (9 test) — commit `032941e`.
+Gate: `go build/vet/test` + `tsc` + 9 test runtime + swagger (4 route baru) +
+Bruno 08–10 + AC-0 regresi nol — semua hijau.
+
+**Sisa (tidak menghalangi lanjut ke CP-3, per prinsip partial):**
+
+1. **Uji berkas asli BBH** (AC-1 penuh + perilaku strict 177 baris tanpa
+   `phone_e164`) — butuh berkas asli dari owner; jalankan via UI chat.
+2. **AC-8** — re-impor berkas sama 2×, skenario idempotensi.
+3. **AC-4** — penegakan `rules` masih pasif; butuh keputusan desain Manager/owner:
+   penegakan per-rule di titik mana (ekstraksi Go? prompt?), rule apa yang
+   wajib didukung di CP-2.
+
+**Catatan review:**
+- Keputusan dev "tidak ada peta re-identifikasi — Go mengekstrak dari berkas
+  asli" DITERIMA: menghapus kelas risiko kebocoran peta; konsisten D-4.
+- `dry_run` tidak mengunci state (kembali ke `mapping_confirmed`) — wajar,
+  cocok untuk latihan; audit tetap tercatat.
+- Migrasi ternyata v4 (bukan v2 seperti rancangan) karena CP-1 sudah makan
+  v2/v3 — tidak masalah, hanya catatan.
+- `provider-compat.ts` masih dikeluarkan bersama runtime (tambalan gateway)
+  — tetap dalam daftar pantau untuk penghapusan saat gateway benar.

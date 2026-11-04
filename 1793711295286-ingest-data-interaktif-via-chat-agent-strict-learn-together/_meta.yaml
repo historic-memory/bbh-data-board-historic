@@ -29,7 +29,7 @@ files:
     - id: 01a1a39c-e3bf-71e2-b8a6-d2e1102cd4d7
       path: wo-01c-mcp-housekeeping.md
       type: file
-      status: progress
+      status: complete
     - id: 01a1a1e9-0fa9-74cd-9e3e-264c51a94904
       path: wo-02-sesi-strict-realcase-visit.md
       type: file

@@ -367,6 +367,27 @@ Draf SPEC akan menyertakan usulan keputusan untuk O-3..O-9 di atas.
   `docker-compose.yml` yang masih menulis "ingest-runtime IDLE, DEV-ONLY spike"
   (usang sejak D-11 final). Dipindah SEBELUM WO-02 agar CP-2 dimulai dari struktur
   yang final.
+- **O-20 (BARU, 2026-11-04): skema `rules` terstruktur + penegakan & editor rules
+  — TERPUTUSKAN (owner): SETUJU.** Latar: AC-4 (Gate Aturan) di CP-2 masih pasif —
+  `rules` hanya tersimpan di `ingest_profiles` (jsonb) tanpa penegakan; owner juga
+  menanyakan "design template rules yang bisa diedit". Klarifikasi Manager (disetujui
+  owner): `rules` BUKAN validator CRUD — guard RBAC tetap di atasnya; rules =
+  **pengecualian validasi data** untuk jalur ekstraksi ingest, dievaluasi di SATU
+  titik sebelum `ImportTemplate` plugin target. Keputusan:
+  1. **Skema rule terstruktur** (objek kecil per rule): `rule_id` (id stabil, cocok
+     dengan penegak Go), `target` (plugin), `violates` (validasi pipeline yang
+     dikecualikan, contoh `phone_e164.required`), `action` (`allow` | `skip`),
+     `scope` (`row` | `field`), `stated_by`/`stated_at` (bukti Gate Aturan),
+     `version` (ikut profil append-only).
+  2. **LLM tidak boleh mengarang rule** — hanya memilih/memodifikasi dari daftar
+     pengecualian valid (disajikan agent sebagai kartu di chat; di editor sebagai
+     form).
+  3. **Penegakan deterministik di Go** (pola classifier D-3): baris ditolak validasi
+     X → cocokkan `violates` dari profil; rule cocok + action allow → lanjut; skip
+     → skipped; tidak ada → rejected (fail-closed).
+  4. **Dua tempat pengeditan**: chat (CP-2, penyimpanan saja — status quo tetap
+     valid) + **panel rules di editor WO-03** (tambah/ubah/hapus, tetap harus
+     disatakan user). Penegakan + panel = lingkup **WO-03/CP-3**.
   atau tidak? Default usulan Manager: TIDAK dulu (Go-only tetap terjaga); deidentify
   dipakai dengan tipe kolom eksplisit dari mapping editor.
 - O-12: Kebijakan flag `is_encrypt`: apakah flag user boleh MENGURANGI proteksi bawaan

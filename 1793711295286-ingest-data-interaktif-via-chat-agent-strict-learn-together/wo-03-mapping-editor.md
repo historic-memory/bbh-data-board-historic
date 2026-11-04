@@ -55,7 +55,40 @@ chat, O-9); integrasi dua arah dengan CopilotKit baru di CP-4.
   chat opsional (O-9); agent tetap menyusun tebakan saat file di-upload (backend yang
   memicu, bukan UI).
 
+### D. Rules (Gate Aturan, O-20) — skema + panel editor + penegakan Go
+
+**Sumber keputusan: O-20 (2026-11-04, owner setuju).** AC-4 (Gate Aturan) dari
+CP-2 masih pasif — `rules` hanya tersimpan. WO-03 ini menutupnya: skema, panel
+editor, DAN penegakan.
+
+- **Skema rule terstruktur** (per objek, di `ingest_profiles.rules` jsonb, ikut
+  versi profil append-only):
+  `rule_id` (id stabil, cocok dengan penegak Go, contoh `visit_missing_phone`),
+  `target` (plugin target), `violates` (validasi pipeline yang dikecualikan,
+  contoh `phone_e164.required`), `action` (`allow` | `skip`), `scope` (`row` |
+  `field`), `stated_by`/`stated_at` (bukti Gate Aturan — rule selalu dari
+  pernyataan user), `version`.
+- **Penegakan deterministik di Go** (pola classifier D-3): evaluasi di SATU titik
+  sebelum pemanggilan `ImportTemplate` plugin target. Baris ditolak validasi X →
+  cocokkan `violates` rule di profil: cocok + `allow` → lanjut; cocok + `skip` →
+  skipped (masuk laporan); tidak ada rule → rejected (fail-closed). `rule_id`
+  tidak dikenal penegak → 400 (rule sintetis tidak bisa dieksekusi).
+- **Panel rules di editor**: daftar pengecualian berlaku per profil — tambah /
+  ubah / hapus via form (bukan JSON mentah); hanya dari daftar pengecualian valid
+  (dropdown `violates` yang dikenal penegak); setiap perubahan menulis versi baru
+  profil + audit; LLM tidak boleh mengarang rule baru.
+- **Chat tetap sumber pertama** (CP-2 status quo): agent menyajikan kartu rule,
+  jawaban user menyimpan rule ke profil — editor hanya tempat koreksi.
+
 ## Acceptance Criteria
+
+- AC-R1 Rule via chat tampil di editor dan bisa dikoreksi; perubahan menulis
+  versi profil baru + audit.
+- AC-R2 Baris yang melanggar validasi `violates` yang punya rule `allow` → masuk
+  DB; dengan rule `skip` → skipped; tanpa rule → rejected (unit test + Bruno).
+- AC-R3 Rule dengan `violates` yang tidak dikenal penegak → 400 (fail-closed).
+- AC-R4 Ekstraksi tetap gagal/menolak bila validasi pelanggaran tidak ter-cover
+  rule (tidak ada pengecualian diam-diam).
 
 - AC-1 Sesi via chat dibuka di editor: mapping tampil (termasuk yang dikonfirmasi
   di chat); perubahan tersimpan ke profil yang sama (bukan duplikat).

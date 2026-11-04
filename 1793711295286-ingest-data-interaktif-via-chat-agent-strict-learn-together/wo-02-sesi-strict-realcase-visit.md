@@ -242,9 +242,9 @@ Bruno 08–10 + AC-0 regresi nol — semua hijau.
 1. **Uji berkas asli BBH** (AC-1 penuh + perilaku strict 177 baris tanpa
    `phone_e164`) — butuh berkas asli dari owner; jalankan via UI chat.
 2. **AC-8** — re-impor berkas sama 2×, skenario idempotensi.
-3. **AC-4** — penegakan `rules` masih pasif; butuh keputusan desain Manager/owner:
-   penegakan per-rule di titik mana (ekstraksi Go? prompt?), rule apa yang
-   wajib didukung di CP-2.
+3. **AC-4** — penegakan `rules` masih pasif; **KEPUTUSAN (O-20, 2026-11-04, owner):
+   penegakan + skema rules + panel editor rules = lingkup WO-03/CP-3; CP-2 tetap
+   penyimpanan chat-only** (status quo valid). Skema + detail: lihat WO-03 §D.
 
 **Catatan review:**
 - Keputusan dev "tidak ada peta re-identifikasi — Go mengekstrak dari berkas

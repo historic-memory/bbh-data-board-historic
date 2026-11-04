@@ -33,21 +33,34 @@ Spike + backend WO-01a telah dikerjakan tim dev dan **terverifikasi end-to-end**
 
 ## Sisa pekerjaan WO-01a (setelah revisi D-11)
 
-1. **Pindahkan kontrol ke kontrak D-11**: pastikan runtime Node memanggil API Go
-   untuk audit/tool (untuk 1a cukup: audit event proxy → `ingest_audit` tetap pusat);
-   kunci `INGEST_LLM_*` hanya di runtime Node.
-2. **Migrasi plugin `ingest` v1**: tabel `ingest_messages` (log chat) — jalankan
-   migrasi & sambungkan (ganti stub `localStorage` bila sudah siap; boleh menyusul
-   di 1b bila backend belum selesai).
-3. **docker-compose**: service `ingest-runtime` (Node) resmi (recreate otomatis,
-   env dari `.env`) — hilangkan pola jalan-manual (`nohup`, `docker compose exec ... dev:runtime`).
-4. Tandai/hapus endpoint proxy Go dari jalur chat (keputusan final di WO-01c).
+1. ~~Pindahkan kontrol ke kontrak D-11 (audit Node→Go)~~ — **SELESAI** (commit
+   `a22c03b`): runtime Node mengirim audit event → `ingest_audit` Go terisi
+   (`POST /api/copilotkit/agent/default/run`, 200); key isolation diverifikasi
+   (`GO_KEYLEN=0`, Node `KEYLEN=58`).
+2. ~~Migrasi `ingest_messages` + ganti stub localStorage~~ — **SELESAI**: chat
+   browser → Go tersimpan (`user` + `assistant`, `client_id` AG-UI); daftar sesi
+   `/app/ingest` dari API (bukan localStorage; `ingestSessions.ts` dihapus);
+   idempotensi POST `client_id` sama → `duplicate` 200, count tetap.
+3. ~~Service `ingest-runtime` resmi di docker-compose~~ — **SELESAI** (compose
+   diperbarui; verifikasi akses via IP Tailscale `:5173` dan chat hidup E2E).
+4. Keputusan nasib endpoint proxy Go (`/api/admin/ingest/llm-proxy/*`, kini
+   ditandai DEPRECATED) — **disengaja ke WO-01c (housekeeping)**.
+
+**Status: seluruh lingkup WO-01a lulus — menunggu konfirmasi owner untuk naik
+status complete + buka WO-01b.** Bug yang ditemukan & diperbaiki selama eksekusi
+(di `copilot-runtime.ts`, commit `a22c03b`): (1) `reportAudit` menerima cast
+`Request` padahal objek asli `IncomingMessage` (URL relatif) → error handler
+`finish` → unhandled rejection → proses Node mati (Node 22); (2) tee SSE membaca
+chunk `Uint8Array` dengan `String(chunk)` → decode salah, 0 pesan tersimpan;
+perbaikan: data plain + try/catch/catch-all agar audit tak pernah mematikan proses,
+dan decode UTF-8 streaming via `TextDecoder(..., {stream:true})`.
 
 ## Acceptance Criteria (diperbarui)
 
 - AC-1 Chat dasar + streaming hidup: UI CopilotKit → runtime Node → provider
-  (SUDAH terbukti di spike; bukti dipertahankan).
-- AC-2 API key TIDAK muncul di response/network klien (SUDAH; grep respons & devtools).
+  (SUDAH terbukti di spike + E2E browser/Tailscale; bukti dipertahankan).
+- AC-2 API key TIDAK muncul di response/network klien (SUDAH; key isolation
+  diverifikasi per container).
 - AC-3 Tanpa key env → 503 fail-closed dengan pesan jelas (SUDAH di proxy Go;
   perilaku sama wajib berlaku di runtime Node).
 - AC-9 Halaman `/ingest` (session list) + `/ingest/:id/chat` (bubble + input +
@@ -55,9 +68,9 @@ Spike + backend WO-01a telah dikerjakan tim dev dan **terverifikasi end-to-end**
 - AC-6 Tanpa token (401) / tanpa `ingest.write` (403) → ditolak (SUDAH; tetap berlaku
   di semua endpoint baru).
 - AC-8 `go vet`/`go test` hijau; `npm run build` hijau; swagger berisi route
-  (SUDAH; ulangi setelah sisa pekerjaan).
+  (SUDAH; `tsc --noEmit` juga hijau).
 - AC-10 (BARU, D-11) Audit event dari runtime Node tercatat di `ingest_audit` Go;
-  key LLM hanya di env Node; tidak ada key di env Go proxy jalur chat.
+  key LLM hanya di env Node; tidak ada key di env Go proxy jalur chat (SUDAH).
 
 ## Non-tujuan (pindah ke 1b/1c)
 

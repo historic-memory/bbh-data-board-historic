@@ -29,7 +29,7 @@ milestone-nya sudah jelas sejak awal.
 
 | WO | Judul | Status | Commit kode | Dok historic |
 |---|---|---|---|---|
-| WO-01a | CopilotKit chat hidup (CP-1) — **DIREVISI D-11** | progress (spike+backend terverifikasi; sisa: audit Node→Go, migrasi ingest_messages, service compose) | e4f4ea9, a019c26 | — |
+| WO-01a | CopilotKit chat hidup (CP-1) — **DIREVISI D-11** | selesai — lulus semua AC (tunggu konfirmasi owner) | e4f4ea9, a019c26, a22c03b | — |
 | WO-01b | Tool dummy `sandbox_ping` + upload ke storage (CP-1) | pending | — | — |
 | WO-01c | Eksperimen MCP + housekeeping (CP-1) | pending | — | — |
 | WO-02 | Sesi strict + real case `visit` via chat (tanpa editor) | pending | — | — |

@@ -273,6 +273,23 @@ Draf SPEC akan menyertakan usulan keputusan untuk O-3..O-9 di atas.
 
 ## Pertanyaan terbuka
 
+- **O-17 (BARU, dari spike WO-01a tim dev, 2026-11-04): strategi adapter CopilotKit
+  runtime.** Temuan spike: CopilotKit v2 = protokol AG-UI + runtime Node WAJIB —
+  proxy Go OpenAI-compatible saja TIDAK cukup untuk jadi backend CopilotKit. Opsi:
+  (A) implement protokol AG-UI di proxy Go (sesuai prinsip: key+gate+audit 1 titik
+  di Go; effort = protokol baru di Go); (B) standalone Node runtime `@copilotkit/runtime`
+  (dipakai di spike dev: `runtime/copilot-runtime.ts`, `npm run dev:runtime`,
+  basePath `/api/copilotkit`, Vite proxy) — cepat tapi service kedua + key/strictness
+  bergeser keluar Go (jangan di-deploy produksi); (C) buang CopilotKit, pakai headless
+  `openai` client. Usulan Manager: **B untuk sandbox CP-1 (dev-only, tidak di-deploy),
+  A untuk CP-2+ produksi**; keputusan final menunggu owner. Temuan lain spike:
+  `/threads` 403 tanpa `identifyUser` (JWT via headers, atau `threads.access: "open"`
+  untuk sandbox); telemetri CopilotKit aktif (bisa dimatikan via
+  `COPILOTKIT_TELEMETRY_DISABLED=true`). Sesi UI masih stub `localStorage`
+  (`lib/ingestSessions.ts`) — WAJIB diganti API `ingest_messages` saat backend jadi.
+  Kode spike BELUM di-commit (menunggu review tim). Build hijau, chunk chat terpisah
+  (lazy + Suspense), bundle utama 1,4 MB, tanpa URL backend.
+
 - O-1: Modul perintis (pilot) untuk sesi belajar pertama? Usulan Manager: `visit`
   (data mentah paling rumit — ujian terbaik agent strict; sumber: ekspor Notion kunjungan).
 - O-2: LLM provider — API eksternal (OpenAI/Claude) vs lokal? Catatan: data PII bayi;

@@ -358,3 +358,62 @@ Draf SPEC akan menyertakan usulan keputusan untuk O-3..O-9 di atas.
 - O-12: Kebijakan flag `is_encrypt`: apakah flag user boleh MENGURANGI proteksi bawaan
   (kolom PII wajib dari fields.yaml)? Usulan Manager: flag hanya boleh MENAMBAH
   proteksi (lebih ketat), tidak bisa lebih longgar — fail-closed.
+
+## Temuan pola tool-calling & upload (WO-01b, 2026-11-04)
+
+Bukti AC-4/AC-5/AC-6 dengan runtime dev `ingest-runtime` + Go data service (D-11).
+
+### Mekanisme tool = API backend (pola definitif CP-2)
+
+1. **Registrasi di Node, eksekusi di Go.** `CopilotRuntime` memakai `agents`
+   sebagai *factory* per-request (`agents: ({ request }) => ...`), sehingga
+   `BuiltInAgent` bisa dibuat ulang per request dengan `tools:[{ sandbox_ping }]`.
+   `execute()` tidak menyimpan state global: ia membaca `Authorization` +
+   `X-Ingest-Session-Id` dari `request`, lalu `POST` ke
+   `/api/admin/ingest/tools/sandbox_ping`.
+2. **Guard + audit tetap di Go.** Route tool memakai `RequirePermission(...,
+   "ingest.write")` dan mencatat `ingest_audit` (`provider='ingest-tool'`).
+   Node tidak pernah menulis data bisnis — hanya meneruskan tool-call model.
+3. **Alur event AG-UI yang terlihat di klien:**
+   `TOOL_CALL_START` → `TOOL_CALL_ARGS` → `TOOL_CALL_END` → `TOOL_CALL_RESULT`
+   → `TEXT_MESSAGE_*`. Hasil tool tampil di chat sebagai code block + ringkasan
+   model (belum ada renderer khusus — muncul warning dev CopilotKit
+   "no renderer is registered for tool", boleh ditambah `useRenderTool` di CP-2).
+4. **Latency terukur** (sandbox, model gateway `cc-deepseek-v4.1-flash`):
+   round-trip tool Node→Go ≈ 3–10 ms; satu run dengan tool + jawaban akhir
+   ≈ 2,5–3,5 s (didominasi LLM). Kegagalan yang mungkin: tanpa token → tool
+   throw `401` (model melaporkan gagal), izin kurang → `403
+   izin ditolak: butuh ingest.write`, `INGEST_GO_API_URL` kosong → tool langsung
+   error tanpa request.
+
+### Temuan kompatibilitas provider (WAJIB dibaca sebelum CP-2)
+
+- Gateway `donis-agent.rolldev.my.id` mengirim chunk streaming
+  `choices[].delta.tool_calls[]` **tanpa field `index`** (wajib menurut spec
+  OpenAI). AI SDK memvalidasi strict → seluruh run menjadi `RUN_ERROR`
+  (`invalid_type: expected number, path: choices[0].delta.tool_calls[0].index`).
+- Semua alias model di gateway (`copilot/manager/hermes/assistant`) berperilaku
+  sama — jadi bukan masalah model.
+- Solusi sementara: `runtime/provider-compat.ts` membungkus `fetch` dan hanya
+  menyisipkan `index` pada SSE provider (host dari `INGEST_LLM_BASE_URL`).
+  Bila gateway diperbaiki → hapus shim ini.
+- `COPILOTKIT_OPENAI_API=responses` TIDAK bisa dipakai: jalur Responses API
+  dibalas `405 Method Not Allowed` oleh gateway.
+
+### Upload file (WO-01b)
+
+- Endpoint: `POST /api/admin/ingest/sessions/:id/uploads` (guard `ingest.write`)
+  → `internal/storage` key acak `ingest/uploads/<session>/<uuid><ext>` +
+  metadata `ingest_uploads`. Isi file tidak diproses; tidak ada pembacaan isi.
+- Fail-closed: `.csv`/`.xlsx` saja; `.xls`/`.xlsm`/`.xlsb` → **415** dengan
+  pesan "simpan ulang sebagai .xlsx" (pola N-17), ekstensi lain → 415,
+  > 10 MiB → 413, storage tidak terpasang → 503.
+- Idempotency `client_id` (pola WO-01a) → retry mengembalikan
+  `{"status":"duplicate"}` tanpa baris/objek baru; objek yatim dihapus.
+- Jebakan UI: instance axios proyek default `Content-Type: application/json`.
+  Untuk `FormData` wajib override ke `multipart/form-data`, kalau tidak server
+  membalas `400 file_missing`.
+- Jebakan env: `./storage` di mesin dev bisa dimiliki root (sisa image lama) →
+  server (user `go`, uid 1000) gagal `mkdir storage/ingest: permission denied`.
+  Perbaikan: pastikan direktori dimiliki user container (atau set
+  `STORAGE_ROOT`). Folder `storage/` sudah masuk `.gitignore`.

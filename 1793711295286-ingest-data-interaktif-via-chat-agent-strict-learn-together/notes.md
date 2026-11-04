@@ -325,6 +325,34 @@ Draf SPEC akan menyertakan usulan keputusan untuk O-3..O-9 di atas.
   Terbuka: apakah kita memang akan memakai layanan TypeSafe (API eksternal + API key)
   atau hanya mengadopsi POLA harness-nya (classifier gate bisa diimplement sendiri)?
 - O-11: Presidio sebagai sidecar Python opsional (untuk NER nama Indonesia) — butuh
+- **O-18 (BARU, 2026-11-04): compact/summarize context window — TERPUTUSKAN (owner
+  ikut rekomendasi Manager): BUAT SENDIRI di runtime Node, TANPA library harness
+  eksternal.** Latar: user minta perilaku compact ~70% seperti GitHub Copilot.
+  Riset Manager: CopilotKit TIDAK punya fitur compact publik (hanya internal runner
+  v2 — test suite menyebut "compaction" thread history, tanpa API publik); library
+  npm (`@deepagents/compaction`, `@aparte/plugin-compaction`, dst.) semuanya
+  plugin harness/framework asing — tidak pas untuk runtime kita. Desain yang
+  disetujui (implementasi di `copilot-runtime.ts`):
+  1. Ukur token kumulatif per thread dari `usage` response provider.
+  2. Threshold (default 70%) dari env `INGEST_LLM_CONTEXT_LIMIT` → compact
+     sebelum request berikutnya; fail-closed bila limit tidak di-set (default
+     konservatif).
+  3. Ringkas pesan lama (kecuali N pesan terakhir) via LLM (model sama atau
+     `INGEST_LLM_SUMMARY_MODEL` opsional).
+  4. Summary disimpan sebagai pesan tipe khusus di `ingest_messages` VIA GO
+     (Node tidak menulis DB langsung — D-11); compact tercatat di `ingest_audit`.
+  5. **Keputusan terkunci TIDAK pernah ikut diringkas**: mapping terkonfirmasi,
+     aturan, pengecualian, status gate diambil dari dokumen profil di Go
+     (source of truth) dan disuntikkan ulang tiap request — summary hanya konteks
+     naratif. Agent strict tetap strict walau riwayat ter-compact.
+  6. Prompt berikutnya = system prompt + profil Go terkini + summary + N pesan
+     terakhir.
+  Sesi (session/thread) juga terekam eksplisit: sumber kebenaran = GO
+  (`ingest_sessions`/`ingest_messages` — sudah dibuktikan WO-01a, commit
+  `a22c03b`); thread cache di Node runtime hanyalah transport, boleh hilang saat
+  restart. **Timing implementasi: CP-2** (setelah CP-1 selesai — sesi real case
+  `visit` baru di sana yang bisa panjang); akan masuk rancangan WO-02.
+  - O-11: Presidio sebagai sidecar Python opsional (untuk NER nama Indonesia) — butuh
   atau tidak? Default usulan Manager: TIDAK dulu (Go-only tetap terjaga); deidentify
   dipakai dengan tipe kolom eksplisit dari mapping editor.
 - O-12: Kebijakan flag `is_encrypt`: apakah flag user boleh MENGURANGI proteksi bawaan

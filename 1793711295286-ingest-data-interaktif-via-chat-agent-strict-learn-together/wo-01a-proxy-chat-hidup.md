@@ -88,3 +88,19 @@ dan decode UTF-8 streaming via `TextDecoder(..., {stream:true})`.
 - Jalan manual container (`nohup`, exec foreground) = pola sementara; wajib jadi
   service compose yang proper sebelum CP-1 ditutup.
 - Provider sandbox: hanya data fiktif.
+
+## Catatan Implementasi (Dev)
+
+| Berkas:baris | Yang dilakukan | Kenapa |
+|---|---|---|
+| `sub_app/ingest_runtime/copilot-runtime.ts:41-46` | `normalizeBaseUrl` menambah skema: `https` default, `http` untuk localhost/loopback | `.env` sering diisi `host/v1` tanpa skema; SDK OpenAI menuntut URL absolut — pola sama dengan normalisasi di plugin Go |
+| `sub_app/ingest_runtime/copilot-runtime.ts:49-57` | `INGEST_LLM_*` disalin ke `OPENAI_*` **di satu titik** saja | CopilotKit membaca `OPENAI_*`; menyebar nama env ke banyak file = sumber bug "kenapa key tidak terbaca" |
+| `sub_app/ingest_runtime/copilot-runtime.ts:90-130` | `identifyUser` membaca klaim JWT untuk **tampilan** saja, dengan komentar eksplisit "jangan dipakai sebagai bukti identitas" | Backend tetap penentu (N-10); Node tidak boleh jadi sumber otorisasi |
+| `sub_app/ingest_runtime/copilot-runtime.ts:478-530` | `reportAudit` mengirim metadata saja (path/method/status/durasi), best-effort, tidak pernah throw | Node 22 mematikan proses pada unhandled rejection → audit gagal tidak boleh mematikan chat |
+| `sub_app/ingest_runtime/copilot-runtime.ts:485-492` | Bearer milik **user** diteruskan apa adanya ke Go | `admin_id` diambil Go dari token, bukan dari body — tidak bisa dipalsukan klien |
+| `sub_app/ingest_runtime/copilot-runtime.ts:569-600` | `teeAgUiEvents` memakai `TextDecoder(..., { stream: true })` dan menyangga baris | Bug: karakter UTF-8 terpotong antar chunk membuat `JSON.parse` gagal → event hilang/absen → pesan assistant tidak tersimpan |
+| `sub_app/ingest_runtime/copilot-runtime.ts:620-640` | `attachPersistence` menerima `IncomingMessage` + `ServerResponse` eksplisit | Bug: tipe request/response ditebak dari objek generik → `req.headers` undefined saat runtime; anotasi tipe membuat kesalahan ketahuan saat compile |
+| `sub_app/ingest_runtime/copilot-runtime.ts:757-772` | Persistensi hanya untuk `/agent/` dengan sesi dari header `X-Ingest-Session-Id` | Id sesi di header, bukan query: tidak bocor di log proxy; endpoint non-run tidak menulis pesan palsu |
+| `sub_app/ingest_runtime/copilot-runtime.ts:773-790` | Audit dipasang di `res.on('finish')` | Status/durasi baru final saat respons selesai; mencatat lebih awal = angka bohong |
+| `sub_app/ingest_runtime/copilot-runtime.ts:768` + `plugins/ingest/handlers/handlers.go` (`audit`) | Persistensi pesan/audit menulis ke Go (bukan localStorage) | D-11: satu sumber kebenaran; riwayat chat tetap ada meski browser dibersihkan |
+| `sub_app/ingest_runtime/copilot-runtime.ts:791-800` | Peringatan start bila `INGEST_GO_API_URL` kosong | Fail-fast yang terlihat di log, bukan kegagalan senyap saat chat dipakai |

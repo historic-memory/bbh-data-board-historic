@@ -94,3 +94,19 @@ upload (WO-01b)".
 | AC-5 | Upload `contoh-sandbox.csv` 17 B → baris `ingest_uploads` + file `storage/ingest/uploads/<sid>/<uuid>.csv`; tidak ada proses lanjutan |
 | AC-6 | tool & upload tanpa token → 401; viewer (`ingest.read` saja) → 403 `izin ditolak: butuh ingest.write`; list sesi viewer → 200 |
 | AC-8 | `go build`/`go vet`/`go test ./plugins/ingest/...` hijau; `tsc --noEmit` + `npm run build` hijau; swagger memuat `/admin/ingest/tools/sandbox_ping` & `/admin/ingest/sessions/{id}/uploads`; temuan dicatat di `notes.md` |
+
+## Catatan Implementasi (Dev)
+
+| Berkas:baris | Yang dilakukan | Kenapa |
+|---|---|---|
+| `sub_app/ingest_runtime/copilot-runtime.ts:374-460` | `createAgent(request)` membangun agent **per request**, tool didaftarkan di sisi server (bukan klien) | Tool yang didefinisikan klien bisa dipalsukan; registrasi server = satu-satunya sumber daftar tool (D-11) |
+| `sub_app/ingest_runtime/copilot-runtime.ts:261-300` | `callGoTool` memakai Bearer **milik user** dan meneruskan 401/403 sebagai error tool | RBAC + audit tetap di Go; Node tidak punya identitas istimewa dan model diberi tahu kegagalan, bukan pura-pura sukses |
+| `plugins/ingest/plugin.go` (`RegisterRoutes`) | Semua route tool/upload di belakang `ingest.read`/`ingest.write` + `h.audit(...)` per request | Pola definitif CP-2: guard RBAC fail-closed + jejak audit tanpa perlu diingat per handler |
+| `plugins/ingest/handlers/tools.go:41-60` | `SandboxPing` = echo tool pertama, dieksekusi di Go | Membuktikan rantai tool-calling Node → Go sebelum tool nyata ditambahkan |
+| `plugins/ingest/handlers/uploads.go:45-95` | Upload: `io.LimitReader(f, MaxUploadBytes+1)` lalu serahkan ke service | Batas dibaca di sisi baca, bukan `Content-Length` yang bisa dibohongi; `.xls` ditolak 415 (N-17) |
+| `plugins/ingest/services/uploads.go:31-80` | `ValidateUpload`: whitelist `.csv/.xlsx`, tolak `.xls/.xlsm/.xlsb`, batas 10 MiB | `.xls` (BIFF8) punya pembaca berbeda & rapuh; pesan penolakan menyuruh simpan ulang, bukan error kriptik |
+| `plugins/ingest/services/uploads.go:100-150` | `SaveUpload` menyimpan lewat `internal/storage` dengan key acak + metadata; `client_id` opsional → UNIQUE `(session_id, client_id)` | Retry jaringan tidak membuat dua baris upload; `stored_key` tidak pernah dikirim ke klien |
+| `plugins/ingest/handlers/uploads.go:119-135` | `writeUploadError` memetakan `UploadRejected` → status HTTP-nya (413/415) + audit `rejected`/`duplicate` | Kegagalan validasi tetap tercatat; klien dapat kode yang bisa ditindaklanjuti |
+| `sub_app/ingest_runtime/provider-compat.ts:1-60` | Shim menyisipkan `index` yang hilang pada `delta.tool_calls[]` di SSE provider | Gateway mengirim tool_calls tanpa `index`; AI SDK memvalidasi strict → `RUN_ERROR`. Ini penambal ketidakpatuhan provider, bukan protokol — hapus bila provider diperbaiki |
+| `sub_app/ingest_runtime/provider-compat.ts:43-56` | `index` diambil dari posisi dalam delta (gateway mengirim satu tool-call utuh per event) | Tidak menebak id yang belum tentu ada; posisi = index yang benar untuk pola gateway ini |
+| `sub_app/webapp/src/pages/admin/ingest/IngestUploadPanel.tsx:60-90` | Validasi ekstensi/ukuran juga di klien sebelum request | Umpan balik cepat; SERVER tetap penentu (fail-closed 413/415) |

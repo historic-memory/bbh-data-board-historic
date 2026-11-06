@@ -103,3 +103,16 @@ per request. Terverifikasi saat eksperimen.
 - Konfigurasi: `docker-compose.yml` (komentar D-11 + `INGEST_MCP_EXPERIMENT_URL: ""`)
 - Uji manual: `api-tests/ingest/04..07`
 - Dokumen: `notes.md`, `work-order.md`, dokumen WO ini
+
+## Catatan Implementasi (Dev)
+
+| Berkas:baris | Yang dilakukan | Kenapa |
+|---|---|---|
+| `sub_app/ingest_runtime/mcp-experiment/server.ts:1-14` | Server MCP eksperimen **tidak** dijalankan docker-compose; hanya dinyalakan manual via env `INGEST_MCP_EXPERIMENT_URL` | MCP tidak bisa menegakkan RBAC + audit seperti pola tool Go → tidak boleh jadi jalur standar tanpa keputusan (D-11) |
+| `sub_app/ingest_runtime/mcp-experiment/server.ts:27-34` | Satu instance `Server` MCP per request (mode stateless, transport per request) | Temuan: protokol melarang satu instance `Server` di-connect ke lebih dari satu transport; dipakai bersama = koneksi saling merusak |
+| `sub_app/ingest_runtime/copilot-runtime.ts:390-400` | `mcpServers: mcpExperimentUrl ? [...] : undefined` — default MATI | Tanpa env, runtime berperilaku seperti biasa; eksperimen tidak mengubah jalur utama |
+| `plugins/ingest/handlers/handlers.go:30-40` | `LLMProxy` + `injectDefaultModel` **dihapus** (WO-01c), hanya komentar yang tersisa | D-11 menjadikan runtime Node satu-satunya pemanggil provider → proxy Go = kode mati + permukaan serangan. Riwayat ada di git `a019c26`, jangan hidupkan jalur mati ini |
+| `plugins/ingest/handlers/safe_payload.go:16-25` | Gate proxy lama (`/llm-proxy/*` fail-closed) dihapus; diganti safe-payload (jalur tunggal isi berkas keluar) | Satu jalur yang sudah terdeidentifikasi lebih aman daripada dua gate yang bisa berbeda |
+| `plugins/ingest/plugin.go:1-12` | Komentar route diperbarui: proxy dinyatakan dihapus, runtime Node = transport + UI | Dokumen di kode = pemandu junior berikutnya, bukan hanya di riwayat chat |
+| `docker-compose.yml:169-209` | Service `ingest-runtime` tetap **IDLE/DEV-ONLY** (spike O-17 opsi B) dengan volume `runtime-node-modules` | Runtime tidak ditasbihkan untuk produksi sebelum ada keputusan standar; deps di volume terpisah supaya image `app` tidak kotor |
+| `sub_app/ingest_runtime/copilot-runtime.ts:41-46` | Normalisasi base URL tanpa skema dipertahankan di Node (tidak dihapus bersama proxy Go) | Provider di `.env` tetap tanpa skema; normalisasi harus ada di pemanggil terakhir, bukan hanya di proxy yang sudah mati |

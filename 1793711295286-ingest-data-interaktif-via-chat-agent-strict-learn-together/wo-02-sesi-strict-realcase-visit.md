@@ -283,3 +283,23 @@ Idempotensi terbukti pada level pipeline (`findVisitByKey` skip, tanpa duplikat)
 Saat berkas asli BBH tiba (0.1), AC-8 di-assert ulang pada berkas itu sebagai
 bukti akhir. (Uji awal dengan fixture lama juga menunjukkan `skipped=2` pada
 kedua impor karena barisnya sudah terlanjur ada dari pengujian CP-2.)
+
+## Catatan Implementasi (Dev)
+
+| Berkas:baris | Yang dilakukan | Kenapa |
+|---|---|---|
+| `plugins/ingest/services/session_state.go:136-188` | Transisi atomik `UPDATE ... WHERE id = ? AND state = ?` + `RowsAffected == 0 → ErrInvalidTransition` | Lompat gate = 409; dua pemanggil paralel hanya satu yang menang (state machine = sumber kebenaran, D-11) |
+| `plugins/ingest/services/session_state.go:149-166` | Gate konfirmasi mensyaratkan profil non-kosong; menandai versi terkunci (`confirmed_at/by`) | Tidak ada jalur "confirm buta" tanpa mapping yang tersimpan |
+| `plugins/ingest/services/session_state.go:190-208` | `SetSessionState` TIDAK diekspos sebagai endpoint publik | Alur internal saja (extracted / rollback); ekspos = lompat gate dari klien |
+| `plugins/ingest/services/profile.go:39-103` | Profil append-only: `MAX(version)+1` dalam transaksi; `UNIQUE (session_id, version)` sebagai jaring pengaman | Riwayat mapping tidak bisa dioverwrite; versi tertinggi = kebenaran sesaat (C-4) |
+| `plugins/ingest/services/deidentify.go:75-116` | `DeidentifyColumns` fail-closed: tanpa `INGEST_DEIDENTIFY_KEY` → `ErrDeidentifyUnconfigured` (503); tidak pernah fallback ke nilai asli | PII tidak boleh bocor ke LLM karena secret lupa di-set (D-5) |
+| `plugins/ingest/services/deidentify.go:159-173` | Mask deterministik HMAC (`anon-<12 hex>`) untuk `kind = generic` | Nilai sama → mask sama (LLM masih bisa melihat "orang yang sama") tapi tidak bisa dibalik |
+| `plugins/ingest/services/payload.go:28-30,89-100` | `MaxSampleRows = 5`; sample dipotong di Go, bukan dipercaya dari klien | LLM hanya butuh contoh; batas di server = satu-satunya penegak |
+| `plugins/ingest/services/payload.go:89-102` | `BuildSafePayload` = satu-satunya jalur isi berkas keluar dari Go (sudah terdeidentifikasi) | Tidak ada jalur kedua yang lupa deidentify (N-16) |
+| `plugins/ingest/services/extraction.go:73-84` | `NormalizeDedupPolicy` memvalidasi `dedup_policy ∈ {phone_then_time, time_only, none}`; kosong/tak dikenal → 400 | Berkas BBH punya 177 baris tanpa `phone_e164`; menebak = data ganda |
+| `plugins/ingest/services/extraction.go:90-173` | `RunExtraction`: `mapping_confirmed → extracting → extracted`, rollback ke `mapping_confirmed` bila impor gagal | Kesalahan impor bukan alasan membuang mapping yang sudah dikonfirmasi |
+| `plugins/ingest/services/extraction.go:145-153` | `dry_run` mengembalikan state ke `mapping_confirmed` | Dry run = latihan; sesi tidak boleh tertinggal di `extracting` |
+| `plugins/ingest/model/session.go` | Tabel transisi 7 state + `action.complete` internal (tidak di `AllowedActions`) | `complete` hanya dipanggil Go setelah impor; klien tidak boleh "menandai selesai" sendiri |
+| `sub_app/ingest_runtime/compact.ts:20-23,93-94` | Threshold compact 70% (`COMPACT_THRESHOLD_RATIO`), default limit 32k token dari env | O-18 fail-closed: limit tak di-set → default konservatif, bukan "tak terbatas" |
+| `sub_app/ingest_runtime/compact.ts:77-84` | Keputusan terkunci ditandai eksplisit `[LOCKED]` (bukan ditebak dari isi) | Compact tidak boleh membuang keputusan yang sudah disepakati user |
+| `sub_app/ingest_runtime/compact.ts:52-95` | Mempertahankan pesan terakhir N + semua `[LOCKED]` + menyimpan ringkasan lewat Go (`role=summary`) | Ringkasan = data tersimpan, bukan prompt sementara |

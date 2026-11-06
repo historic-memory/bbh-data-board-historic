@@ -302,3 +302,26 @@ bertanya kebijakan dedup tanpa HP). Verifikasi terakhir CP-3.
 **Konsekuensi master index:** CP-4 (WO-04) BOLEH disusun rancangannya sekarang
 (prinsip partial), namun eksekusinya idealnya SETELAH §0.1 terverifikasi agar
 keputusan desain integrasi editor↔chat memakai hasil percakapan data nyata.
+
+## Catatan Implementasi (Dev)
+
+| Berkas:baris | Yang dilakukan | Kenapa |
+|---|---|---|
+| `plugins/visit/schema/exceptions.yaml` | 4 entri katalog pengecualian valid plugin | Satu sumber: penegak Go + dropdown editor memakai loader yang sama (O-20) — kalau pipeline berubah, file ini wajib ikut |
+| `plugins/visit/schema/exceptions.go:20-46` | `//go:embed exceptions.yaml` + `LoadExceptions` (validasi id unik & action non-kosong) | Katalog terbakar ke biner; error load = gagal start, bukan diam-diam |
+| `plugins/ingest/model/rules.go` | `Validate` fail-closed: `violates` tak dikenal → `ErrUnknownRule`, aksi ilegal, scope tak dikenal, duplikat | Rule "tidak dikenal" tidak boleh lahir saat runtime (AC-R3) |
+| `plugins/ingest/model/mapping.go:77-131` | `ParseMappingDocument` menerima v2 (daftar) DAN legacy `{"kolom":"field"}`; `MergeIntoLegacy()` menerjemahkan balik | Satu profil, dua wajah: editor menulis v2, agent/ekstraksi lama tetap jalan tanpa salinan kedua (C-4/AC-1) |
+| `plugins/ingest/model/mapping.go:174-225` | `Validate`: target tak dikenal, PK ditolak, duplikat target hanya bila `kind`+`is_encrypt` identik, `ErrPolicyRelaxed` untuk PII | Fail-closed di server — editor tidak pernah dipercaya (D-5) |
+| `plugins/visit/schema/schema.go` + `fields.yaml` | `Field.Encrypt` + `encrypt: true` pada `full_name`, `phone_raw`, `phone_e164` | Policy bawaan (D-5); editor hanya boleh menambah proteksi, bukan menguranginya |
+| `plugins/ingest/services/rules.go:68-170` | `EnforceMappingRules`: validasi dokumen+rules di sini juga, periksa baris, lalu pancarkan CSV terproyeksi | Jalur tool/agent tidak bisa melewati policy dengan memanggil langsung (tidak hanya di editor) |
+| `plugins/ingest/services/rules.go:172-220` | `projectColumns` memproyeksikan kolom sumber ("Nama Lengkap") → header template ("Nama") | Berkas nyata berheader bebas, importer menuntut header template; tanpa proyeksi ini impor menolak semua baris ("kolom wajib tidak ditemukan") |
+| `plugins/ingest/services/rules.go:68-170` (`-enforced.csv`) | Keluaran penegak = berkas CSV baru; baris skip/reject tidak pernah masuk staging | Importer hanya melihat berkas terfilter; laporan `enforcement` = satu-satunya jejak baris yang tidak diteruskan |
+| `plugins/ingest/services/mapping.go:98-200` | `GetMappingView`: kolom terdeteksi + sample TERDEIDENTIFIKASI + targets + rules + katalog + 4 gate | UI hanya meninjau; kebenaran tetap di Go |
+| `plugins/ingest/services/mapping.go:264-300` | `guessColumn` menandai tebakan `Guess: true` (dari header/label schema) | Tebakan wajib dikonfirmasi manusia; gate mapping menahannya sampai `validated_by` terisi (AC-5) |
+| `plugins/ingest/services/mapping.go:301-370` | `evaluateGates` (identity/mapping/rules/confirm) + `scanViolations` menjalankan enforcer sungguhan | Gate aturan memeriksa berkas yang sebenarnya, bukan klaim "sudah jawab" |
+| `plugins/ingest/services/mapping.go:412-476` | `SaveMapping`: validasi penuh, append versi profil; `revise` bila sudah `mapping_confirmed` | Mengubah mapping setelah konfirmasi membatalkan persetujuan lama — tidak ada jalan pintas gate |
+| `plugins/ingest/services/mapping.go:482-547` | `ConfirmMappingDoc` mengembalikan 409 + daftar gate kegagalan, bukan boolean | UI menampilkan alasan konkret (baris/kolom), bukan sekadar "belum siap" (AC-2) |
+| `plugins/ingest/model/session.go:37-64` | Aksi baru `revise` (`mapping_confirmed → mapping_draft`) | Konfirmasi lama tidak bisa dipakai untuk menyelundupkan mapping baru |
+| `plugins/ingest/services/extraction.go` (`RunExtraction`) | Ekstraksi menegakkan rules dulu, lalu menyerahkan `-enforced.csv` ke `ImportTemplate`; `dedup_policy` tetap wajib (400 bila kosong) | Dedup milik manusia; editor memilih nilainya, bukan mengarangnya |
+| `sub_app/webapp/src/pages/admin/ingest/IngestMappingPage.tsx:178-200,340-360` | Tombol Ekstrak terkunci (disabled + tooltip) sampai `extract_ready` dan kebijakan dedup dipilih | UI meniru gate server; server tetap penentu |
+| `sub_app/webapp/src/pages/admin/ingest/IngestMappingPage.tsx:101-120` | Memilih target = pernyataan manusia: `guess: false`, `validated_by: 'admin'`, `is_encrypt` mengikuti policy field PII (terkunci) | Menjaga tombol "ekstrak" dari menjadi cara melewati konfirmasi manusia |

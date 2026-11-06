@@ -57,3 +57,16 @@ butuh berkas asli dari owner & keputusan desain rules.
   langsung — semua lewat action API Go yang di-guard RBAC.
 - Dependensi baru wajib direkam di `spec-techstack.md` (kini: `deidentify` di Go,
   CopilotKit `react-core`+`runtime` di frontend/Node, service `ingest-runtime`).
+- **(KEPUTUSAN owner, 2026-11-06) Log Implementasi WAJIB per WO.** Setiap Dev
+  Agent menulis **log implementasi codingnya di dok WO terkait** — bukan di chat
+  terpisah. Tujuan: junior bisa menelusuri kenapa kode jadi begini tanpa membaca
+  seluruh riwayat chat. Ketentuan:
+  1. Format: section `## Catatan Implementasi (Dev)` di bagian paling bawah dok WO.
+  2. Isi per entri: `berkas:baris` kunci (mis. `services/extraction.go:88-120`) +
+     **yang dilakukan** + **kenapa** (referensi keputusan D-x/O-x atau gotcha).
+  3. Hanya baris KUNCI (keputusan, gate, fail-closed, jebakan) — ±10–20 entri per
+     WO; bukan diary setiap baris.
+  4. Diisi bertahap per bagian (§A, §B, ...) saat bagian itu selesai; WO sudah
+     selesai (WO-01a/b/c, WO-02, WO-03) di-retrofill dari kode existing.
+  5. Masuk laporan dev ke Manager: log terkini ikut disebut, Manager review sebagai
+     bagian dari checklist laporan.

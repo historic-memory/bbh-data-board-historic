@@ -20,7 +20,10 @@ milestone-nya sudah jelas sejak awal. **Pengecualian kedua (2026-11-04):** CP-2
 ditutup sebagian — inti (0/A/B/C/D + compact) selesai & teruji dengan data
 sintetis; sisa AC-4 (penegakan rules), AC-8 (idempotensi re-impor), dan uji
 berkas asli BBH dibawa ke CP-3/WO-03 sebagai prasyarat verifikasi, karena
-butuh berkas asli dari owner & keputusan desain rules.
+butuh berkas asli dari owner & keputusan desain rules. **Pengecualian
+ketiga (2026-11-06):** delete sesi (bagian housekeeping WO-4 §D) dipindah
+jadi WO-04a — patch prioritas owner, dieksekusi SEBELUM CP-4 (kebutuhan nyata
+saat uji: daftar sesi penuh); sisa WO-4 tetap CP-4.
 
 | Checkpoint | Isi | Status | Bukti |
 |---|---|---|---|
@@ -38,7 +41,8 @@ butuh berkas asli dari owner & keputusan desain rules.
 | WO-01c | Eksperimen MCP + housekeeping (CP-1) | complete (2026-11-04) — CP-1 DITUTUP | 397fbff | a017ba2 |
 | WO-02 | Sesi strict + real case `visit` via chat (tanpa editor) — **DIREVISI pasca CP-1** | complete (2026-11-06) | 032941e, 743e183 |
 | WO-03 | Excel mapping editor — §0 prasyarat sisa CP-2 + §D rules O-20 | complete (2026-11-06) | 2f7cf07, 743e183 | — |
-| WO-04 | Integrasi editor ↔ CopilotKit + housekeeping (CP-4 final) — **DIREVISI pasca CP-2/CP-3** | pending (rancangan final; eksekusi setelah §0.1 CP-3) | — | — |
+| WO-04a | Delete sesi ingest (soft/hard/restore/bulk) — **dipindah dari WO-04, PRIORITAS owner** | pending — siap eksekusi sekarang | — | — |
+| WO-04 | Integrasi editor ↔ CopilotKit + housekeeping (CP-4 final) — **DIREVISI pasca CP-2/CP-3** | pending (rancangan final; eksekusi setelah keputusan O-14) | — | — |
 | WO-05.. | tidak ada — CP-4 adalah checkpoint terakhir | — | — | — |
 
 **Aturan lintas WO (pinned):**

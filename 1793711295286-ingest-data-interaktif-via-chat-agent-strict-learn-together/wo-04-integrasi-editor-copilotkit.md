@@ -76,33 +76,14 @@ sesi, retensi) agar fitur siap dipakai rutin.
 - Daftar `/ingest` sudah ada (WO-01): tambahkan kolom state machine + plugin
   target + tombol kontekstual per state ("Lanjut chat" / "Buka editor" /
   "Konfirmasi" / "Ekstrak") — baca dari API gate, bukan tebak di klien.
-- **Delete sesi (keputusan owner, 2026-11-06): soft delete + opsi hard delete.**
-  - **Soft delete** = default: kolom `deleted_at` di `ingest_sessions`
-    (migrasi baru), sesi terhapus hilang dari daftar default; sesi terhapus
-    masih bisa dilihat/ dipulihkan lewat filter eksplisit.
-  - **Hard delete** = aksi kedua, dijalankan SETELAH konfirmasi eksplisit:
-    hapus fisik baris sesi + `ingest_messages` + `ingest_uploads` (dan berkas
-    di storage) milik sesi itu.
-  - **Guard `ingest.write` + audit** untuk kedua aksi (pola D-6); klien tidak
-    menghapus lewat tool-calling LLM — hanya action API.
-  - Sesi ber-state `extracted` menyimpan profil (inti learn-together, D-8; O-14
-    mengusulkan profil disimpan tak terbatas) → **hard delete sesi extracted
-    WAJIB konfirmasi eksplisit berlabel risiko kehilangan profil**; soft delete
-    tetap diizinkan.
-  - Endpoint usulan: `DELETE /api/admin/ingest/sessions/:id` (soft, default)
-    + `?mode=hard` / aksi terpisah untuk hard delete; restore = aksi API
-    eksplisit (`POST .../sessions/:id/restore`).
-- **Checkbox multi-select di daftar `/ingest` (keputusan owner, 2026-11-06):**
-  pilih banyak sesi → aksi **bulk delete** (soft delete) lewat satu endpoint
-  batch (usulan: `POST /api/admin/ingest/sessions/bulk-delete`), dengan modal
-  konfirmasi berisi jumlah sesi terpilih; hasil per-sesi dilaporkan (sukses /
-  gagal / ditolak karena state terkunci). Checkbox hanya di daftar, bukan di
-  halaman chat/editor.
+- **Delete sesi & checkbox bulk — DIPINDAH ke WO-04a** (keputusan owner
+  2026-11-06: prioritas, dieksekusi SEBELUM CP-4). Detail keputusan soft/hard/
+  restore/bulk ada di dok `wo-04a-delete-sesi.md`; WO-4 ini tinggal memastikan
+  aksi delete ikut tampil di aksi kontekstual (AC-6) dan regresi nol.
 - Retensi & cleanup: sesi/file kedaluwarsa dihapus sesuai keputusan **O-14**
   (masih menunggu keputusan owner — diisi SEBELUM eksekusi; default:
-  konfigurabel + TODO + audit job periodik). Hapus manual (di atas) dan job
-  retensi O-14 HARUS memakai jalur penghapusan yang sama supaya tidak saling
-  melanggar aturan soft/hard delete.
+  konfigurabel + TODO + audit job periodik). Job retensi O-14 WAJIB memakai
+  jalur penghapusan yang sama dengan WO-04a (soft → hard policy).
 - ~~O-15 (cakupan proxy)~~ **MOOT** — proxy Go dihapus di WO-01c (keputusan
   MCP/D-11); tidak ada tindak lanjut.
 - Housekeeping kecil: hapus tambalan `provider-compat.ts` JIKA gateway sudah

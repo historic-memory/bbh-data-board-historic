@@ -303,3 +303,86 @@ kedua impor karena barisnya sudah terlanjur ada dari pengujian CP-2.)
 | `sub_app/ingest_runtime/compact.ts:20-23,93-94` | Threshold compact 70% (`COMPACT_THRESHOLD_RATIO`), default limit 32k token dari env | O-18 fail-closed: limit tak di-set → default konservatif, bukan "tak terbatas" |
 | `sub_app/ingest_runtime/compact.ts:77-84` | Keputusan terkunci ditandai eksplisit `[LOCKED]` (bukan ditebak dari isi) | Compact tidak boleh membuang keputusan yang sudah disepakati user |
 | `sub_app/ingest_runtime/compact.ts:52-95` | Mempertahankan pesan terakhir N + semua `[LOCKED]` + menyimpan ringkasan lewat Go (`role=summary`) | Ringkasan = data tersimpan, bukan prompt sementara |
+
+---
+
+## Progres Implementasi — 2026-11-06 (Dev): §0.1 + bug sesi-lazy
+
+### §0.1 AC-0 — LULUS (berkas asli BBH, 2026-11-06)
+
+Dok WO-02 sebelumnya mencatat §0.1/AC-0 TERBLOKIR menunggu berkas
+asli. Berkas tiba 2026-11-06 (`KUNJUNGAN HARI INI ...csv`, 141.405
+byte, 1.639 baris data; header `Nama,Alamat,Nomor HP,Waktu Kunjungan,
+Jumlah Pengunjung,Status Kunjungan`; hanya 5 baris tanpa HP).
+Owner mengunggahnya lewat panel chat (sesi `72be67c3-…`).
+
+**Bug yang menghalangi:** upload sukses, agent membalas "tidak ada
+sesi ingest aktif… 0 baris terbaca", tool `get_mapping_guess` 404.
+Akarnya: `POST /sessions/:id/uploads` hanya menulis `ingest_uploads`
+(tanpa FK ke `ingest_sessions`), sementara safe-payload/tool
+memanggil `GetSession` → 404. Sesi klien ber-UUID tidak pernah lahir
+(komentar di `sessionId.ts`: *"sesi di backend lahir saat pesan
+pertama tersimpan"*), padahal upload harusnya sudah berarti sesi
+mulai.
+
+**Perbaikan (commit `743e183`):**
+- `SaveUpload` / `AppendMessage` kini memanggil `EnsureSession`
+  (state `uploaded`); sesi "hantu" lama pulih otomatis.
+- Berkas baru menggantikan berkas sesi (invarian satu berkas/sesi);
+  `sessions.file_id` tertaut.
+- `SaveMapping` mendukung `uploaded → introduced → mapping_draft`,
+  sehingga editor bisa dipakai langsung pada sesi hasil upload.
+- `revise` boleh dari `extracted` (koreksi mapping + re-ekstraksi
+  idempoten); error transisi/terminal → 409 (bukan 500).
+
+**Uji §0.1 — hasil perilaku yang dituntut AC-0:**
+- Tool `get_mapping_guess` berhasil; safe-payload memberi 5 baris
+  sampel terdeidentifikasi + deskripsi isi berkas (header ternama,
+  tanggal campuran, kolom `Jumlah Pengunjung`/`Status Kunjungan`
+  tidak ada di katalog visit) — agent tidak lagi mengarang isi.
+- Ekstraksi tanpa `dedup_policy` → **400** ("kebijakan dedup wajib
+  diputuskan manusia"), karena berkas BBH memang tidak bisa
+  didedup otomatis dengan jujur. Itu titik berhenti yang diminta
+  AC-0.
+- Sesi percobaan `112c6a31-…` berakhir ber-state `mapping_draft`;
+  mapping draft tersimpan (profil sama, bukan duplikat).
+
+**AC-8 pada berkas asli:**
+- `time_only`: IMPOR-1 `created=177, skipped=1462`; re-impor
+  `created=0, skipped=1639` → idempoten.
+- `phone_then_time`: IMPOR-1 `created=57`; re-impor `created=0,
+  skipped=1639` → idempoten.
+
+Artinya: §0.1 WO-02 (berkas asli via chat → agent strict berhenti
++ bertanya dedup) kini **LULUS**, bukan lagi TERBLOKIR.
+
+### Catatan Implementasi (Dev) — 2026-11-06
+
+| Berkas:baris | Yang dilakukan | Kenapa |
+|---|---|---|
+| `plugins/ingest/services/session_state.go` (`EnsureSession`) | Membuat/barengkan sesi bila belum ada (state `uploaded`) | Upload tidak boleh jadi "sesi hantu"; helper sudah ada, commit ini yang memasangnya |
+| `plugins/ingest/services/uploads.go` (`SaveUpload`) | Panggil `EnsureSession`; state harus `uploaded` (409 bila diperkenalkan); berkas baru menggantikan berkas sesi; tautkan `sessions.file_id` | Satu berkas/sesi; lampiran duplikat (`...49.csv` + `...49_all.csv`) tidak menumpuk |
+| `plugins/ingest/services/sessions.go` (`AppendMessage`) | Panggil `EnsureSession` sebelum menyimpan | Sesi lama `72be67c3-…` pulih pada pesan berikutnya |
+| `plugins/ingest/services/mapping.go` (`SaveMapping`) | Dukung aliran `uploaded → introduced → mapping_draft` | Editor langsung bisa dipakai di sesi upload; tombol sebelumnya tanpa aksi |
+| `plugins/ingest/model/session.go` | `revise` dari `extracted`; `cancel` tetap tertutup di terminal | Koreksi mapping pasca-ekstraksi sah; terminal bukan |
+| `plugins/ingest/handlers/mapping.go` | Matakan `ErrInvalidTransition`/`ErrSessionTerminal`/`ErrProfileRequired` → 409 | Tombol Extract di `extracted` kini memberi pesan eksplisit, bukan 500 |
+| `plugins/ingest/services/payload.go` | Bedakan "sesi tidak ditemukan" vs "sesi belum punya berkas" | Agent tidak mengarang; instruksi dialog jadi jujur |
+| `plugins/visit/services/import.go` (`ImportOptions` + dedup) | `DedupPolicy` nyata: `phone_then_time` → fallback nama+waktu; `time_only` → waktu; `none` → tanpa dedup | §0.1: campuran format + baris tanpa HP; menebak = duplikat |
+| `plugins/visit/services/phone.go` (`normalizePhoneE164`) | Terima awalan `00` + nomor internasional tanpa awalan (`447454726495`) | Baris format asing bisa didedup, bukan selalu "beda" |
+| `plugins/ingest/prompt/agent.md` | Persempit daftar tool; bedakan dua ketiadaan di atas | Dialog tidak menjanjikan tool yang tidak ada; agent berhenti jujur |
+| `sub_app/webapp/src/pages/admin/ingest/IngestUploadPanel.tsx` | Hint: kirim pesan agar agent membaca + satu berkas/sesi | User tidak menunggu "otomatis dibaca" |
+| `sub_app/webapp/src/pages/admin/ingest/IngestChatPage.tsx` | Welcome + placeholder CopilotKit berbahasa Indonesia; tautan editor menulis draft sebelum navigasi | Sapaan default Inggris hilang; tombol editor hidup |
+| `api-tests/ingest/17-Upload-membuat-sesi.bru`, `18-Sesi-hasil-upload.bru`, `19-Upload-menggantikan-berkas.bru` | Regresi: upload lahirkan sesi; editor buka dari `uploaded`; upload kedua menggantikan pertama | Bug 2026-11-06 tidak boleh kembali diam-diam |
+
+---
+
+## Review Manager — 2026-11-06 (pasca §0.1)
+
+**§0.1 WO-02: LULUS — WO-02 kini COMPLETE PENUH** (semua AC 0–11 ✅;
+AC-4/AC-8 yang ⏳ ditutup via WO-03 §D + §0.2/berkas asli). Akar bug
+sesi-lazy (`ingest_uploads` tanpa FK + `EnsureSession` tak terpasang)
+dijelaskan dengan benar; perbaikan konsisten dengan shortnote Manager
+(opsi A). Catatan yang sama berlaku: bukti percakapan UI end-to-end
+masih parsial — ulangi via UI saat eksekusi WO-04 (lihat review di
+dok WO-03). Data nyata ternyata 1.639 baris (5 tanpa HP), bukan 177
+sebagai estimasi awal — tidak mengubah kesimpulan gate.

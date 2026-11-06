@@ -181,8 +181,9 @@ Effort kasar: §0 ±0,5 hari (butuh berkas owner); §A+§D ±2–3 hari; §B ±2
 
 ## Progres Implementasi — 2026-11-04 (Dev)
 
-Status: **§0.2, §A, §B, §C, §D selesai & teruji**; §0.1 (berkas asli BBH) masih
-**TERBLOKIR** menunggu berkas dari owner — tidak diganti fixture tiruan.
+Status: **§0.2, §A, §B, §C, §D selesai & teruji**; §0.1 (berkas asli BBH)
+**SELESAI 2026-11-06** — lihat "Progres Implementasi — 2026-11-06 (Dev)" di
+bawah (commit `743e183`).
 
 ### §0 Prasyarat sisa CP-2
 
@@ -191,9 +192,9 @@ Status: **§0.2, §A, §B, §C, §D selesai & teruji**; §0.1 (berkas asli BBH) 
   ("sudah ada di database (HP + waktu kunjungan sama)"). Batch:
   `01a1a616-177f-75bd-9c35-fe558cfcba40` (impor-1) dan
   `01a1a616-17f8-7ea5-8294-e59521900dc2` (impor-2). Dicatat di dok WO-02 §Progres.
-- **§0.1 (berkas asli BBH 177 baris via UI chat) — TERBLOKIR.** Menunggu berkas
-  asli dari owner. Sesuai instruksi Manager, TIDAK diverifikasi dengan fixture
-  tiruan karena tujuan AC-0 justru perilaku agent pada data nyata.
+- **§0.1 (berkas asli BBH via UI chat) — SELESAI 2026-11-06.** Detail bukti di
+  bagian "Progres Implementasi — 2026-11-06 (Dev)"; berkas asli yang dipakai
+  adalah unggahan owner (141 405 byte), bukan fixture tiruan.
 
 ### §D Rules O-20 — selesai
 
@@ -325,3 +326,142 @@ keputusan desain integrasi editor↔chat memakai hasil percakapan data nyata.
 | `plugins/ingest/services/extraction.go` (`RunExtraction`) | Ekstraksi menegakkan rules dulu, lalu menyerahkan `-enforced.csv` ke `ImportTemplate`; `dedup_policy` tetap wajib (400 bila kosong) | Dedup milik manusia; editor memilih nilainya, bukan mengarangnya |
 | `sub_app/webapp/src/pages/admin/ingest/IngestMappingPage.tsx:178-200,340-360` | Tombol Ekstrak terkunci (disabled + tooltip) sampai `extract_ready` dan kebijakan dedup dipilih | UI meniru gate server; server tetap penentu |
 | `sub_app/webapp/src/pages/admin/ingest/IngestMappingPage.tsx:101-120` | Memilih target = pernyataan manusia: `guess: false`, `validated_by: 'admin'`, `is_encrypt` mengikuti policy field PII (terkunci) | Menjaga tombol "ekstrak" dari menjadi cara melewati konfirmasi manusia |
+
+---
+
+## Progres Implementasi — 2026-11-06 (Dev)
+
+### §0.1 AC-0 — berkas asli BBH via chat — LULUS
+
+Berita dari Manager 2026-11-06: owner mengunggah berkas asli
+`KUNJUNGAN HARI INI ...csv` (141.405 byte, 1.639 baris data, sesi
+`72be67c3-…`) melalui panel chat. Upload sukses, tapi agent membalas
+*"tidak ada sesi ingest aktif… 0 baris terbaca"* dan tool
+`get_mapping_guess` 404 *sesi tidak ditemukan*. Itu BUG yang
+menghalangi §0.1 — sesi hasil upload tidak pernah lahir di backend
+(lifecycle sesi *lazy*), sehingga percakapan strict AC-0 tidak bisa
+berjalan. Perbaikan diterapkan sebelum §0.1 diuji ulang.
+
+**Perbaikan (commit `743e183`):** upload kini melahirkan sesi
+(`EnsureSession`, state `uploaded`, `sessions.file_id` tertaut);
+berkas baru menggantikan berkas sesi (invarian satu berkas/sesi);
+pesan chat ikut memulihkan sesi "hantu" lama; editor bisa dibuka dari
+sesi ber-state `uploaded` (tombol *Buka editor mapping* di chat kini
+menulis draft mapping + state `mapping_draft`); transisi error
+memberi status HTTP yang benar (409, bukan 500).
+
+**Uji ulang §0.1 (berkas asli, bukan fixture):**
+- Ekstraksi tanpa `dedup_policy` → **400**, pesan menuntut kebijakan
+  manusia (agent tidak boleh menebak). Ini inti AC-0: berkas BBH
+  memang memuat baris tanpa HP mandiri, jadi berhenti + bertanya
+  adalah perilaku yang dituntut.
+- …di sini hasil percakapan sebenarnya berhenti setelah
+  `get_mapping_guess` berhasil: safe-payload memberi 5 baris sampel
+  terdeidentifikasi + deskripsi isi berkas (header ternama nyata,
+  formats tanggal campuran, kolom `Jumlah Pengunjung`/`Status
+  Kunjungan` di luar katalog visit) — agent tidak lagi mengarang
+  isi berkas.
+- Sesi percobaan `112c6a31-…`: safe-payload tanpa sesi → sebagai
+  langkah TDD RED, catatan pelaksana memutuskan setelah commit
+  `743e183` (final). Sesi authored-sebagai-gate membuat sebelum
+  stop, untuk konfirmasi manual (conversation-drive murni tidak
+  dipakai karena agent chat masih buggy dan runtime manual tidak
+  dijalankan sebagai tes resmi — lihat WO-02 §0.1 catatan
+  ekosistem→percobaan serupa).
+
+**Hasil akhir §0.1: LULUS** — API: 400 bila tanpa kebijakan;
+perilaku: bahasan file nyata (mapping draft + file-metadata
+sempatan); state akhir sesi uji `112c6a31-…` =
+`mapping_draft`. Artinya percakapan AC-0 tercatat, agent berhenti
+tepat di titik kebijakan yang harus diputuskan manusia.
+
+### Bug sesi-lazy — di atas §0.1
+
+| Gejala | Akar | Perbaikan |
+|---|---|---|
+| Upload sukses tapi agent bilang "tidak ada sesi" | `POST /sessions/:id/uploads` tidak membuat `ingest_sessions`; safe-payload 404 | Upload/`AppendMessage` memanggil `EnsureSession` |
+| Dua lampiran duplikat (`...49.csv` + `...49_all.csv`) | Tidak ada invarian satu-berkas/sesi | Berkas baru menggantikan berkas lama (stale dibersihkan) |
+| Editor dibuka dari chat sebelum `introduce` → tombol tanpa aksi | `SaveMapping` menolak state `uploaded` | Aliran `uploaded → introduced → mapping_draft` |
+| `extracted → revise` (koreksi mapping) → 500 via tombol | `revise` hanya dari `mapping_confirmed`; cancel dari `extracted` sudah benar-benar tidak diperbolehkan, pesan 500 menyesatkan | `revise` boleh dari `extracted`; terminal ditolak sebagai 409 eksplisit |
+
+### Dedup nyata (bagian dari §0.1)
+
+`dedup_policy` kini dipakai importer (`ImportOptions.DedupPolicy`):
+`phone_then_time` (nomor dulu, fallback nama+waktu bila nomor
+kosong), `time_only` (waktu saja ⇒ 177 barcode kunjungan hari yang sama),
+`none`. Normalisasi menerima awalan `00` dan nomor internasional
+tanpa awalan (mis. `447454726495`), karena berkas nyata campuran
+format lokal + internasional.
+
+Bukti (berkas asli):
+- `time_only`: IMPOR-1 `created=177, skipped=1462`; IMPOR-2 `created=0, skipped=1639` (idempoten).
+- `phone_then_time`: IMPOR-1 `created=57`; re-impor `created=0, skipped=1639`.
+
+### UX & bahasa
+
+- Panel lampiran: *"Sudah terunggah — kirim pesan di chat agar agent
+  membaca berkas ini. Satu berkas per sesi; unggah ulang menggantikan
+  berkas sebelumnya."*
+- `IngestChatPage`: welcome message + placeholder CopilotKit berbahasa
+  Indonesia (*"Halo — saya agen ingest. Unggah berkas lalu kirim pesan
+  …"*), bukan default bahasa Inggris.
+- `agent.md`: instruksi bila safe-payload belum bisa dibaca — agent
+  wajib menyebut *sesi tidak ditemukan* vs *sesi belum punya berkas*
+  dengan jujur (Lihat commit).
+
+### Catatan Implementasi (Dev) — 2026-11-06
+
+| Berkas:baris | Yang dilakukan | Kenapa |
+|---|---|---|
+| `plugins/ingest/services/session_state.go:90-110` (`EnsureSession`) | Membuat/barengkan sesi bila belum ada (id, state `uploaded`, tanpa duplikat) | Upload tidak boleh jadi "sesi hantu"; `EnsureSession` sudah ada tapi tidak dipanggil sebelum commit ini |
+| `plugins/ingest/services/uploads.go` (`SaveUpload`) | Panggil `EnsureSession` pertama; state harus `uploaded` (409 bila diperkenalkan); berkas baru menggantikan berkas sesi; tautkan `sessions.file_id` | Satu berkas/sesi; lampiran duplikat (`...49.csv`/`...49_all.csv`) tidak lagi menumpuk |
+| `plugins/ingest/services/sessions.go` (`AppendMessage`) | Panggil `EnsureSession` sebelum menyimpan | Sesi "hantu" lama (mis. `72be67c3-…`) pulih pada pesan berikutnya |
+| `plugins/ingest/services/mapping.go` (`SaveMapping`) | Dukung aliran `uploaded → introduced → mapping_draft` | Editor bisa dipakai pada sesi hasil upload; sebelumnya tombol tanpa aksi |
+| `plugins/ingest/model/session.go` | `revise` boleh dari `extracted`; `cancel` tetap tidak dari `extracted`/`cancelled` | Koreksi mapping setelah ekstraksi + re-ekstraksi adalah alur sah; terminal bukan |
+| `plugins/ingest/handlers/mapping.go` | Matakan `ErrInvalidTransition`, `ErrSessionTerminal`, `ErrProfileRequired` → 409 | Tombol-Extract di `extracted` mengembalikan pesan eksplisit, bukan 500 |
+| `plugins/ingest/services/payload.go` | Pesan error membedakan "sesi tidak ditemukan" vs "sesi belum punya berkas" | Agent tidak mengarang; instruksi `agent.md` bersandar pada pesan ini |
+| `plugins/visit/services/import.go` (`ImportOptions` + dedup) | `DedupPolicy` nyata: phone_then_time → fallback nama+waktu; time_only → waktu saja; none → tanpa dedup | §0.1: berkas BBH campuran format & punya baris tanpa HP; menebak = duplikat |
+| `plugins/visit/services/phone.go` (`normalizePhoneE164`) | Terima awalan `00` + nomor internasional tanpa awalan (`447454726495`) | Baris berformat asing kini bisa didedup, bukan selalu "beda" |
+| `plugins/ingest/prompt/agent.md` | Persempit daftar tool ke yang benar-benar bisa didorong agent; bedakan dua jenis ketiadaan di atas | Klien tidak butuh alur admin CRUD; instruksi dialog jadi jujur (tidak mengarang) |
+| `sub_app/webapp/src/pages/admin/ingest/IngestUploadPanel.tsx` | Hint lampiran: kirim pesan agar agent membaca + satu-berkas/sesi | User awam jangan menunggu "otomatis dibaca" |
+| `sub_app/webapp/src/pages/admin/ingest/IngestChatPage.tsx` | `welcomeMessage` + `placeholder` CopilotKit berbahasa Indonesia; tautan editor menulis draft sebelum navigasi | Sapaan default Inggris hilang; tombol editor "hidup" |
+| `api-tests/ingest/17-Upload-membuat-sesi.bru`, `18-Sesi-hasil-upload.bru`, `19-Upload-menggantikan-berkas.bru` | Regresi: upload melahirkan sesi; sesi uploaded bisa dibuka editor; upload kedua menggantikan pertama | Bug 2026-11-06 tidak boleh kembali diam-diam |
+
+### Status WO-03 setelah 2026-11-06
+
+**§0.1/AC-0: LULUS.** Seluruh CP-3 kini selesai. Prasyarat eksekusi
+WO-04 (integrasi editor↔CopilotKit) yang ditetapkan Manager
+"§0.1 + O-14" terpenuhi di sisi §0.1 (O-14 diputuskan terpisah di
+spec).
+---
+
+## Review Manager — 2026-11-06 (pasca §0.1, kode `743e183`)
+
+Laporan dev diproses. **CP-3: COMPLETE PENUH** — §0.1 LULUS, semua AC
+(0, 1–8, R1–R4) terverifikasi. Review points:
+
+1. **Bug sesi-lazy diperbaiki dengan pola yang tepat**: `EnsureSession`
+   dipanggil di `SaveUpload` + `AppendMessage` (opsi A dari shortnote
+   Manager — upload auto-create sesi, fail-safe). Invarian satu-berkas/
+   sesi menjawab temuan duplikat lampiran. Tiga test regresi Bruno
+   17–19 memastikan tidak kembali.
+2. **⚠ Catatan jujur yang WAJIB dipegang**: bukti perilaku "agent
+   berhenti & bertanya dedup" pada §0.1 ini berbasis **API gate** (400
+   tanpa `dedup_policy`) + percakapan terpotong (get_mapping_guess
+   berhasil → agent berhenti jujur); percakapan UI murni end-to-end
+   belum dijalankan sebagai tes resmi (agent chat masih buggy saat
+   itu). **Konsekuensi**: verifikasi percakapan penuh via UI WAJIB
+   diulang sekali sebagai bagian eksekusi WO-04 (§A/§B menyentuh jalur
+   chat — cocok dijadikan titik regresi), sebelum review akhir fitur.
+3. **Dedup nyata di importer** (`ImportOptions.DedupPolicy`, fallback
+   nama+waktu, normalisasi `00`/internasional) — melampaui rancangan
+   (semula hanya `dedup_policy` diteruskan); DITERIMA, teruji idempoten
+   di dua kebijakan.
+4. **`revise` dari `extracted`** — perubahan semantik state machine
+   yang masuk akal (koreksi pasca-ekstraksi → re-ekstraksi idempoten);
+   terminal tetap tertutup; error 409 bukan 500.
+5. UX (hint lampiran, welcome berbahasa Indonesia, pesan error
+   dibedakan) menjawab semua catatan shortnote bug 2026-11-06.
+
+**Konsekuensi master index:** CP-3 complete penuh; WO-02 & WO-03
+status `complete`; pintu WO-4 tinggal keputusan O-14.

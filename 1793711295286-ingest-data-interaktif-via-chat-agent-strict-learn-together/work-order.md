@@ -70,3 +70,6 @@ butuh berkas asli dari owner & keputusan desain rules.
      selesai (WO-01a/b/c, WO-02, WO-03) di-retrofill dari kode existing.
   5. Masuk laporan dev ke Manager: log terkini ikut disebut, Manager review sebagai
      bagian dari checklist laporan.
+  **Status retrofill: COMPLETE (2026-11-06, review Manager lulus, commit dok
+  `5dfb4f5`)** — 5 dok WO terisi (01a:11, 01b:11, 01c:8, 02:15, 03:18 entri);
+  WO-04 akan diisi bertahap per bagian saat eksekusi.

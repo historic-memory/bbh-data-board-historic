@@ -41,7 +41,7 @@ saat uji: daftar sesi penuh); sisa WO-4 tetap CP-4.
 | WO-01c | Eksperimen MCP + housekeeping (CP-1) | complete (2026-11-04) — CP-1 DITUTUP | 397fbff | a017ba2 |
 | WO-02 | Sesi strict + real case `visit` via chat (tanpa editor) — **DIREVISI pasca CP-1** | complete (2026-11-06) | 032941e, 743e183 |
 | WO-03 | Excel mapping editor — §0 prasyarat sisa CP-2 + §D rules O-20 | complete (2026-11-06) | 2f7cf07, 743e183 | — |
-| WO-04a | Delete sesi ingest (soft/hard/restore/bulk) — **dipindah dari WO-04, PRIORITAS owner** | pending — siap eksekusi sekarang | — | — |
+| WO-04a | Delete sesi ingest (soft/hard/restore/bulk) — **dipindah dari WO-04, PRIORITAS owner** | complete (2026-11-06) | 9040b39 | — |
 | WO-04 | Integrasi editor ↔ CopilotKit + housekeeping (CP-4 final) — **DIREVISI pasca CP-2/CP-3** | pending (rancangan final; eksekusi setelah keputusan O-14) | — | — |
 | WO-05.. | tidak ada — CP-4 adalah checkpoint terakhir | — | — | — |
 

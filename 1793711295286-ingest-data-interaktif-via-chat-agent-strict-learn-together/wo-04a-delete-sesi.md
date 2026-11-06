@@ -1,7 +1,7 @@
 ---
 title: WO-04a — Delete sesi ingest (soft/hard/bulk) — dipindah dari WO-04
 description: "Prioritas owner: soft delete default, hard delete ber-konfirmasi, restore, checkbox multi-select + bulk delete di daftar /ingest"
-status: pending
+status: complete
 created: "2026-11-06"
 ---
 # WO-04a — Delete Sesi Ingest (Checkpoint: patch prioritas sebelum CP-4)
@@ -92,3 +92,87 @@ melewati RBAC/audit.
   satu query filter di satu tempat.
 - Modal konfirmasi hard delete untuk sesi `extracted` WAJIB menyebut profil
   (jangan hanya "yakin?").
+
+## Progres Implementasi — 2026-11-06 (Dev)
+
+### Bukti AC-1..AC-7
+
+- **AC-1 (soft delete/restore)**: host functional test — soft 200, soft-2x 409,
+  sesi hilang dari list default, `include_deleted=1` menampilkan `deleted_at`,
+  restore 200, restore-2x 409. Browser: Hapus → notice "dihapus (bisa
+  dipulihkan lewat filter terhapus)" → badge `terhapus · <waktu>` + tombol
+  "Pulihkan" → notice "dipulihkan".
+- **AC-2 (hard delete)**: hard 200 dengan DB 0 baris (sessions/messages/
+  uploads/profiles) dan 0 berkas storage; id tidak ada → 404. Browser: modal
+  "Hapus permanen sesi" — blok RISIKO "sesi sudah diekstrak … profil
+  learn-together" hanya muncul untuk sesi `extracted` (terverifikasi
+  `72be67c3-…` 5 pesan extracted), sesi `uploaded` mendapat peringatan
+  permanen standar tanpa blok risiko.
+- **AC-3 (bulk delete)**: bulk `{deleted:2, rejected:2}` — sesi `extracting`
+  ditolak 409 dan duplikat ditolak tanpa mengganggu yang lain. Browser:
+  multi-select A+B → "Hapus terpilih (2)" → modal jumlah → confirm → notice
+  "Bulk delete (2 sesi): 2 dihapus." + ringkasan per-sesi; bug UI (checkbox
+  tidak ter-clear sesudah bulk) ditemukan saat verifikasi browser dan sudah
+  diperbaiki (`setSelected(new Set())`).
+- **AC-4 (RBAC + audit)**: 401 tanpa token untuk semua jalur; 403 semua aksi
+  (delete/restore/bulk) untuk viewer hanya ber-`ingest.read`; audit
+  `provider='ingest-delete'` terisi per aksi termasuk bulk (class
+  `bulk_delete_<status>` per sesi).
+- **AC-5 (tool LLM)**: tidak ada route delete di `/api/admin/ingest/tools/*`
+  (plugin.go hanya daftar read/write route); chat/editor tidak punya jalur
+  delete.
+- **AC-6 (regresi)**: `go build ./...` + `go vet ./...` + `go test
+  ./plugins/ingest/...` hijau; `npx tsc --noEmit` + `npm run build` hijau;
+  swagger (gitignored `docs/`) diregenerasi di container kanonik via
+  `build.sh` — memuat `/{id}` DELETE, `/restore`, `/bulk-delete`,
+  `include_deleted`; Bruno suite baru `20–28` 14/14 PASS.
+- **AC-7**: Catatan Implementasi (Dev) di bawah ini.
+
+### Catatan Implementasi (Dev)
+
+| Berkas:baris | Yang dilakukan | Kenapa |
+| --- | --- | --- |
+| `plugins/ingest/migrations/postgres/2026_11_06_100000_add_ingest_sessions_deleted_at.up.sql:12` | Migrasi `deleted_at TIMESTAMPTZ` + index partial `idx_ingest_sessions_active` / `idx_ingest_sessions_deleted` | Keputusan Manager: filter daftar cukup satu kolom nullable + index partial, tanpa enum status baru. |
+| `plugins/ingest/model/session.go` (field `DeletedAt *time.Time`) | Tambah `DeletedAt` ke model + summary service | Keputusan Manager: sesi legacy tanpa baris `ingest_sessions` tidak boleh hilang dari daftar — list menyiapkan fallback. |
+| `plugins/ingest/services/sessions.go` (`ListSessions(includeDeleted)`) | Filter `deleted_at IS NULL` default, mode `include_deleted` untuk filter "Tampilkan terhapus" | Keputusan Manager: satu query filter di satu tempat (risiko "list lama menampilkan terhapus" tertutup). |
+| `plugins/ingest/services/delete.go:74` | `DeleteSession` soft default / `?mode=hard`, sentinel `ErrSessionDeleted/ErrSessionNotDeleted/ErrSessionExtracting` | Keputusan Manager: soft default, hard hanya dari UI ber-konfirmasi, `extracting` → 409. |
+| `plugins/ingest/services/delete.go:155` | `hardDelete`: storage dulu (fail-first), pre-check eksistensi → 404, lalu tx hapus uploads/messages/profiles/session | Keputusan Manager: hard = fisik DB + storage; temuan uji (hard id tidak ada sebelumnya 200) diperbaiki agar 404 jujur. |
+| `plugins/ingest/services/delete.go:258` | `BulkDeleteSessions` per-sesi (dedup, guard, status per-id) | Keputusan Manager: bulk soft per-sesi — `extracting`/duplikat ditolak tanpa menggagalkan sisanya. |
+| `plugins/ingest/handlers/delete.go:33,61,90` | HTTP handler delete/restore/bulk; audit `provider='ingest-delete'`, max 200 id bulk | Keputusan Manager: guard `ingest.write` + audit tiap aksi; bulk diaudit per sesi agar rantai tanggung jawab utuh. |
+| `plugins/ingest/handlers/session_state.go` (`sessionErrorStatus`) | Petakan sentinel baru ke 409 | Keputusan Manager: konflik state (sudah terhapus / belum terhapus / extracting) apa adanya 409, bukan 500/404. |
+| `plugins/ingest/plugin.go:85-87` | Registrasi 3 route delete; NOL route di `/tools/*` | Keputusan Manager + D-11: tool LLM tidak punya akses delete — route sengaja tidak dibuat. |
+| `sub_app/webapp/src/api/ingest.ts:68,80,103` | `deleteIngestSession/restoreIngestSession/bulkDeleteIngestSessions` + `include_deleted` | Keputusan Manager: UI hanya lewat API write; checkbox hanya di daftar (tidak di chat/editor). |
+| `sub_app/webapp/src/pages/admin/ingest/IngestSessionListPage.tsx` (rewrite) | Checkbox multi-select, modal bulk ber-jumlah, Hapus/Hapus permanen per sesi, blok RISIKO khusus `extracted`, filter "Tampilkan terhapus" + "Pulihkan" | Keputusan Manager: konfirmasi berlapis + peringatan profil wajib untuk sesi `extracted`; seleksi di-clear setelah bulk (bug ditemukan via verifikasi browser). |
+| `api-tests/ingest/20–28-*.bru` (9 berkas, 14 request) | Bruno: soft/restore/hard/bulk + negatif 401/403 + restore-2x 409 | Keputusan Manager: bukti AC-1..AC-6 harus bisa diulang otomatis, bukan hanya screenshot. |
+
+---
+
+## Review Manager — 2026-11-06 (laporan dev diproses, commit kode `9040b39`)
+
+Laporan Dev Agent diterima dan di-review. **WO-04a: COMPLETE** — AC-1..AC-7
+semua ✅, verifikasi dua lapis (host functional test + browser), Bruno 14/14,
+gate build/test hijau, swagger memuat 4 kontrak baru.
+
+**Catatan review:**
+1. **Keputusan desain yang disetujui saat eksekusi** (tercantum di log sebagai
+   "Keputusan Manager") dikonfirmasi SAH: index partial, sentinel error →
+   409, storage fail-first di hard delete, audit bulk per-sesi, max 200 id
+   bulk, NOL route di `/tools/*`.
+2. **Hard delete 404 jujur** — perbaikan dari temuan uji (id tidak ada
+   sebelumnya balas 200) tepat; fail-first storage sebelum tx DB mencegah
+   baris hilang tapi berkas menggantung.
+3. **Bug UI bulk (seleksi tidak ter-clear)** ditemukan via verifikasi browser
+   sendiri dan diperbaiki — pola verifikasi dua lapis ini yang kita inginkan.
+4. **Blok RISIKO khusus `extracted`** (kehilangan profil learn-together)
+   terverifikasi tampil hanya untuk sesi itu; `uploaded` dapat peringatan
+   standar — sesuai AC-2.
+5. **Cleanup sesi uji** (hard-delete via API, cancel sesi extracting, hapus
+   file temp repo) — baik; daftar produksi tidak tertinggal sampah uji.
+6. Catatan kecil (non-blocking): `include_deleted` di list — pastikan UI
+   filter terhapus tidak ikut masuk paginasi default pengguna baru; sudah
+   tertutup karena default `deleted_at IS NULL`.
+
+**Konsekuensi master index:** WO-04a complete; patch prioritas ditutup.
+Sisa menuju penyelesaian fitur ingest: **WO-04 (CP-4)** — prasyarat tinggal
+keputusan O-14 (retensi) + verifikasi ulang percakapan UI end-to-end
+(catatan review §0.1).

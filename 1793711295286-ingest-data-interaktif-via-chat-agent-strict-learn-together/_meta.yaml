@@ -42,6 +42,10 @@ files:
       path: wo-04-integrasi-editor-copilotkit.md
       type: file
       status: pending
+    - id: 01a1b060-4069-77bb-abb7-7d881d9b5be8
+      path: wo-04a-delete-sesi.md
+      type: file
+      status: pending
     - id: 01a1a1e7-a01c-7a43-8d41-efa850f0ff78
       path: work-order.md
       type: file

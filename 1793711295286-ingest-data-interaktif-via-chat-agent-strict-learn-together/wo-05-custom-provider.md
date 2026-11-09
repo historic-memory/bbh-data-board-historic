@@ -105,7 +105,7 @@ sampai ke klien.
 
 1. **APPROVED — key env→DB**: owner setuju dengan pergeseran sumber key dari env API key terenkripsi di DB (Go menjaga key; node menerima konfig via endpoint internal server-to-server). Prinsip inti D-11 tetap: key tidak pernah sampai ke klien; hanya berubahnya tempat penyimpanan (DB terenkripsi) dan mekanisme distribusi (fetch per request, bukan env statis).
 2. **Verifikasi CopilotKit (Manager, 2026-11-09)**: CopilotKit TIDAK menyediakan management API bawaan untuk provider LLM (tidak ada CRUD base URL/key/model; dashboard Intelligence hanya mengelola memory/learning/threads, bukan kredensial LLM). Pola yang didukung: env, atau config object per-agent. BuiltInAgent menerima `apiKey` langsung di config — pas dengan pola `createAgent` per-request (WO-01a). Kesimpulan: fitur ini WAJIB dibangun mandiri (Go = management API; Node hanya konsumen per request) — sesuai §A/§B di atas; TIDAK menyalahi CopilotKit.
-3. **Arsitektur final ditegaskan**: Go menyimpan API key (terenkripsi) & mengechild<|end_of_box|> PLAINTEXT ke Node hanya via endpoint internal; Node tetap satu-satunya pemanggil LLM. Fall-back env dipertahankan (backward compat).
+3. **Arsitektur final ditegaskan**: Go menyimpan API key (terenkripsi) & mendedahkan PLAINTEXT ke Node hanya via endpoint internal; Node tetap satu-satunya pemanggil LLM. Fall-back env dipertahankan (backward compat).
 4. WO ini **STATUS: siap eksekusi — handoff ke Dev Agent (2026-11-09)**; manager TIDAK menyentuh source code; semua keputusan desain di dok ini dianggap final.
 
 ## Risiko & catatan
@@ -167,6 +167,15 @@ sampai ke klien.
 - `api-tests/environments/Local.bru` (+ `.env.sample`) | tambah `viewerToken` (`BBH_VIEWER_TOKEN`) | uji negatif RBAC butuh token tanpa `ingest.write`; bila kosong uji turun ke 401 — tetap bermakna negatif, tidak pernah lolos diam-diam.
 - Verifikasi AC-5 manual (2026-11-09, host dev) | baris DB hanya berisi envelope `{"v":1,"alg":"AES-GCM","iv":…}`; `grep` plaintext key di `/tmp/server.log` = 0 hit; `ingest_audit` (provider `ingest-provider`) = 0 hit | membuktikan klaim "plaintext tidak pernah di DB/log/audit" dengan bukti, bukan asumsi.
 - `plugins/ingest/plugin.go:130`–`:145` | 8 route manajemen ber-guard `ingest.write` + 1 route internal **tanpa** guard RBAC (`:142`) | pemisahan tegas: permukaan admin = RBAC; permukaan service = service token. Menaruh guard RBAC di route internal akan membuat runtime Node tidak bisa memanggilnya sama sekali.
+
+## Manager Review (2026-11-09)
+
+- **Keputusan tambahan dev DI-SETUJUI**: `POST /:id/deactivate` (+ tombol Nonaktifkan) — logika dev benar: provider aktif ditolak hapus (409), jadi tanpa jalur nonaktif tidak ada cara sah kembali ke fallback env (AC-3) selain SQL manual. Endpoint idempoten, ter-audit, guard `ingest.write` — sesuai §C/§D. Ditandai sebagai "tambahan di luar teks asli" oleh dev sendiri di tabel bukti — proses yang benar.
+- **Log implementasi DITERIMA**: §A (10 entri), §B (8), §C (5), §D (6) = **29 entri** ± batas 10-20, semuanya format `berkas:baris | dilakukan | kenapa`. Kualitas tinggi — banyak gotcha nyata terdokumentasi: race `OPENAI_BASE_URL` global CopilotKit di-resolves dengan model per-request (§B:290, paling bernilai), provider-compat SSE jadi idempotent (§B:8), mask netral tanpa asumsi prefix vendor (§A:68), dua normalizer URL agar format .env lama konsisten (§A:459). Banner komentar aturan WAJIB dipertahankan — wajar.
+- **Bukti AC diperiksa**: AC-5 diverifikasi dengan bukti konkret (DB hanya envelope AES-GCM, `grep` log = 0, audit = 0 utk plaintext); AC-6 menjawab PRISYARAT paling sensitif: token **admin ditolak** (401) di endpoint internal, hanya service-token — sesuai §D "menaruh guard RBAC di route internal akan membuat runtime Node tidak bisa memanggilnya sama sekali". AC-7 lengkap (build/vet/test go, tsc, npm test 17/17, build webapp, swagger, Bruno 14 req/27 test).
+- **Lingkup dijaga**: non-tujuan tidak tersentuh (tidak ada multi-aktif, tidak ada non-OpenAI, tidak ada D-11 diubah); model sederhana (satu aktif) dipatuhi — detail tabel & index parsial sesuai desain.
+- **Verifikasi Manager**: commit kode `181e416` terlihat di `git log` (di atas `9040b39`, belum di-push); frontmatter `status: complete` valid; git bersih.
+- **Keputusan**: WO-05 **LULUS — COMPLETE**. Catatan untuk masa depan: model id per-provider di audit sudah ada (label provider), tapi label-nya **cache-of-config** bukan slug per-provider — cukup untuk sekarang; bila kelak multi-provider diaktifkan (non-tujuan), audit label akan perlu upgraded ke id provider yang eksplisit.
 
 ## Bukti Penyelesaian (Dev, 2026-11-09)
 

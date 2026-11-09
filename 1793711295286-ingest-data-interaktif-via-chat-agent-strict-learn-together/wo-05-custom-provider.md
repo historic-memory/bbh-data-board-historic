@@ -1,8 +1,9 @@
 ---
 title: WO-05 — Custom provider LLM via UI admin (pengganti/penyanding env `INGEST_LLM_*`)
 description: "Admin menambah/mengubah provider LLM (base URL, API key terenkripsi, model) lewat UI admin; tersimpan di DB terenkripsi; runtime Node mengambil konfigurasi aktif dari Go per request; key tidak pernah tampil ke klien"
-status: pending
+status: progress
 created: "2026-11-09"
+updated: "2026-11-09"
 ---
 # WO-05 — Custom Provider LLM via UI Admin
 
@@ -100,6 +101,13 @@ sampai ke klien.
 - Provider non-OpenAI-compatible.
 - Mengubah D-11 (key tetap tidak pernah ke klien; kebijakan tetap di Go).
 
+## Bordir — Keputusan owner & verifikasi (2026-11-09, handoff final)
+
+1. **APPROVED — key env→DB**: owner setuju dengan pergeseran sumber key dari env API key terenkripsi di DB (Go menjaga key; node menerima konfig via endpoint internal server-to-server). Prinsip inti D-11 tetap: key tidak pernah sampai ke klien; hanya berubahnya tempat penyimpanan (DB terenkripsi) dan mekanisme distribusi (fetch per request, bukan env statis).
+2. **Verifikasi CopilotKit (Manager, 2026-11-09)**: CopilotKit TIDAK menyediakan management API bawaan untuk provider LLM (tidak ada CRUD base URL/key/model; dashboard Intelligence hanya mengelola memory/learning/threads, bukan kredensial LLM). Pola yang didukung: env, atau config object per-agent. BuiltInAgent menerima `apiKey` langsung di config — pas dengan pola `createAgent` per-request (WO-01a). Kesimpulan: fitur ini WAJIB dibangun mandiri (Go = management API; Node hanya konsumen per request) — sesuai §A/§B di atas; TIDAK menyalahi CopilotKit.
+3. **Arsitektur final ditegaskan**: Go menyimpan API key (terenkripsi) & mengechild<|end_of_box|> PLAINTEXT ke Node hanya via endpoint internal; Node tetap satu-satunya pemanggil LLM. Fall-back env dipertahankan (backward compat).
+4. WO ini **STATUS: siap eksekusi — handoff ke Dev Agent (2026-11-09)**; manager TIDAK menyentuh source code; semua keputusan desain di dok ini dianggap final.
+
 ## Risiko & catatan
 
 - **Key di DB vs env**: ini pergeseran dari D-11 asli ("key hanya di Node env").
@@ -112,3 +120,25 @@ sampai ke klien.
   run tidak memukul Go — sebutkan trade-off: perubahan provider berlaku ≤ TTL.
 - Kegagalan provider aktif → error tool/chat jelas ("provider aktif gagal,
   cek pengaturan"), jangan fallback diam-diam ke env (justru membingungkan).
+
+## Catatan Implementasi (Dev)
+
+<!-- WAJIB diisi bertahap per bagian (§A, §B, §C, §D) sesuai aturan 2026-11-06:
+     entri = `berkas:baris kunci | yang dilakukan | kenapa (ref D-x/O-x/gotcha)`;
+     ±10–20 entri total, hanya keputusan/gate/fail-closed/jebakan — bukan diary. -->
+
+### §A Backend (plugin `ingest`)
+
+_(belum ada — diisi Dev saat §A selesai)_
+
+### §B Runtime Node (`ingest_runtime`)
+
+_(belum ada — diisi Dev saat §B selesai)_
+
+### §C UI admin
+
+_(belum ada — diisi Dev saat §C selesai)_
+
+### §D Keamanan & aturan / lintas bagian
+
+_(belum ada — diisi Dev saat bagian lintas selesai)_

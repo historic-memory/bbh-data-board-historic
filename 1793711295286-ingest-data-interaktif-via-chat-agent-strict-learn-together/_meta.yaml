@@ -49,7 +49,7 @@ files:
     - id: 01a1bf9e-f95f-77a2-b393-ef5a6616c79b
       path: wo-05-custom-provider.md
       type: file
-      status: progress
+      status: complete
     - id: 01a1a1e7-a01c-7a43-8d41-efa850f0ff78
       path: work-order.md
       type: file

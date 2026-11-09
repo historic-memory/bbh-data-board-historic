@@ -1,7 +1,7 @@
 ---
 title: WO-05 — Custom provider LLM via UI admin (pengganti/penyanding env `INGEST_LLM_*`)
 description: "Admin menambah/mengubah provider LLM (base URL, API key terenkripsi, model) lewat UI admin; tersimpan di DB terenkripsi; runtime Node mengambil konfigurasi aktif dari Go per request; key tidak pernah tampil ke klien"
-status: progress
+status: complete
 created: "2026-11-09"
 updated: "2026-11-09"
 ---
@@ -167,3 +167,19 @@ sampai ke klien.
 - `api-tests/environments/Local.bru` (+ `.env.sample`) | tambah `viewerToken` (`BBH_VIEWER_TOKEN`) | uji negatif RBAC butuh token tanpa `ingest.write`; bila kosong uji turun ke 401 — tetap bermakna negatif, tidak pernah lolos diam-diam.
 - Verifikasi AC-5 manual (2026-11-09, host dev) | baris DB hanya berisi envelope `{"v":1,"alg":"AES-GCM","iv":…}`; `grep` plaintext key di `/tmp/server.log` = 0 hit; `ingest_audit` (provider `ingest-provider`) = 0 hit | membuktikan klaim "plaintext tidak pernah di DB/log/audit" dengan bukti, bukan asumsi.
 - `plugins/ingest/plugin.go:130`–`:145` | 8 route manajemen ber-guard `ingest.write` + 1 route internal **tanpa** guard RBAC (`:142`) | pemisahan tegas: permukaan admin = RBAC; permukaan service = service token. Menaruh guard RBAC di route internal akan membuat runtime Node tidak bisa memanggilnya sama sekali.
+
+## Bukti Penyelesaian (Dev, 2026-11-09)
+
+Perintah & hasil pada host dev (container kanonik `app` untuk Go, host untuk Node/FE):
+
+| AC | Bukti |
+|---|---|
+| AC-1 | `POST /api/admin/ingest/providers` → **201**, respons `{id,name,base_url,model,key_mask:"…8bbe",is_active:false}` (tanpa `api_key`). Bruno `30`, `39` hijau. |
+| AC-2 | `POST /:id/activate` → **200** `is_active:true`; runtime membaca konfigurasi per request (`resolveProvider`) dengan cache ≤30 s — tanpa restart container. Bruno `32` hijau. |
+| AC-3 | Tanpa provider aktif → endpoint internal **204** → `envProviderConfig()` dipakai. Test Node "tanpa provider aktif di DB → fallback env (AC-3)" + "DB menang atas env" hijau. |
+| AC-4 | `POST /:id/test` → **200** `{ok:true, latency_ms:372, models:[copilot, manager, hermes, design, openrouter, assistant]}` — panggilan nyata ke `GET {base_url}/models`. Bruno `34`/`35` hijau. |
+| AC-5 | DB: `api_key_ciphertext` = `{"v":1,"alg":"AES-GCM","iv":"…`; `api_key_hint=8bbe`; `grep -c <key> /tmp/server.log` = **0**; `ingest_audit` = **0** hit. Respons list/CRUD tidak pernah memuat `api_key`/ciphertext (diuji di Bruno `29`/`39`). |
+| AC-6 | Tanpa token → **401**; token admin ke endpoint internal → **401**; service token → **200** (plaintext, hanya di jalur ini). `ingest_audit` terisi `provider='ingest-provider'` untuk semua aksi (200/201/204/400/401/409). Bruno `36`/`37`/`38` hijau. |
+| AC-7 | `go build ./...` ✅ · `go vet ./plugins/ingest/...` ✅ · `go test ./plugins/ingest/...` ✅ (7 test kripto/URL baru) · `npx tsc --noEmit` (ingest_runtime) ✅ · `npm test` **17/17** ✅ · `npx tsc --noEmit` + `npm run build` (webapp) ✅ · `build.sh` → swagger diperbarui ✅ · Bruno provider **14 request / 27 test, PASS** ✅ |
+
+**Tambahan di luar teks asli WO (kecil, diminta oleh AC-3):** endpoint `POST /api/admin/ingest/providers/:id/deactivate` + tombol "Nonaktifkan" di UI. Alasan: provider aktif menolak dihapus (409), jadi tanpa jalur nonaktif tidak ada cara sah untuk kembali ke fallback env — satu-satunya alternatif adalah SQL manual di DB, yang tidak boleh menjadi prosedur resmi. Endpoint bersifat idempoten (200), ter-audit, dan ter-guard `ingest.write`. Status WO: **selesai** untuk §A–§D + AC-1..AC-7; non-tujuan tidak tersentuh.

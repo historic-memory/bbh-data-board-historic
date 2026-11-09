@@ -46,6 +46,10 @@ files:
       path: wo-04a-delete-sesi.md
       type: file
       status: complete
+    - id: 01a1bf9e-f943-7af8-bb32-4a47582fd552
+      path: wo-05-custom-provider.md
+      type: file
+      status: progress
     - id: 01a1a1e7-a01c-7a43-8d41-efa850f0ff78
       path: work-order.md
       type: file

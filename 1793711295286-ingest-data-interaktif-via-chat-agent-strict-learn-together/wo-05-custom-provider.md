@@ -101,7 +101,7 @@ sampai ke klien.
 - Provider non-OpenAI-compatible.
 - Mengubah D-11 (key tetap tidak pernah ke klien; kebijakan tetap di Go).
 
-## Bordir — Keputusan owner & verifikasi (2026-11-09, handoff final)
+## Keputusan Owner & Verifikasi (2026-11-09 — handoff final)
 
 1. **APPROVED — key env→DB**: owner setuju dengan pergeseran sumber key dari env API key terenkripsi di DB (Go menjaga key; node menerima konfig via endpoint internal server-to-server). Prinsip inti D-11 tetap: key tidak pernah sampai ke klien; hanya berubahnya tempat penyimpanan (DB terenkripsi) dan mekanisme distribusi (fetch per request, bukan env statis).
 2. **Verifikasi CopilotKit (Manager, 2026-11-09)**: CopilotKit TIDAK menyediakan management API bawaan untuk provider LLM (tidak ada CRUD base URL/key/model; dashboard Intelligence hanya mengelola memory/learning/threads, bukan kredensial LLM). Pola yang didukung: env, atau config object per-agent. BuiltInAgent menerima `apiKey` langsung di config — pas dengan pola `createAgent` per-request (WO-01a). Kesimpulan: fitur ini WAJIB dibangun mandiri (Go = management API; Node hanya konsumen per request) — sesuai §A/§B di atas; TIDAK menyalahi CopilotKit.

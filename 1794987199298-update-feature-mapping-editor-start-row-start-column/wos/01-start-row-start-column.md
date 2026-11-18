@@ -1,14 +1,14 @@
 ---
-title: "WO-01: Override start row & start column saat parsing berkas"
-description: "Lembar kerja fitur override start row/column — latar belakang & desain lihat 01-analisa-parsing-header.md"
-status: pending
+title: 'WO-01: Override start row & start column saat parsing berkas'
+description: Lembar kerja fitur override start row/column — latar belakang & desain lihat 01-analisa-parsing-header.md
+status: complete
 created: "2026-11-18"
 updated: "2026-11-18"
 tags:
-  - ingest
-  - mapping
-  - parsing
-  - backend
+    - ingest
+    - mapping
+    - parsing
+    - backend
 ---
 # WO-01: Override start row & start column saat parsing berkas
 

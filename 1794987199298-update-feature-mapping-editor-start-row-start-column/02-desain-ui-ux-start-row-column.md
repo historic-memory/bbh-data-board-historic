@@ -1,14 +1,14 @@
 ---
-title: "Desain UI/UX override start row & start column"
-description: "Konsep antarmuka pemilihan titik awal header/data di editor mapping ingest"
-status: draft
+title: Desain UI/UX override start row & start column
+description: Konsep antarmuka pemilihan titik awal header/data di editor mapping ingest
+status: complete
 created: "2026-11-18"
 updated: "2026-11-18"
 tags:
-  - ingest
-  - mapping
-  - ui-ux
-  - frontend
+    - ingest
+    - mapping
+    - ui-ux
+    - frontend
 ---
 # Desain UI/UX override start row & start column
 

@@ -1,14 +1,14 @@
 ---
-title: "Analisa parsing header & dasar fitur start row/column"
-description: "Latar belakang fitur mapping editor: perilaku deteksi header saat ini, celahnya, dan desain override start row/start column"
-status: draft
+title: Analisa parsing header & dasar fitur start row/column
+description: 'Latar belakang fitur mapping editor: perilaku deteksi header saat ini, celahnya, dan desain override start row/start column'
+status: complete
 created: "2026-11-18"
 updated: "2026-11-18"
 tags:
-  - ingest
-  - mapping
-  - parsing
-  - arsitektur
+    - ingest
+    - mapping
+    - parsing
+    - arsitektur
 ---
 # Analisa parsing header & dasar fitur start row/column
 

@@ -1,7 +1,7 @@
 id: "1794987199298"
 title: Update feature mapping editor — start row & start column
 created: "2026-11-18"
-updated_at: "2026-11-18T07:35:46Z"
+updated_at: "2026-11-18T08:02:45Z"
 files:
     - id: 01a1ed93-4a6d-74ca-8cb4-ca2bf19352e0
       path: wos/01-start-row-start-column.md
@@ -13,4 +13,9 @@ files:
       type: file
       status: create
       updated_at: "2026-11-18T07:35:46Z"
+    - id: 01a1edad-68ee-7a68-8931-06cca4300136
+      path: 02-desain-ui-ux-start-row-column.md
+      type: file
+      status: create
+      updated_at: "2026-11-18T08:02:45Z"
 assets: []

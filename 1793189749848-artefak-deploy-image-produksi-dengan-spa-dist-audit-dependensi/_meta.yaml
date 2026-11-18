@@ -1,25 +1,31 @@
 id: "1793189749848"
 title: Artefak Deploy — image produksi dengan SPA dist & audit dependensi
 created: "2026-10-28"
+updated_at: "2026-10-28T12:15:49Z"
 files:
     - id: 01a18272-50dd-7262-be08-d174e983c532
       path: WO-01-image-produksi.md
       type: file
       status: pending
+      updated_at: "2026-10-28T12:18:12Z"
     - id: 01a18272-50dd-7492-9902-ae00dd85525c
       path: WO-02-audit-dependensi.md
       type: file
       status: pending
+      updated_at: "2026-10-28T12:18:12Z"
     - id: 01a18272-50dd-71cd-a08f-cd4a096c1e0d
       path: WO-03-verifikasi-dokumentasi.md
       type: file
       status: pending
+      updated_at: "2026-10-28T12:18:12Z"
     - id: 01a18272-50dd-78f0-b9e3-5702ac4124c0
       path: spec.md
       type: spec
       status: draft
+      updated_at: "2026-10-28T12:18:12Z"
     - id: 01a18272-50de-7ea9-95ba-5246a9c6082e
       path: work-order.md
       type: file
       status: draft
+      updated_at: "2026-10-28T12:18:12Z"
 assets: []

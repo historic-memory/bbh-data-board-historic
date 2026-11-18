@@ -1,25 +1,31 @@
 id: "1793189749895"
 title: Housekeeping — fasilitas, permission 403, Fast Refresh, SPA_DIR
 created: "2026-10-28"
+updated_at: "2026-10-28T12:15:49Z"
 files:
     - id: 01a18272-50e1-7b16-b4d1-945f23fa76ba
       path: WO-01-fasilitas-delete-branch.md
       type: file
       status: pending
+      updated_at: "2026-10-28T12:18:12Z"
     - id: 01a18272-50e2-7533-b824-35af36151cb8
       path: WO-02-fast-refresh-spa-dir.md
       type: file
       status: pending
+      updated_at: "2026-10-28T12:18:12Z"
     - id: 01a18272-50e2-7bd1-9806-713d507d3fb6
       path: WO-03-uji-403.md
       type: file
       status: pending
+      updated_at: "2026-10-28T12:18:12Z"
     - id: 01a18272-50e2-7576-9a30-8d7940d2fca4
       path: spec.md
       type: spec
       status: draft
+      updated_at: "2026-10-28T12:18:12Z"
     - id: 01a18272-50e2-74e5-8d48-0b23b46274e5
       path: work-order.md
       type: file
       status: draft
+      updated_at: "2026-10-28T12:18:12Z"
 assets: []

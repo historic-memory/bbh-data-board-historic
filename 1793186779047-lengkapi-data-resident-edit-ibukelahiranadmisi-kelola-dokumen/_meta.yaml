@@ -1,29 +1,36 @@
 id: "1793186779047"
 title: Lengkapi Data Resident — edit ibu/kelahiran/admisi & kelola dokumen
 created: "2026-10-28"
+updated_at: "2026-10-28T11:26:19Z"
 files:
     - id: 01a18247-ff2c-73d6-9973-24f843d6caa0
       path: WO-01-update-sub-entitas.md
       type: file
       status: complete
+      updated_at: "2026-10-28T11:31:58Z"
     - id: 01a18247-ff2c-7a6a-a0d4-109ab07e96a1
       path: WO-02-dokumen-delete-patch.md
       type: file
       status: complete
+      updated_at: "2026-10-28T11:31:58Z"
     - id: 01a18247-ff2c-71b8-90e4-a41bb578bfcf
       path: WO-03-ui-edit-lengkap.md
       type: file
       status: complete
+      updated_at: "2026-10-28T11:31:58Z"
     - id: 01a18247-ff2c-7d01-a291-3d8373162967
       path: WO-04-kontrak-verifikasi.md
       type: file
       status: complete
+      updated_at: "2026-10-28T11:31:58Z"
     - id: 01a18247-ff2c-7207-9f33-8ceab7731815
       path: spec.md
       type: spec
       status: complete
+      updated_at: "2026-10-28T11:31:58Z"
     - id: 01a18247-ff2c-7bab-b22c-06da49fdc19d
       path: work-order.md
       type: file
       status: complete
+      updated_at: "2026-10-28T11:31:58Z"
 assets: []

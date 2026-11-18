@@ -1,9 +1,11 @@
 id: "1793096602507"
 title: Integrasi LLM & AI-ETL (CopilotKit, Jobmanager Sandbox, ACP Agent)
 created: "2026-10-27"
+updated_at: "2026-10-27T10:23:22Z"
 files:
     - id: 01a17ce2-f0d7-7397-b615-b5d961f1ff0a
       path: notes.md
       type: file
       status: progress
+      updated_at: "2026-10-27T10:23:30Z"
 assets: []

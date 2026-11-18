@@ -1,29 +1,36 @@
 id: "1793687545424"
 title: Dashboard Ringkasan Lintas Modul (resident + hsh + sec)
 created: "2026-11-03"
+updated_at: "2026-11-03T06:32:25Z"
 files:
     - id: 01a1a020-86db-78ee-9246-5c0e845b3962
       path: WO-01-endpoint-agregat.md
       type: file
       status: complete
+      updated_at: "2026-11-03T06:37:28Z"
     - id: 01a1a020-86db-7b59-8e1c-00df22250ae3
       path: WO-02-ui-kartu.md
       type: file
       status: complete
+      updated_at: "2026-11-03T06:37:28Z"
     - id: 01a1a020-86db-7e88-b072-5b0df6f12173
       path: WO-03-verifikasi-dokumentasi.md
       type: file
       status: complete
+      updated_at: "2026-11-03T06:37:28Z"
     - id: 01a1a048-12b7-7756-a9ff-771fdf20e217
       path: WO-04-template-per-segment-ui.md
       type: file
       status: complete
+      updated_at: "2026-11-03T07:20:40Z"
     - id: 01a1a01c-d28e-7fbe-9ddb-74992954cb43
       path: spec.md
       type: spec
       status: complete
+      updated_at: "2026-11-03T06:33:25Z"
     - id: 01a1a020-86dd-7abb-b09a-242b5a7dc67d
       path: work-order.md
       type: file
       status: complete
+      updated_at: "2026-11-03T06:37:28Z"
 assets: []

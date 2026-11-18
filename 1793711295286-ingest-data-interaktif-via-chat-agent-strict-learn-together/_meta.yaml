@@ -1,57 +1,71 @@
 id: "1793711295286"
 title: Ingest data interaktif via chat — agent strict learn-together
 created: "2026-11-03"
+updated_at: "2026-11-03T13:08:15Z"
 files:
     - id: 01a1a186-ee87-79d8-b4d2-0e00a1dbac14
       path: notes.md
       type: file
       status: draft
+      updated_at: "2026-11-03T13:08:57Z"
     - id: 01a1a1db-59fa-7eb1-b901-1de136e29898
       path: spec-techstack.md
       type: spec
       status: draft
+      updated_at: "2026-11-03T14:41:09Z"
     - id: 01a1a1d8-21cd-749e-9449-24f4d4d73444
       path: spec.md
       type: spec
       status: draft
+      updated_at: "2026-11-03T14:37:38Z"
     - id: 01a1a1e7-a18a-7673-9d56-29b72446cf34
       path: wo-01-setup-copilotkit-sandbox.md
       type: file
       status: pending
+      updated_at: "2026-11-03T14:54:34Z"
     - id: 01a1a39c-c124-7a85-9923-754290de965d
       path: wo-01a-proxy-chat-hidup.md
       type: file
       status: complete
+      updated_at: "2026-11-03T22:52:01Z"
     - id: 01a1a39c-e24f-71a7-acb0-83aa29a1c923
       path: wo-01b-tool-upload.md
       type: file
       status: complete
+      updated_at: "2026-11-03T22:52:10Z"
     - id: 01a1a39c-e3bf-71e2-b8a6-d2e1102cd4d7
       path: wo-01c-mcp-housekeeping.md
       type: file
       status: complete
+      updated_at: "2026-11-03T22:52:10Z"
     - id: 01a1a1e9-0fa9-74cd-9e3e-264c51a94904
       path: wo-02-sesi-strict-realcase-visit.md
       type: file
       status: complete
+      updated_at: "2026-11-03T14:56:08Z"
     - id: 01a1a1ea-4ce4-7af3-b3da-aa8f47d65747
       path: wo-03-mapping-editor.md
       type: file
       status: complete
+      updated_at: "2026-11-03T14:57:29Z"
     - id: 01a1a1eb-7b58-79c7-9b01-b39270d21de6
       path: wo-04-integrasi-editor-copilotkit.md
       type: file
       status: pending
+      updated_at: "2026-11-03T14:58:46Z"
     - id: 01a1b060-4082-7f65-b5e1-4617cef0e8e2
       path: wo-04a-delete-sesi.md
       type: file
       status: complete
+      updated_at: "2026-11-06T10:21:00Z"
     - id: 01a1bf9e-f95f-77a2-b393-ef5a6616c79b
       path: wo-05-custom-provider.md
       type: file
       status: complete
+      updated_at: "2026-11-09T09:23:49Z"
     - id: 01a1a1e7-a01c-7a43-8d41-efa850f0ff78
       path: work-order.md
       type: file
       status: draft
+      updated_at: "2026-11-03T14:54:34Z"
 assets: []

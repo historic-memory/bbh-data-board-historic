@@ -1,9 +1,11 @@
 id: "1792760294553"
 title: init-root-admin-credentials
 created: "2026-10-23"
+updated_at: "2026-10-23T12:58:14Z"
 files:
     - id: 01a168d7-c9d6-7c1e-965d-310096d4c65a
       path: work-order.md
       type: file
       status: complete
+      updated_at: "2026-10-23T12:58:54Z"
 assets: []

@@ -1,55 +1,68 @@
 id: "1793265053300"
 title: Kebutuhan Rumah Tangga — modul list kebutuhan rumah tangga cabang
 created: "2026-10-29"
+updated_at: "2026-10-29T09:10:53Z"
 files:
     - id: 01a1875b-242d-79eb-9a81-3079620c43c9
       path: WO-01-skeleton-plugin-skema.md
       type: file
       status: complete
+      updated_at: "2026-10-29T11:10:59Z"
     - id: 01a1875b-242d-7671-ae40-a35330934cb2
       path: WO-02-permission-crud-master.md
       type: file
       status: complete
+      updated_at: "2026-10-29T11:10:59Z"
     - id: 01a1875b-242d-7c32-b3b9-cf22ce5299c8
       path: WO-03-periode-entri.md
       type: file
       status: complete
+      updated_at: "2026-10-29T11:10:59Z"
     - id: 01a1875b-242d-7194-a908-7d07d2b3af61
       path: WO-04-generator-template.md
       type: file
       status: complete
+      updated_at: "2026-10-29T11:10:59Z"
     - id: 01a1875b-242d-7789-89d7-4eda1b69552f
       path: WO-05-validator.md
       type: file
       status: complete
+      updated_at: "2026-10-29T11:10:59Z"
     - id: 01a1875b-242d-7af3-a2c4-87b3c5cbece8
       path: WO-06-importer.md
       type: file
       status: complete
+      updated_at: "2026-10-29T11:10:59Z"
     - id: 01a1875b-242d-7320-b3ef-f26122f65917
       path: WO-07-seed-data-awal.md
       type: file
       status: pending
+      updated_at: "2026-10-29T11:10:59Z"
     - id: 01a1875b-242e-7d1e-97f0-e958a39e20d8
       path: WO-08-ui-admin.md
       type: file
       status: complete
+      updated_at: "2026-10-29T11:10:59Z"
     - id: 01a1875b-242e-7cf8-ad18-14f8a1ba4305
       path: WO-09-swagger-docs-bruno.md
       type: file
       status: complete
+      updated_at: "2026-10-29T11:10:59Z"
     - id: 01a186ed-5905-7248-b6f5-bf9cfb9fa4ad
       path: notes.md
       type: file
       status: progress
+      updated_at: "2026-10-29T09:11:04Z"
     - id: 01a186ff-7ad9-7664-9a95-d0e1fdcf2ad7
       path: spec.md
       type: spec
       status: draft
+      updated_at: "2026-10-29T09:30:52Z"
     - id: 01a1875b-242e-7afd-a2f9-3be02e5dfab0
       path: work-order.md
       type: file
       status: draft
+      updated_at: "2026-10-29T11:10:59Z"
 assets:
     - path: List Kebutuhan RT  BBH  SEPT 19 OKT 26 d.xls
       type: xls

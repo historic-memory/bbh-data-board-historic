@@ -1,13 +1,16 @@
 id: "1792743552837"
 title: BBH Data Board — First Run Setup
 created: "2026-10-23"
+updated_at: "2026-10-23T08:19:12Z"
 files:
     - id: 01a167db-5ec5-7592-8c66-1a00701243c3
       path: SPEC.md
       type: spec
       status: complete
+      updated_at: "2026-10-23T08:23:12Z"
     - id: 01a167f4-728d-78ac-8ed0-0b1e21dec0cf
       path: work-order.md
       type: file
       status: complete
+      updated_at: "2026-10-23T08:50:35Z"
 assets: []

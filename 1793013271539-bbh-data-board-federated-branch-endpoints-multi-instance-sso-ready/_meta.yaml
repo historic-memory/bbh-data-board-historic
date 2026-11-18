@@ -1,53 +1,66 @@
 id: "1793013271539"
 title: BBH Data Board — Federated Branch Endpoints (multi-instance, SSO-ready)
 created: "2026-10-26"
+updated_at: "2026-10-26T11:14:31Z"
 files:
     - id: 01a17c2f-1109-7243-b4bf-cd1aafb7f4eb
       path: SHORTNOTE-TEAM.md
       type: file
       status: draft
+      updated_at: "2026-10-27T07:07:01Z"
     - id: 01a177ec-c012-70b6-ac59-e5f05ceb4544
       path: SHORTNOTE-WO-01.md
       type: file
       status: draft
+      updated_at: "2026-10-26T11:16:06Z"
     - id: 01a177ec-c012-7b24-954b-cae5dbfb8889
       path: SPEC.md
       type: spec
       status: draft
+      updated_at: "2026-10-26T11:16:06Z"
     - id: 01a177ec-c013-75a4-bbf7-0c801612ef14
       path: WO-01-endpoint-registry.md
       type: file
       status: complete
+      updated_at: "2026-10-26T11:16:06Z"
     - id: 01a17833-8257-7ff5-8b17-3b08dc2555f3
       path: WO-02-captive-portal-routing.md
       type: file
       status: complete
+      updated_at: "2026-10-26T12:33:24Z"
     - id: 01a17833-8258-7dfe-908c-2dbbcb0488f3
       path: WO-03-sso-admin-only.md
       type: file
       status: complete
+      updated_at: "2026-10-26T12:33:24Z"
     - id: 01a17843-e021-71c1-823f-130a712d4175
       path: WO-04-rbac-groups-permissions.md
       type: file
       status: complete
+      updated_at: "2026-10-26T12:51:16Z"
     - id: 01a17c26-97e6-7dc5-b6de-2bd4bfba7b99
       path: WO-05-housekeeping-docs-env.md
       type: file
       status: complete
+      updated_at: "2026-10-27T06:57:46Z"
     - id: 01a17c61-2af2-7435-b88e-624b616801a8
       path: WO-06-patch-wo-05.md
       type: file
       status: complete
+      updated_at: "2026-10-27T08:01:45Z"
     - id: 01a17c72-c9a0-7cca-aaad-d15c8c066db0
       path: WO-07-swagger-parity-rebuild-console.md
       type: file
       status: complete
+      updated_at: "2026-10-27T08:20:59Z"
     - id: 01a17c84-9dec-722a-9b33-2c85fee148b8
       path: WO-08-build-sh-reproducible.md
       type: file
       status: complete
+      updated_at: "2026-10-27T08:40:28Z"
     - id: 01a177ec-c013-7221-8502-c5aa011599f8
       path: work-order.md
       type: file
       status: draft
+      updated_at: "2026-10-26T11:16:06Z"
 assets: []

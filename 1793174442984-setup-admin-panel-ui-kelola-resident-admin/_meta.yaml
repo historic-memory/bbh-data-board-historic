@@ -1,45 +1,56 @@
 id: "1793174442984"
 title: Setup Admin Panel (UI) — kelola resident & admin
 created: "2026-10-28"
+updated_at: "2026-10-28T08:00:42Z"
 files:
     - id: 01a1819e-26ae-7bde-94fc-674089474e5c
       path: WO-00-dev-workflow.md
       type: file
       status: complete
+      updated_at: "2026-10-28T08:26:27Z"
     - id: 01a18199-41e3-7e9b-aaeb-877acf16fdb2
       path: WO-01-backend-kontrak-tipis.md
       type: file
       status: complete
+      updated_at: "2026-10-28T08:21:07Z"
     - id: 01a18199-41e3-712a-8f0c-f15401d3ca46
       path: WO-02-auth-flow.md
       type: file
       status: complete
+      updated_at: "2026-10-28T08:21:07Z"
     - id: 01a18199-41e4-72a6-a4da-bdd0682e5745
       path: WO-03-tailwind-admin-shell.md
       type: file
       status: complete
+      updated_at: "2026-10-28T08:21:07Z"
     - id: 01a18199-41e5-703e-8acb-d22cc67270a1
       path: WO-04-resident-crud-ui.md
       type: file
       status: complete
+      updated_at: "2026-10-28T08:21:07Z"
     - id: 01a18199-41e5-7793-8c22-3ad5926c5585
       path: WO-05-facilities-ui.md
       type: file
       status: complete
+      updated_at: "2026-10-28T08:21:07Z"
     - id: 01a18199-41e5-72aa-8d5c-4718a35ca5a7
       path: WO-06-admin-rbac-ui.md
       type: file
       status: complete
+      updated_at: "2026-10-28T08:21:07Z"
     - id: 01a18199-41e5-781f-911f-46425df3f30c
       path: WO-07-dashboard.md
       type: file
       status: complete
+      updated_at: "2026-10-28T08:21:07Z"
     - id: 01a18186-c2ed-7765-9b77-7d2fdb5874f7
       path: spec.md
       type: spec
       status: complete
+      updated_at: "2026-10-28T08:00:55Z"
     - id: 01a18186-c30e-7a18-87bf-ada9399763b6
       path: work-order.md
       type: file
       status: complete
+      updated_at: "2026-10-28T08:00:55Z"
 assets: []

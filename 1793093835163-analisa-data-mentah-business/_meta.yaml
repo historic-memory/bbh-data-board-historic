@@ -1,59 +1,73 @@
 id: "1793093835163"
 title: Analisa Data Mentah Business
 created: "2026-10-27"
+updated_at: "2026-10-27T09:37:15Z"
 files:
     - id: 01a17ce6-0bc3-70d2-a998-8b3a718cfd64
       path: SPEC.md
       type: spec
       status: draft
+      updated_at: "2026-10-27T10:26:53Z"
     - id: 01a17d01-609c-7622-878a-9dce0731bbf4
       path: WO-01-plugin-skeleton.md
       type: file
       status: complete
+      updated_at: "2026-10-27T10:56:44Z"
     - id: 01a17d01-609c-77bd-b0e1-90ff7e8f4580
       path: WO-02-migrasi-skema-canonical.md
       type: file
       status: complete
+      updated_at: "2026-10-27T10:56:44Z"
     - id: 01a17d01-609d-7de6-8d9f-13ade46cc618
       path: WO-03-permission-auth.md
       type: file
       status: complete
+      updated_at: "2026-10-27T10:56:44Z"
     - id: 01a17d01-609d-7cfa-9c94-e66e429f2833
       path: WO-04-api-admin-crud.md
       type: file
       status: complete
+      updated_at: "2026-10-27T10:56:44Z"
     - id: 01a17d01-609d-7267-b466-c08edda40c15
       path: WO-05-http-api-bruno.md
       type: file
       status: complete
+      updated_at: "2026-10-27T10:56:44Z"
     - id: 01a17d01-609d-7f6f-b631-b991e090397c
       path: WO-06-importer-csv.md
       type: file
       status: complete
+      updated_at: "2026-10-27T10:56:44Z"
     - id: 01a17d01-609d-7645-9069-aabaaa21cb3c
       path: WO-07-swagger-docs.md
       type: file
       status: complete
+      updated_at: "2026-10-27T10:56:44Z"
     - id: 01a17d0c-d56a-7f45-b88c-b12239b49bc5
       path: WO-08-template-generator.md
       type: file
       status: complete
+      updated_at: "2026-10-27T11:09:15Z"
     - id: 01a17d0c-d56a-71f5-bb9e-16b8d0b045a1
       path: WO-09-validasi-umpan-balik.md
       type: file
       status: complete
+      updated_at: "2026-10-27T11:09:15Z"
     - id: 01a17d13-8b47-7ef7-b3ad-bbd86be1c654
       path: WO-10-generator-resident-code.md
       type: file
       status: complete
+      updated_at: "2026-10-27T11:16:35Z"
     - id: 01a17cb8-d9ac-7864-b376-950ff7458b27
       path: notes.md
       type: file
       status: progress
+      updated_at: "2026-10-27T09:37:31Z"
     - id: 01a17d01-609e-7c10-9dd7-217bde28062e
       path: work-order.md
       type: file
       status: draft
+      updated_at: "2026-10-27T10:56:44Z"
 assets:
     - path: Data Bayi Yayasan 1b590f1a8a518093ac5bd1d366590b33_all.csv
       type: csv

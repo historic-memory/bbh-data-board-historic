@@ -1,14 +1,14 @@
 ---
-title: "WO-02: Konsisten redaksi preview penala dengan panel kolom"
-description: "Preview penala titik awal memakai mask generik berbeda dari SAMPLE panel kolom — samakan kebijakan (opsi B) agar header terbaca tanpa jalur PII baru"
-status: pending
+title: 'WO-02: Konsisten redaksi preview penala dengan panel kolom'
+description: Preview penala titik awal memakai mask generik berbeda dari SAMPLE panel kolom — samakan kebijakan (opsi B) agar header terbaca tanpa jalur PII baru
+status: complete
 created: "2026-11-18"
 updated: "2026-11-18"
 tags:
-  - ingest
-  - mapping
-  - ui-ux
-  - backend
+    - ingest
+    - mapping
+    - ui-ux
+    - backend
 ---
 # WO-02: Konsisten redaksi preview penala dengan panel kolom
 

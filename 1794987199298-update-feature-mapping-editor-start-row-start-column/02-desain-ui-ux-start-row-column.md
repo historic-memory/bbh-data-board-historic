@@ -17,6 +17,38 @@ tags:
 Desain antarmuka agar user dapat menunjuk baris header dan kolom data
 awal secara visual di editor mapping — tanpa mengetik angka mentah.
 
+## Mockup (sketsa sederhana)
+
+```
+┌─ Editor Mapping ──────────────────────────────────────────────────────┐
+│  Sesi: 2d54fff5… · berkas: kunjungan-nov.xlsx                         │
+│                                                                       │
+│  [ Header: baris 4 · Kolom: B  ✕ reset → otomatis ]   (chip status)   │
+│                                                                       │
+│  Preview sample (klik nomor baris = pilih header,                     │
+│                  klik huruf kolom = pilih kolom data pertama)         │
+│                                                                       │
+│        │  A     │  B        │  C         │  D       │                 │
+│  ──────┼────────┼────────────┼─────────────┼───────────┤                 │
+│  1     │ Laporan Kunjungan Bulan November ────── (redup, diabaikan)     │
+│  2     │ Dinas Kesehatan ────────────────────── (redup, diabaikan)     │
+│  3     │ No │ Nama        │ Telepon     │ Tanggal   │ ← kolom A redup │
+│  [4]   │ 1  │ Ani         │ 0812…       │ 02-11     │ ← HEADER (aktif)│
+│  5     │ 2  │ Budi        │ 0813…       │ 03-11     │   baris data    │
+│                                                                       │
+│  ⚠ Baris ini tidak tampak seperti header — pilih baris yang berisi    │
+│    nama kolom.                        (pesan inline, bila salah-titik)│
+│                                                                       │
+│  ⛔ ada perubahan belum disimpan                    [Simpan] [Batal]  │
+└───────────────────────────────────────────────────────────────────────┘
+```
+
+- `[4]` = baris terpilih sebagai header (highlight); baris 1-2 dan
+  kolom A redup karena berada di luar titik awal.
+- Chip status klik → reset ke "Deteksi: otomatis".
+- Banner "belum disimpan" muncul hanya saat ada override aktif yang
+  belum di-`PUT /mapping`.
+
 ## Prinsip
 
 - **Show, don't tell**: user menunjuk di preview, bukan menebak nomor.

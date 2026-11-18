@@ -1,7 +1,7 @@
 ---
 title: 'WO-03: Modal konfirmasi sebelum replace lampiran sesi di halaman chat'
 description: Upload berkas baru di halaman chat langsung menghapus berkas lama tanpa konfirmasi — tambah modal confirm destructive (AlertDialog) dengan info berkas lama & baru
-status: progress
+status: complete
 created: "2026-11-18"
 updated: "2026-11-18"
 tags:
@@ -46,13 +46,13 @@ tags:
 
 ## Daftar kerja
 
-- [ ] Tambah state pending-file di `IngestUploadPanel` + AlertDialog
+- [x] Tambah state pending-file di `IngestUploadPanel` + AlertDialog
       konfirmasi replace (nama lama/baru, tombol Batal & Ganti).
-- [ ] Label tombol dinamis: "Pilih file" (kosong) / "Ganti berkas"
+- [x] Label tombol dinamis: "Pilih file" (kosong) / "Ganti berkas"
       (sudah ada lampiran).
-- [ ] Modal HANYA untuk kondisi replace; upload pertama langsung jalan.
-- [ ] Pesan 409 "sesi sudah di tahap …" tetap tampil di error panel.
-- [ ] Test Playwright: replace dengan modal (batal & lanjut), upload
+- [x] Modal HANYA untuk kondisi replace; upload pertama langsung jalan.
+- [x] Pesan 409 "sesi sudah di tahap ..." tetap tampil di error panel.
+- [x] Test Playwright: replace dengan modal (batal & lanjut), upload
       pertama tanpa modal, replace setelah sesi diperkenalkan → 409.
 
 ## Kriteria selesai

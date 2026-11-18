@@ -1,7 +1,7 @@
 id: "1794972055068"
 title: Review analisa llm chat
 created: "2026-11-18"
-updated_at: "2026-11-18T07:11:18Z"
+updated_at: "2026-11-18T07:17:38Z"
 files:
     - id: 01a1ecaf-f999-7c32-a628-de2cb146c01e
       path: 01-mekanisme-first-chat-front-ke-backend.md
@@ -13,4 +13,9 @@ files:
       type: task
       status: complete
       updated_at: "2026-11-18T07:03:49Z"
+    - id: 01a1ed82-64af-7889-bfd1-8a5e705821f5
+      path: 02-mekanisme-mapping-berkas.md
+      type: file
+      status: create
+      updated_at: "2026-11-18T07:17:38Z"
 assets: []

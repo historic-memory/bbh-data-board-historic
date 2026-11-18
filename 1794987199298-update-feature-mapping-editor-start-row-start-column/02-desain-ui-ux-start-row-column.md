@@ -49,6 +49,47 @@ awal secara visual di editor mapping — tanpa mengetik angka mentah.
 - Banner "belum disimpan" muncul hanya saat ada override aktif yang
   belum di-`PUT /mapping`.
 
+## Alur pemilihan (micro-interaction)
+
+**1. Masuk mode "penala titik awal"**
+- Penala di preview TIDAK aktif secara default — klik biasa di preview
+  tidak mengubah apa pun.
+- Mode diaktifkan lewat chip `Deteksi: otomatis` atau tombol
+  "Atur titik awal".
+
+**2. Memilih header (start_row)**
+- Mode aktif → semua nomor baris jadi tombol. Hover = outline halus +
+  tooltip "Jadikan baris ini header".
+- Klik nomor baris (mis. `4`) → langsung berlaku: baris `4` di-highlight
+  sebagai header, baris di atasnya redup, daftar kolom mapping
+  auto-populate dari isi baris itu.
+- Tidak ada modal/dialog — semuanya inline di preview.
+
+**3. Memilih kolom data pertama (start_col)**
+- Klik huruf kolom (mis. `B`) → kolom sebelum `B` redup/tercoret dengan
+  label "diabaikan".
+- Salah klik → klik baris/kolom lain; pilihan terakhir yang berlaku,
+  tanpa konfirmasi per klik.
+
+**4. Umpan balik instan**
+- Setiap klik: preview re-render + daftar kolom mapping ikut berubah.
+- Bila butuh sample baru dari Go → spinner kecil di chip, preview redup
+  selama loading (re-sample debounce).
+- Pilihan menghasilkan header kosong/duplikat → pesan inline merah dan
+  pilihan TIDAK diterapkan (tetap pilihan valid sebelumnya) — konsisten
+  fail-closed Go.
+
+**5. Keluar & simpan**
+- Chip berubah jadi `Header: baris 4 · Kolom: B` + tanda "belum
+  disimpan".
+- User lanjut mapping kolom seperti biasa, atau `Simpan`
+  (`PUT /mapping`) — override ikut tersimpan sebagai data sesi.
+- `✕ reset` di chip → kembali ke deteksi otomatis.
+
+**Poin UX penting**: satu klik = satu keputusan, tanpa dialog, umpan
+balik langsung di tempat data dilihat. Keyboard didukung (penala
+focusable, Enter untuk memilih).
+
 ## Prinsip
 
 - **Show, don't tell**: user menunjuk di preview, bukan menebak nomor.

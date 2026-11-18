@@ -1,13 +1,13 @@
 ---
-title: "Mekanisme first chat dari front ke backend"
-description: "Analisa flow LLM chat ingest: sesi baru sampai submit message pertama (front → backend)"
-status: draft
+title: Mekanisme first chat dari front ke backend
+description: 'Analisa flow LLM chat ingest: sesi baru sampai submit message pertama (front → backend)'
+status: complete
 created: "2026-11-18"
 updated: "2026-11-18"
 tags:
-  - ingest
-  - llm
-  - arsitektur
+    - ingest
+    - llm
+    - arsitektur
 ---
 # Mekanisme first chat dari front ke backend
 

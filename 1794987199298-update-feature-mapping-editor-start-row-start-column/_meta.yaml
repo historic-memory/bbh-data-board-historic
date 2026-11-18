@@ -1,11 +1,16 @@
 id: "1794987199298"
 title: Update feature mapping editor — start row & start column
 created: "2026-11-18"
-updated_at: "2026-11-18T07:34:22Z"
+updated_at: "2026-11-18T07:35:46Z"
 files:
     - id: 01a1ed93-4a6d-74ca-8cb4-ca2bf19352e0
       path: wos/01-start-row-start-column.md
       type: task
       status: create
-      updated_at: "2026-11-18T07:34:22Z"
+      updated_at: "2026-11-18T07:35:46Z"
+    - id: 01a1ed94-be1a-7e0e-8e1a-923cb3d7ec5a
+      path: 01-analisa-parsing-header.md
+      type: file
+      status: create
+      updated_at: "2026-11-18T07:35:46Z"
 assets: []

@@ -1,7 +1,7 @@
 ---
 title: "WO-06 — Segmentasi sesi eksplisit (satu sesi per segmen, konteks ke AI)"
 description: "Opsi B+ dari analisa multi-segmen: user memilih segmen (modul target) secara eksplisit saat membuat sesi, segmen tampil jelas di editor & chat, AI selalu tahu konteks segmen, plus guard kecocokan berkas vs segmen"
-status: draft
+status: review
 created: "2026-11-19"
 updated: "2026-11-19"
 tags:
@@ -115,3 +115,81 @@ prompt agent.
 
 Urutan eksekusi disarankan: §A → §B → §C. Effort kasar: §A ±0,5–1 hari;
 §B ±1 hari; §C ±0,5 hari.
+
+---
+
+## Progres Dev — 2026-11-19 (status: review)
+
+Urutan §A → §B → §C selesai dan divalidasi. Model mapping v2, state machine,
+dan pipeline ekstraksi TIDAK berubah.
+
+### §A Backend (`plugins/ingest`)
+
+- `services/segments.go` (baru): katalog `Segment` + `Segments()`,
+  `NormalizeSegment` (fail-closed: kosong → `ErrSegmentRequired`, tak dikenal
+  → `ErrTargetPluginUnsupported`), `SegmentInfo`, `CheckSegmentWarning`
+  (guard, warning saja).
+- `services/session_state.go`: `CreateSession` wajib `TargetPlugin` (opsional
+  `ID` dari klien); `EnsureSession(id, targetPlugin)` — baris BARU wajib
+  segmen; `SetSessionSegment` — lock dicek lebih dulu (409 bila sudah
+  punya berkas/profil).
+- `services/uploads.go`: `SaveUploadInput.TargetPlugin`; sesi hasil upload ikut
+  bersegmen eksplisit.
+- `services/sessions.go`: `AppendMessage(..., targetPlugin)`.
+- `services/payload.go`: `TargetFields` tanpa fallback `visit`; `SafePayload`
+  menambah `segment` + `segment_warning`.
+- `services/mapping.go`: `MappingView` menambah `segment` + `segment_warning`;
+  gate identitas dari `target_plugin` sesi (tanpa default); `SaveMapping`/
+  `ConfirmMappingDoc` memakai segmen sesi.
+- `services/extraction.go`: ekstraksi hanya segmen eksplisit `visit`.
+- `handlers/segments.go` (baru): `GET /admin/ingest/segments`,
+  `PUT /admin/ingest/sessions/:id/segment` (RBAC + audit).
+- `plugin.go`: registrasi dua route segmen.
+- Tools agent: `confirm_mapping` memakai segmen sesi (bukan hardcode `visit`).
+
+### §B Frontend (`sub_app/webapp`)
+
+- `api/ingest.ts`: `listIngestSegments`, `createIngestSession`,
+  `setIngestSessionSegment`, `getIngestSessionState`, `segmentLabelFor`,
+  `uploadIngestFile(..., targetPlugin)`, tipe `segment`/`segment_warning`.
+- `IngestSessionListPage`: picker segmen saat "Sesi baru" (fail-closed; tombol
+  nonaktif tanpa pilihan) + badge segmen di kartu sesi.
+- `IngestChatPage`: gerbang segmen (sesi belum ada/belum bersegmen) + badge +
+  kirim `target_plugin` saat upload.
+- `IngestMappingPage`: badge segmen + banner `segment_warning` + pemilih segmen
+  untuk sesi legacy.
+- `IngestUploadPanel`: prop `targetPlugin` → form `target_plugin`.
+
+### §C Agent (`sub_app/ingest_runtime`, `plugins/ingest/prompt/agent.md`)
+
+- `copilot-runtime.ts`: `fetchSessionSegment` (dari `GET /sessions/:id/state`),
+  blok "Segmen sesi (WAJIB)" ditempel ke system prompt per request, `segment`
+  dikirim di payload tool, `target_plugin` ikut saat persist pesan.
+- `agent.md`: Kontrak 0 (segmen eksplisit), peringatan berkas campur →
+  sarankan sesi terpisah, output menyertakan baris `Segmen`.
+
+### Bukti (AC)
+
+- AC-1/AC-2/AC-4/AC-6: Bruno hijau — `44,45,46,48,49,50,51,52,53`
+  (`bru run --env Local --env-var token=... ingest/...`), termasuk 409 ganti
+  segmen setelah berkas & `segment_warning` dari backend.
+- AC-3: Playwright smoke via Tailscale (`BASE_URL=http://100.125.175.34:5173`)
+  — picker memuat `visit` (supported), badge "Kunjungan" tampil di chat, editor,
+  dan daftar sesi.
+- AC-4 (UI): smoke kedua — banner `ingest-segment-warning` tampil di editor
+  dari data backend ("...periksa segmen atau buat sesi terpisah").
+- AC-7: route baru di belakang `ingest.read`/`ingest.write` + audit.
+- AC-8: `go build ./...` + `go vet ./plugins/ingest/...` +
+  `go test ./plugins/ingest/...` hijau; `npx tsc --noEmit` + `npm run build`
+  (webapp) hijau; `tsc --noEmit` runtime hijau; `swag init` meregenerasi
+  `docs/swagger` (gitignored); Bruno + Playwright di atas.
+
+### Catatan untuk reviewer
+
+- Kegagalan pre-existing pada Bruno ingest `05` dan `08–14` (bukan akibat WO-06):
+  `05` mengecek literal `bruno-sesi-1` sedangkan `04` memakai id ber-timestamp;
+  `08–14` membutuhkan runtime var `sessionId` (diisi manual).
+- Karena hanya `visit` yang punya katalog field, "ganti segmen → 409" (AC-2)
+  diuji dengan target segmen lain (`resident`) pada sesi yang sudah berberkas.
+- `EnsureSession` berubah tanda tangan (kini butuh `targetPlugin`) — hanya
+  dipanggil internal (upload/message).

@@ -1,7 +1,7 @@
 id: "1793711295286"
 title: Ingest data interaktif via chat — agent strict learn-together
 created: "2026-11-03"
-updated_at: "2026-11-19T01:53:21Z"
+updated_at: "2026-11-19T01:55:16Z"
 files:
     - id: 01a1f17d-2b89-7adb-99c1-641e012bd5e2
       path: analisa-mapping-multi-segmen.md
@@ -73,6 +73,11 @@ files:
       type: file
       status: draft
       updated_at: "2026-11-03T14:54:34Z"
+    - id: 01a1f183-1dcb-77ec-b9dd-a01255693c4c
+      path: wo-06-segmen-sesi-eksplisit.md
+      type: file
+      status: create
+      updated_at: "2026-11-19T01:55:16Z"
 assets:
     - path: .trash-delete-file-481019-1795052881293719352
       type: trash-delete-file-481019-1795052881293719352

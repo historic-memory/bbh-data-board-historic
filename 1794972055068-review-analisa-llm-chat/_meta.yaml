@@ -11,7 +11,7 @@ files:
     - id: 01a1ed82-64af-7889-bfd1-8a5e705821f5
       path: 02-mekanisme-mapping-berkas.md
       type: file
-      status: draft
+      status: complete
       updated_at: "2026-11-19T08:21:49Z"
     - id: 01a1ed4a-c647-79bb-a949-1e0ba2b9810d
       path: wos/01-muat-riwayat-chat-saat-mount.md

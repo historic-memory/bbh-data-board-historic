@@ -13,9 +13,12 @@ tags:
 
 Topic `1795107489593` (extends `1795083433686`). Sumber kebenaran:
 `notes.md` (DESAIN FINAL owner ok 2026-11-20) + `spec.md` (draft).
-**SPEC disetujui owner 2026-11-20**. WO-01 progress (handoff dev);
-WO-02..05 pending (urutan WO-01→02→03→04→05; WO-02 bebas paralel
-bila kapasitas dev memungkinkan).
+**SPEC disetujui owner 2026-11-20**. WO-01 complete (review LULUS 2026-11-20,
+kode `111bf03`+`8d0eafb`); WO-02..05 pending (urutan WO-02→03→04→05).
+Backlog dari review WO-01 (tidak blocker): (a) default `kind` dari
+`fields.yaml` untuk bentuk mapping legacy; (b) OPEN QUESTION owner — sesi
+pure-chat dari `uploaded` butuh jalur `introduce` (tool kecil vs
+auto-introduce); (c) sesi uji dev `wo01-smoke-1795126932` boleh dibersihkan.
 
 ## Latar
 
@@ -29,7 +32,7 @@ API admin existing + proposal/approve untuk tulis.
 
 | WO | Judul | Status | Commit kode | Dok historic |
 |---|---|---|---|---|
-| WO-01 | Patch editor: hapus tombol Ekstrak & Konfirmasi + modal Simpan draft → chat | **progress** (handoff 2026-11-20) | — | wo-01-hapus-tombol-ekstrak-konfirmasi-editor.md |
+| WO-01 | Patch editor: hapus tombol Ekstrak & Konfirmasi + modal Simpan draft → chat | **complete** (review LULUS 2026-11-20) | `111bf03`, `8d0eafb` | wo-01-hapus-tombol-ekstrak-konfirmasi-editor.md |
 | WO-02 | Backend `segment_read` (whitelist + deidentify) + skema Node | pending (2026-11-20) | — | wo-02-segment-read.md |
 | WO-03 | Backend `segment_write_propose` + `apply_record_actions` + kartu approve | pending (2026-11-20) | — | wo-03-write-propose-apply.md |
 | WO-04 | `MergeVisitors` plugin visit + endpoint admin | pending (2026-11-20) | — | wo-04-merge-visitors-visit.md |

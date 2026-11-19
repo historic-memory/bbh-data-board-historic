@@ -1,7 +1,7 @@
 ---
 title: "WO-01 — Hapus tombol Ekstrak & Konfirmasi dari editor mapping (aksi jalan via chat AI)"
 description: "Hapus tombol 'Ekstrak sekarang' (kartu Ekstrak: dedup + dry run ikut hilang) dan 'Konfirmasi & kunci mapping' di IngestMappingPage — konfirmasi/ekstraksi cukup lewat tool chat AI (confirm_mapping/run_extraction); Simpan draft tetap; prasyarat data dedup/dry-run pindah ke alur chat"
-status: progress
+status: complete
 created: "2026-11-20"
 updated: "2026-11-20"
 tags:
@@ -198,3 +198,43 @@ Format: `berkas:baris` — apa yang dilakukan — kenapa (ref AC/D-x/gotcha).
     `uploaded` butuh aksi `introduce` yang hanya dijalankan editor
     (`plugins/ingest/services/mapping.go:786`) — untuk uji chat murni, gate itu
     dimajukan lewat `POST /admin/ingest/sessions/:id/transition`.
+
+## Review Manager (2026-11-20) — LULUS ✅
+
+Verifikasi independen (bukan hanya percaya laporan):
+
+- `git show 111bf03` + `8d0eafb` — isi commit sesuai lingkup; berkas di luar
+  lingkup TIDAK ikut.
+- Grep `IngestMappingPage.tsx` — tidak ada lagi `confirmMapping`/
+  `extractMapping`/state `dedup`/`dryRun`/`gateReady`; sisa kecocokan hanya
+  komentar arahan ke chat (AC-1).
+- Modal pasca simpan (baris ±741-765) memakai `ui/Modal` existing, dua tombol
+  bertanda `ingest-save-continue`/`ingest-save-go-chat`, `onClose` = Lanjut
+  edit, tanpa navigasi otomatis (AC-2/AC-7).
+- `tool-schema.ts` (`loosenFreeFormFields`) + pembungkusan 3 tool di
+  `copilot-runtime.ts` + 3 test regresi terpasang di `npm test` — Manager
+  jalankan sendiri di container `ingest-runtime`: **20/20 PASS** (AC-6).
+- Smoke browser sendiri (sesi `wo03-smoke-1795104921/map`, reload): footer
+  hanya "Simpan draft"; kartu "Langkah berikutnya" + Gate + "Pengecualian
+  (aturan)" + panel Baris Rejected ("Analisa"/"Setujui semua") tetap tampil
+  (AC-1/AC-5).
+- Log Implementasi: 20 entri, format `berkas:baris` + kenapa dengan ref
+  gotcha/AC — kualitas baik (aturan owner `7e1a197` terpenuhi).
+
+### Putusan 3 temuan dev
+
+1. **Bentuk peta legacy tanpa `kind`** (field `encrypt:true` ditolak
+   `ErrPolicyRelaxed`) → DITERIMA SEBAGAI BACKLOG, tidak blocker. Prompt sudah
+   mengarahkan bentuk v2 + `kind`; usulan backend "default `kind` dari
+   `fields.yaml` saat kolom legacy" dicatat sebagai kandidat perbaikan kecil
+   (kandidat: masuk WO-05 housekeeping atau patch kecil terpisah — jangan
+   dikerjakan tanpa WO).
+2. **Gate `introduced` hanya via editor** (`ActionIntroduce`) → DIPERTAHANKAN
+   "editor = persiapan" (konsisten arah owner: chat = jalur eksekusi).
+   Peningkatan "sesi pure-chat dari `uploaded`" dicatat sebagai OPEN QUESTION
+   ke owner: (a) tool kecil `introduce_session` di Node, atau (b) auto-introduce
+   saat pesan pertama agent. Menunggu keputusan owner; tidak blocker WO-02..05.
+3. **Sesi uji dev `wo01-smoke-1795126932`** → boleh dibersihkan via soft delete
+   daftar sesi (WO-04a) kapan saja; tidak menahan apa pun.
+
+Status WO: **complete**. Berikutnya: WO-02 (`segment_read`) siap eksekusi.

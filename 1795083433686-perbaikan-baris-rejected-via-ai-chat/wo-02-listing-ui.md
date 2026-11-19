@@ -12,7 +12,8 @@ tags:
 # WO-02 — Frontend: listing UI + checkbox scope + edit manual + tombol Analisa
 
 Sumber: SPEC `spec.md` topic `1795083433686`. Prasyarat: WO-01
-(snapshot + tool T-1/T-2/T-4 hidup). Status: **pending**.
+(snapshot + tool T-1/T-2/T-4 hidup). Status: **pending (menunggu
+WO-01 selesai)**.
 
 ## Lingkup
 

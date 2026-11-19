@@ -1,7 +1,7 @@
 ---
 title: "WO-01 — Backend snapshot analisa + tool T-1/T-2/T-4 + fail-closed P-8"
 description: "Endpoint analyze (dry-run full scan → snapshot jsonb), tool get_rejected_rows/propose_fixes/submit_analysis (pola agent_tools.go), fail-closed P-8 + batas O-21; listing UI & apply menyusul di WO-02/03"
-status: pending
+status: progress
 created: "2026-11-19"
 updated: "2026-11-19"
 tags:
@@ -11,8 +11,9 @@ tags:
 ---
 # WO-01 — Backend: snapshot analisa + tool T-1/T-2/T-4 + fail-closed P-8
 
-Sumber: SPEC `spec.md` topic `1795083433686` (desain final owner ok
-2026-11-19). Status: **pending**.
+Sumber: SPEC `spec.md` topic `1795083433686` (disetujui owner
+2026-11-19). Status: **progress**. Prasyarat: tidak ada (mulai dari
+WO ini).
 
 ## Lingkup
 

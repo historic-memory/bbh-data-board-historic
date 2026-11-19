@@ -1,7 +1,7 @@
 id: "1795083433686"
 title: Perbaikan baris rejected via AI chat (gate rejected ingest)
 created: "2026-11-19"
-updated_at: "2026-11-19T11:16:48Z"
+updated_at: "2026-11-19T11:19:03Z"
 extends: "1793711295286"
 files:
     - id: 01a1f35c-0351-7d0e-b724-5ebc82cf8380
@@ -17,18 +17,18 @@ files:
     - id: 01a1f37c-1943-7889-9f2f-29ea463e8fa1
       path: spec.md
       type: spec
-      status: draft
-      updated_at: "2026-11-19T11:16:48Z"
+      status: progress
+      updated_at: "2026-11-19T11:19:03Z"
     - id: 01a1f37c-1943-7298-88eb-a2bfe01639db
       path: wo-01-backend-snapshot-tool.md
       type: file
-      status: pending
-      updated_at: "2026-11-19T00:00:00Z"
+      status: progress
+      updated_at: "2026-11-19T11:19:03Z"
     - id: 01a1f37c-1943-79d3-a974-51125091eb79
       path: wo-02-listing-ui.md
       type: file
       status: pending
-      updated_at: "2026-11-19T11:16:48Z"
+      updated_at: "2026-11-19T11:19:03Z"
     - id: 01a1f37c-1943-7303-a19a-5cb6e5627f79
       path: wo-03-apply-rescan-loop.md
       type: file
@@ -37,6 +37,6 @@ files:
     - id: 01a1f37c-1943-7bc1-b1f4-c425c7936315
       path: work-order.md
       type: file
-      status: draft
-      updated_at: "2026-11-19T11:16:48Z"
+      status: progress
+      updated_at: "2026-11-19T11:19:03Z"
 assets: []

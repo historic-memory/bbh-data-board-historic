@@ -1,7 +1,7 @@
 ---
 title: "SPEC — Perbaikan baris rejected via AI chat (loop + listing)"
 description: "SPEC final: loop analisa AI (max 3 putaran) + tabel listing rejected di editor (checkbox scope P-7/P-8 + edit manual) + 4 tool call Node↔Go + CSV perbaikan menggantikan berkas; prinsip fail-closed & deidentify tetap; WO-01..WO-03"
-status: draft
+status: progress
 created: "2026-11-19"
 updated: "2026-11-19"
 tags:
@@ -13,8 +13,8 @@ tags:
 # SPEC — Perbaikan baris rejected via AI chat
 
 Topic `1795083433686` (extends `1793711295286`). Sumber: desain final
-`desain-flow-dan-toolcall.md` (owner ok 2026-11-19). Status: **draft —
-menunggu review owner** sebelum WO dieksekusi.
+`desain-flow-dan-toolcall.md` (owner ok 2026-11-19). Status:
+**progress — disetujui owner 2026-11-19, eksekusi WO-01 dimulai.**
 
 ## 1. Masalah
 

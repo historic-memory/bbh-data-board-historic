@@ -3,7 +3,7 @@ title: work order
 description: 'Master index WO plugin ingest — pendekatan checkpoint (partial: CP-1 saja; WO checkpoint berikutnya menyusul)'
 status: draft
 created: "2026-11-03"
-updated: "2026-11-09"
+updated: "2026-11-19"
 ---
 # Master Index — Work Order Plugin `ingest` (checkpoint)
 
@@ -26,6 +26,24 @@ ketiga (2026-11-06):** delete sesi (bagian housekeeping WO-4 §D) dipindah
 jadi WO-04a — patch prioritas owner, dieksekusi SEBELUM CP-4 (kebutuhan nyata
 saat uji: daftar sesi penuh); sisa WO-4 tetap CP-4.
 
+**Pembaruan (2026-11-19):** hasil analisa `analisa-mapping-multi-segmen.md`
+(opsi **B+** disetujui owner) melahirkan **WO-06 — segmentasi sesi eksplisit**;
+temuan owner sesi `extracting` macet melahirkan **WO-07 — penanganan sesi
+stale**. Keduanya complete 2026-11-19 dan berada di luar checkpoint. Kandidat
+segmen ingest berikutnya: `resident` -> `sec`/`hsh` (katalog field per plugin
+menyusul). **WO-08 dibuat & COMPLETE** (2026-11-19) — D-R1 dikunci
+owner (dedup `NIK` -> `nama + tanggal_lahir` -> none, mesin dedup dipakai
+ulang dari visit); D-R2/D-R3 default Manager aktif.
+**WO-09 dibuat** (2026-11-19, pending) — registrasi segmen `sec` + `hsh`
+ke dispatcher; pipeline import kedua plugin SUDAH ADA, kerja utama adapter
++ exceptions minimal; D-S1/D-S2 dikunci 2026-11-19 (owner "ok"); SIAP EKSEKUSI.
+**WO-10 dibuat** (2026-11-19, pending) — housekeeping & retensi sesi
+(bagian D WO-04 dipisah, pola WO-04a); menunggu keputusan O-14 (D-T1).
+**WO-11 dibuat** (2026-11-19, pending) — konfirmasi tebakan agent di
+editor: tombol "Setuju semua tebakan" + konfirmasi per baris (dari temuan
+uji owner pasca WO-09; auto-confirm oleh sistem DITOLAK — D-7 tetap,
+konfirmasi tetap aksi user eksplisit via PUT mapping).
+
 | Checkpoint | Isi | Status | Bukti |
 |---|---|---|---|
 | CP-1 | Setup CopilotKit + proxy + sandbox belajar — **dipecah 3 sub-WO**: 01a proxy+chat → 01b tool+upload → 01c MCP+housekeeping | **complete** (2026-11-04) | e4f4ea9, a019c26, a22c03b, f00e542, 397fbff |
@@ -44,6 +62,12 @@ saat uji: daftar sesi penuh); sisa WO-4 tetap CP-4.
 | WO-03 | Excel mapping editor — §0 prasyarat sisa CP-2 + §D rules O-20 | complete (2026-11-06) | 2f7cf07, 743e183 | — |
 | WO-04a | Delete sesi ingest (soft/hard/restore/bulk) — **dipindah dari WO-04, PRIORITAS owner** | complete (2026-11-06) | 9040b39 | — |
 | WO-05 | Custom provider LLM via UI admin (key terenkripsi di DB, fallback env; di luar checkpoint) — **fitur baru permintaan owner** | **complete (2026-11-09)** — review Manager LULUS; tambahan `/deactivate` disetujui; log implementasi 29 entri; AC-1..AC-7 berbukti | 181e416 | — |
+| WO-06 | Segmentasi sesi eksplisit (opsi B+ analisa multi-segmen): picker segmen saat buat sesi + badge + guard kecocokan berkas — **usulan revisi UX TERTUNDA** | **complete (2026-11-19)** — §A→§C selesai; Bruno 44–53 + Playwright smoke hijau | — (belum commit) | wo-06-segmen-sesi-eksplisit.md |
+| WO-07 | Penanganan sesi `extracting` stale: penanda run + deteksi stale + cancel & delete (temuan owner sesi `01a1a5d6-…`) | **complete (2026-11-19)** — §A+§B selesai; AC-1..AC-7 berbukti; belum di-push | — (belum commit) | wo-07-penanganan-extracting-stale.md |
+| WO-08 | Segmen baru: `resident` — porting pipeline import (staging 2-fasa + gates + dedup + PII) + generalisasi dispatcher ekstraksi; D-R1..R3 dikunci; replikasi pola visit | **complete (2026-11-19)** — approve owner; D-R4: birth_date tanpa encrypt; commit `ac3ca5e` lokal (belum push) | — | wo-08-segmen-resident.md |
+| WO-09 | Segmen baru: `sec` + `hsh` (kebutuhan) — registrasi dispatcher (pipeline import kedua plugin sudah ada, semantik upsert) + exceptions minimal; D-S1/D-S2 dikunci | **complete (2026-11-19)** — approve owner; commit `9f78ea1` lokal (belum push); swagger regenerasi menyusul | — | wo-09-segmen-sec-hsh.md |
+| WO-10 | Housekeeping & retensi sesi ingest — job periodik (90/30 hari, profil extracted imun, env konfigurabel, audit); **D-T1 (approve O-14) menunggu** | pending (2026-11-19) | — | wo-10-housekeeping-retensi.md |
+| WO-11 | Konfirmasi tebakan agent di editor — tombol "Setuju semua tebakan" + konfirmasi per baris; TANPA auto-confirm (D-7 tetap, aksi user via PUT mapping) | pending (2026-11-19) | — | wo-11-konfirmasi-tebakan-editor.md |
 | WO-04 | Integrasi editor ↔ CopilotKit + housekeeping (CP-4 final) — **DIREVISI pasca CP-2/CP-3** | pending (rancangan final; eksekusi setelah keputusan O-14) | — | — | — |
 
 **Aturan lintas WO (pinned):**

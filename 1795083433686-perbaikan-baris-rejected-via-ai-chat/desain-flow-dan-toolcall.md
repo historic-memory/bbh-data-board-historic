@@ -1,6 +1,6 @@
 ---
 title: "Desain — flow perbaikan baris rejected & tool call Node↔Go"
-description: "Flow paten 5 tahap (report → perbaiki → evaluasi ulang → confirm → extract) + desain 3 tool call baru (get_rejected_rows, propose_row_fix, apply_fixes) mengikuti pola tool strict existing; keputusan P-1..P-6 + T-1..T-4"
+description: "DESAIN FINAL (owner ok 2026-11-19): flow 5 tahap + listing rejected interaktif di editor (checkbox scope AI + edit manual) + loop AI analisa + 3 tool call Node↔Go; keputusan P-1..P-8, T-1..T-4, O-21/O-22/O-25 dikunci"
 status: draft
 created: "2026-11-19"
 updated: "2026-11-19"
@@ -12,51 +12,69 @@ tags:
 ---
 # Desain — Flow perbaikan baris rejected & tool call Node↔Go
 
-Topic turunan `1795083433686` (extends `1793711295286`). Status: **draft —
-menunggu keputusan owner** sebelum SPEC/WO dibuat. Semua rujukan kode
-terverifikasi dari workspace 2026-11-19.
+Topic turunan `1795083433686` (extends `1793711295286`).
+**REVISI FINAL 2026-11-19 (owner ok)** — menggantikan rancangan awal
+per-baris interaktif dengan **agent-driven loop + listing rejected di
+editor (checkbox scope + edit manual)**. Semua rujukan kode terverifikasi
+dari workspace.
 
-## 1. Flow paten (5 tahap)
+## 1. Flow final
 
 ```
-[extract gagal gate / ada rejected]
-  (1) REJECTED REPORT  — baca EnforcementReport sesi terakhir
-                        (RowNo + Violates + Reason; dari rules.go:68)
-  (2) PERBAIKI — user memilih salah satu jalur:
-        a. RULE pengecualian → allow/skip (agent usulkan dari KATALOG
-           exceptions.yaml; user approve; StatedBy=admin)
-        b. NILAI baris → BERKAS PERBAIKAN BARU (v2) di-upload MENG GANTIKAN
-           berkas sesi — bukan edit DB staging (P-1)
-  (3) EVALUASI ULANG — enforcement jalan lagi atas berkas/rules baru;
-        dry run WAJIB dulu (P-4)
-  (4) CONFIRM ULANG — mapping_draft → mapping_confirmed
-        (gate tidak boleh dilompati; revise existing dipakai)
-  (5) EXTRACT ULANG → extracted (state machine existing; TIDAK ada state baru)
+[mapping accepted — semua kolom dikonfirmasi]
+  → tombol "AI Analisa"
+(1) FULL SCAN — Go: dry-run enforcement atas seluruh berkas
+      (penegak existing `EnforceMappingRules`; bukan sample 5 baris)
+(2) TABEL BARIS REJECTED muncul di editor (mapping draft) —
+      tiap baris/kelompok: checkbox "perbaiki AI" + edit manual inline
+(3) SCOPE — user mencentang baris yang mau diserahkan ke AI
+      (default cerdas P-8: format ☑, kelengkapan/ambigu ☐)
+(4) AGENT LOOP (mandiri, atas baris terpilih):
+      baca (deidentified) → klasifikasi salah-data vs pengecualian →
+      tulis proposal batch (row-fix / rule dari katalog) → sisa dilaporkan
+      batas: max 3 putaran analisa, max 500 baris/petikan (O-21)
+(5) CHECKPOINT — proposal tampil di listing (kolom "usulan AI",
+      status menunggu) + ringkasan di chat (blok terstruktur, bukan teks LLM)
+(6) APPROVAL — user setujui (per baris / kategori / semua) dari listing
+      ATAU kartu di chat → apply_fixes (confirmed_by_user eksplisit)
+(7) APPLY — rule → profil append-only (StatedBy=user); row-fix →
+      Go bentuk CSV perbaikan → menggantikan berkas sesi (P-1)
+(8) RE-SCAN otomatis (dry run) → sisa pelanggaran tampil →
+      bisa centang lagi → analisa lagi (loop §4-§8 sampai gate hijau)
+(9) CONFIRM ULANG → EXTRACT → extracted (state machine existing;
+      tidak ada state baru — revise path dipakai)
 ```
 
-### Keputusan desain P-1..P-6 (usulan Manager, menunggu owner)
+### Keputusan desain P-1..P-8 (DIKUNCI owner 2026-11-19)
 
 - **P-1 Perbaikan nilai = berkas baru, bukan edit DB.**
   Faktanya `latestUploadData` (`services/extraction.go`) selalu membaca
   berkas ASLI dari storage; staging (`*_import_batches/rows`) hanya jejak
-  ekstraksi. Maka jalur nilai yang jujur: agent usulkan baris perbaikan →
-  user approve → Go menghasilkan **CSV perbaikan** → di-upload menggantikan
-  berkas sesi (invarian satu-berkas/sesi + mekanisme replace sudah ada).
+  ekstraksi. Jalur nilai yang jujur: agent/user usulkan baris perbaikan →
+  approve → Go menghasilkan **CSV perbaikan** → menggantikan berkas sesi
+  (invarian satu-berkas/sesi + mekanisme replace existing).
   Edit baris di staging DB = DITOLAK.
 - **P-2 Dua jalur, dua tempat keputusan:**
-  (a) rule `allow`/`skip` → disimpan di profil (rules append-only, O-20);
+  (a) rule `allow`/`skip` → profil (rules append-only, O-20);
   (b) nilai baris → berkas perbaikan di storage. Profil tak tersentuh jalur (b).
 - **P-3 AI TIDAK pernah menulis — hanya mengusulkan.** Semua tulisan lewat
   action API Go (RBAC + audit, D-11); rule selalu `StatedBy: user`;
   auto-apply oleh sistem DITOLAK.
 - **P-4 Dry run wajib** pada evaluasi ulang sebelum extract sungguhan.
-- **P-5 Konteks ke chat = deidentified.** Daftar rejected yang dikirim ke
-  LLM lewat jalur `BuildSafePayload`/deidentify — PII rejected tidak pernah
-  mentah ke model (pola CP-2: safe-payload di depan LLM).
+- **P-5 Konteks ke chat/listing = deidentified.** Nilai yang tampil di
+  listing & dikirim ke LLM lewat jalur `BuildSafePayload`/deidentify —
+  PII rejected tidak pernah mentah ke model/browser.
 - **P-6 Tanpa state baru, tanpa tabel baru.** Flow hidup di state machine
-  existing (`mapping_draft`/`revise`/`confirm`/`extract`). Tambahan data
-  hanya: endpoint baca laporan rejected per sesi (dari `EnforcementReport`
-  yang sudah ada; staging juga bisa jadi sumber audit).
+  existing; snapshot analisa terakhir = jsonb di profil/plugin ingest
+  (persisten ringan, O-25).
+- **P-7 Scope analisa eksplisit (checkbox).** AI HANYA menganalisa baris
+  yang dicentang user; state checkbox milik listing (frontend/proposal
+  store), bukan tebakan agent.
+- **P-8 Checkbox default cerdas (ditandai Go, bukan UI guess):**
+  pelanggaran FORMAT (mis. HP tidak valid) → default ☑ (perlu dibetulkan);
+  pelanggaran KELENGKAPAN/KEBIJAKAN (mis. HP kosong) → default ☐ (kandidat
+  rule — **AI DILARANG mengarang nilai untuk data yang memang kosong**;
+  penegak Go menolak row-fix field-wajib-kosong tanpa rule — fail-closed).
 
 ## 2. Desain tool call Node ↔ Go
 
@@ -70,57 +88,99 @@ Pola yang diikuti = tool strict existing (`handlers/agent_tools.go` +
   Go via **Bearer milik user**; Node hanya meneruskan tool-call model —
   tanpa logika bisnis (D-11).
 
-### Tool baru (3)
+### Tool baru (4)
 
-**T-1 `get_rejected_rows`** — baca, tidak menulis.
+**T-1 `get_rejected_rows`** — baca; DUA konsumen: agent (loop) & UI editor
+(tabel listing). Endpoint sama, sumber sama.
 - Endpoint Go: `POST /admin/ingest/tools/get_rejected_rows`
 - Input: `session_id`, `max_rows` (dipotong backend).
-- Output: `EnforcementReport` terakhir (skipped+rejected per `RowNo`,
-  `Violates`, `Reason`) + nilai baris terkait dalam bentuk AMAN
-  (deidentify, pola sample ≤N baris) + katalog `exceptions.yaml` segmen
-  yang relevan agar agent bisa mengusulkan rule yang SAH.
-- Sumber data: report ekstraksi terakhir + (audit) staging rows.
+- Output: snapshot analisa terakhir (skipped+rejected per `RowNo`,
+  `Violates`, `Reason`) + nilai baris terkait AMAN (deidentify) +
+  katalog `exceptions.yaml` segmen + flag default checkbox (P-8, dari
+  metadata `violates`).
+- Sumber data: report ekstraksi/snapshot analisa + staging rows (audit).
 
-**T-2 `propose_row_fix`** — mengusulkan, BELUM menerapkan.
-- Endpoint Go: `POST /admin/ingest/tools/propose_row_fix`
-- Input: `session_id`, `fixes[]` di mana tiap fix salah satu dari:
-  `{kind:"rule", violates, action:"allow"|"skip", scope, note}` (rule_id
-  HARUS ada di katalog → `ErrUnknownRule` bila tidak) atau
+**T-2 `propose_fixes`** — mengusulkan (batch), BELUM menerapkan.
+- Endpoint Go: `POST /admin/ingest/tools/propose_fixes`
+- Input: `session_id`, `fixes[]`: `{kind:"rule", violates, action,
+  scope, note}` (HARUS ada di katalog → `ErrUnknownRule`) atau
   `{kind:"row", row_no, values:{field: nilai_baru}}`.
-- Perilaku: disimpan sebagai **proposal** (belum diterapkan ke profil maupun
-  berkas) + ter-audit. Agent tidak bisa lompat ke penerapan.
-- Output: `proposal_id` + ringkasan + pesan bahwa penerapan butuh
-  persetujuan user.
+- Perilaku: disimpan sebagai PROPOSAL (belum diterapkan) + ter-audit;
+  muncul di kolom "usulan AI" listing. Fail-closed P-8: row-fix utk
+  field wajib yang kosong TANPA rule → ditolak.
+- Output: `proposal_id` + ringkasan.
 
-**T-3 `apply_fixes`** — penerapan, dipicu USER (bukan inisiatif agent).
+**T-3 `apply_fixes`** — penerapan, dipicu USER (listing ATAU chat).
 - Endpoint Go: `POST /admin/ingest/tools/apply_fixes`
-- Input: `session_id`, `proposal_id`, `confirmed_by_user: true` (wajib
-  eksplisit — flag hilang → 400 fail-closed).
+- Input: `session_id`, `proposal_id`, `confirmed_by_user: true`
+  (wajib eksplisit — hilang → 400).
 - Perilaku per kind:
-  - `rule` → validasi ulang terhadap katalog (`RuleSet.Validate`) → tambah
-    ke rules profil dengan `StatedBy=<admin>`, append-only versi baru.
-  - `row` → Go bentuk **CSV perbaikan** dari berkas asli + nilai baru →
-    disimpan sebagai berkas perbaikan → menggantikan berkas sesi
-    (mekanisme replace existing).
-- Lanjutan: state kembali `mapping_draft` (revise path) → user confirm
-  ulang → dry run → extract (flow §1 tahap 3-5).
+  - `rule` → validasi ulang katalog (`RuleSet.Validate`) → profil
+    append-only, `StatedBy=<admin>`.
+  - `row` → Go bentuk CSV perbaikan dari berkas asli + nilai baru →
+    menggantikan berkas sesi (replace existing).
+- Lanjutan: re-scan otomatis (dry run) → sisa pelanggaran →
+  listing ter-update → loop; selesai = `mapping_draft` untuk confirm ulang.
 
-### Aturan yang TIDAK berubah (paten bawaan)
+**T-4 `submit_analysis`** — penutup loop agent (baru, iterasi final).
+- Endpoint Go: `POST /admin/ingest/tools/submit_analysis`
+- Input: `session_id`, `proposal_id`, `summary` (ringkasan pemahaman
+  agent atas pola pelanggaran), `remaining` (baris yang menurut agent
+  tidak bisa dibereskan otomatis + alasannya).
+- Perilaku: mengakhiri putaran analisa — snapshot analisa diperbarui,
+  `remaining` ditandai di listing (status "perlu keputusan manusia"),
+  ringkasan masuk chat sebagai blok terstruktur + pesan sistem.
+- Batas: max 3 putaran analisa per sesi (P-7); putaran ke-4 ditolak —
+  agent harus submit.
+
+### Keputusan tool T-1..T-4 + O-21/O-22/O-25 (DIKUNCI owner 2026-11-19)
+- T-1..T-4 mengikuti pola tool strict existing; Node hanya skema + forward.
+- **O-21 DIKUNCI**: max 500 baris per petikan analisa; lebih dari itu
+  dipecah bertahap oleh agent (bukan satu kirim raksasa).
+- **O-22 DIKUNCI**: approve cukup `ingest.write` (sama dengan editor;
+  tanpa permission baru).
+- **O-25 DIKUNCI**: listing/snapshot analisa PERSISTEN ringan — jsonb
+  per sesi (plugin ingest), tampil lagi setelah reload; dibersihkan
+  bersama retensi sesi (WO-10 topic induk, saat itu jadi kebijakan).
+
+## 3. Listing rejected di editor (baru — hasil iterasi owner)
+
+Panel/tabel **"Baris Rejected"** di `IngestMappingPage` (mapping draft):
+
+- Kolom: `☑` checkbox (default P-8) · RowNo · kolom bermasalah ·
+  nilai terdeidentify · `violates` · usulan AI · status
+  (menunggu/diusulkan/diedit user/disetujui/terlambat perlu manusia).
+- **Edit manual inline** per baris → masuk proposal yang sama dengan
+  penanda `edited_by: user` — jalur manual & jalur AI bermuara ke
+  SATU proposal store.
+- Tombol **"Analisa (N)"** → hanya baris tercentang yang diserahkan ke
+  AI (P-7); N di tombol.
+- Tombol **"Setujui"** per baris/kategori/semua → `apply_fixes`.
+- **Dua arah chat ↔ listing**: tombol per baris/kelompok "perbaiki via
+  chat" → buka sesi chat dengan konteks baris (blok terstruktur
+  `rejected_listing` dibuat BACKEND Go — pola `editor_link` WO-04,
+  bukan teks LLM); dari chat, link kembali menyorot baris di listing.
+- Regenerasi: setiap apply/apply-edit → re-scan otomatis → listing
+  ter-update dari snapshot terbaru (persisten ringan, O-25).
+
+## 4. Aturan yang TIDAK berubah (paten bawaan)
 
 1. Agent tidak pernah menulis master data/profil langsung — semua lewat
    tool = API Go (RBAC + audit).
 2. Rule hanya dari katalog `exceptions.yaml` segmen — `RuleSet.Validate`
    sudah menolak rule sintetis (fail-closed, gratis dari mesin existing).
-3. Konteks ke LLM selalu terdeidentify (P-5).
+3. Konteks ke LLM/listing selalu terdeidentify (P-5).
 4. Node tidak pernah menyentuh DB — hanya skema + forward.
 5. Dry run wajib di evaluasi ulang (P-4).
+6. AI dilarang mengarang nilai field wajib yang kosong (P-8) —
+   fail-closed di penegak Go.
+7. Max 3 putaran analisa; putaran ke-4 wajib `submit_analysis` (T-4).
 
-## Terbuka (untuk owner)
+## 5. Sisa terbuka
 
-- O-21: ukuran maksimal proposal per sesi (batas jumlah baris yang boleh
-  diperbaiki lewat chat sebaiknya dibatasi — usulan: ringkas per rule id,
-  bukan per baris).
-- O-22: siapa yang boleh approve (`ingest.write` cukup, atau perlu
-  permission baru?) — usulan: cukup `ingest.write`, sama dengan flow
-  editor.
-- SPEC + pecah WO disusun setelah P-1..P-6/T-1..T-4 disetujui.
+- SPEC + pecah WO disusun Manager berikutnya (usulan pembagian:
+  WO-01 backend snapshot+tool T-1/T-2/T-4 + fail-closed P-8;
+  WO-02 listing UI + checkbox + edit manual + tombol analisa;
+  WO-03 apply T-3 + berkas perbaikan + re-scan loop + blok chat).
+- Kasus uji pertama: 144 pelanggaran `visit_visitors.phone_raw.lenient_format`
+  (isu data nyata dari uji owner 2026-11-19).

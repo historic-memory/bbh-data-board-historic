@@ -1,7 +1,7 @@
 ---
 title: "WO-03 — Apply fixes + CSV perbaikan + re-scan loop + blok chat rejected_listing"
 description: "apply_fixes (T-3): rule → profil append-only; row-fix → CSV perbaikan menggantikan berkas sesi (P-1); re-scan dry-run otomatis; blok terstruktur rejected_listing di chat (pola editor_link WO-04); uji berkas asli 144 lenient end-to-end"
-status: pending
+status: progress
 created: "2026-11-19"
 updated: "2026-11-19"
 tags:
@@ -13,7 +13,8 @@ tags:
 # WO-03 — Apply fixes + CSV perbaikan + re-scan loop + blok chat
 
 Sumber: SPEC `spec.md` topic `1795083433686`. Prasyarat: WO-01 & WO-02
-selesai. Status: **pending**.
+selesai — TERPENUHI (`ba7853c` + `fc8edbe`, review Manager LULUS).
+Status: **progress** (mulai 2026-11-19).
 
 ## Lingkup
 

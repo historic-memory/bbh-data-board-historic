@@ -14,9 +14,9 @@ tags:
 
 Topic `1795083433686` (extends `1793711295286`). Sumber kebenaran desain:
 `desain-flow-dan-toolcall.md` (final, owner ok 2026-11-19) + `spec.md`
-(progress — owner setujui 2026-11-19). **WO-01 SELESAI (complete,
-`ba7853c`); WO-02 AKTIF (progress); WO-03 pending** sampai prasyaratnya
-selesai.
+(progress — owner setujui 2026-11-19). **WO-01 & WO-02 SELESAI
+(`ba7853c` + `fc8edbe`); WO-03 AKTIF (progress)** — eksekusi terakhir
+di topic ini.
 
 ## Latar
 
@@ -33,7 +33,7 @@ listing interaktif dua arah → checkbox scope → final ok.
 |---|---|---|---|---|
 | WO-01 | Backend snapshot analisa + tool T-1/T-2/T-4 + fail-closed P-8 | **complete** (2026-11-19) | `ba7853c` | wo-01-backend-snapshot-tool.md |
 | WO-02 | Listing UI: tabel rejected + checkbox + edit manual + tombol Analisa | **progress** (2026-11-19) | — | wo-02-listing-ui.md |
-| WO-03 | Apply fixes + CSV perbaikan + re-scan loop + blok chat | pending (menunggu WO-02) | — | wo-03-apply-rescan-loop.md |
+| WO-03 | Apply fixes + CSV perbaikan + re-scan loop + blok chat | **progress** (2026-11-19) | — | wo-03-apply-rescan-loop.md |
 
 ## Prinsip lintas WO (pinned)
 

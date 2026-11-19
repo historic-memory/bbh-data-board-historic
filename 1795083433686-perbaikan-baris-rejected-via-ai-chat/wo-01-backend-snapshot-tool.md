@@ -77,6 +77,8 @@ aturan proyek). Bukti verifikasi: `go build ./...` ✓, `go vet
 ./plugins/ingest/...` ✓, `go test ./plugins/ingest/...` ✓, `tsc --noEmit`
 (ingest_runtime) ✓, Bruno 58–71 ✓ (36 test), audit & pesan chat diperiksa di DB.
 
+Commit kode: `fffe34c`.
+
 ### A. Snapshot analisa
 
 - `plugins/ingest/migrations/postgres/2026_11_20_100000_add_ingest_sessions_analysis.up.sql:1`

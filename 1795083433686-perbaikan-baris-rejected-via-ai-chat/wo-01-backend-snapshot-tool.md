@@ -211,3 +211,27 @@ Commit kode: `ba7853c`.
   `go build -o bin/server ./cmd/server`, server dijalankan ulang lalu snapshot
   dibaca lagi (persist ✓ — round 3, rejected 2, skipped 1, proposals 1).
 
+## Review Manager
+
+**LULUS** (2026-11-19). Spot-check kode `ba7853c`:
+
+1. Guard RBCB ✓ — 4 rute baru di `plugin.go` semua memakai guard `write`
+   (`ingest.write`); audit `provider='ingest-tool'` di semua handler.
+2. Fail-closed ✓ — rule asing → `ErrUnknownRule` 400; O-21 >
+   500 baris → `ErrAnalysisTooManyRows` 400; putaran ke-4 →
+   `ErrAnalysisRoundLimit` 409 (reset hanya via `submit_analysis`).
+3. P-3 ✓ — `propose_fixes` hanya `status:"proposed"` (Bruno 63: profil
+   tidak berubah); tidak ada jalur penerapan.
+4. P-5 ✓ — nilai baris T-1 dibaca ulang dari berkas ASLI + `DeidentifyColumns`,
+   snapshot tidak menyimpan PII (tidak ada salinan PII kedua di DB).
+5. AC-1 ✓ — snapshot memakai jalur penegakan yang sama dengan gate
+   (`EnforceMappingRules`); angka total dari seluruh berkas, scope hanya filter.
+6. Dua penguatan dev (P-8 dari isi berkas `emptySourceTargets`;
+   usulan bertahan saat analisa ulang) disetujui — keduanya menutup celah
+   desain asli, selaras P-8/P-3.
+
+Catatan untuk WO-02/03: T-1 kini menolak sesi tanpa `target_plugin`
+(`ErrSegmentRequired`) — UI listing wajib pakai `session_id`+`target_plugin`
+yang benar; bentuk snapshot satu-dokumen per sesi cukup, tidak perlu riwayat
+per putaran. WO-02 siap dieksekusi.
+

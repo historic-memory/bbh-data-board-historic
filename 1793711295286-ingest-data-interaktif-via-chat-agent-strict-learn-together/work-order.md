@@ -44,7 +44,7 @@ tebakan agent di editor: tombol "Setuju semua tebakan" + konfirmasi per baris
 (dari temuan uji owner pasca WO-09; auto-confirm oleh sistem DITOLAK — D-7
 tetap, konfirmasi tetap aksi user eksplisit via PUT mapping). §B backend
 ternyata TIDAK perlu (kontrak v2 sudah punya `guess`+`validated_by`) → murni
-frontend, satu berkas. Commit `a3a30d1` lokal (belum push).
+frontend, satu berkas. Commit `a3a30d1` + revisi UX `df42bf5` lokal (belum push).
 
 | Checkpoint | Isi | Status | Bukti |
 |---|---|---|---|
@@ -69,7 +69,7 @@ frontend, satu berkas. Commit `a3a30d1` lokal (belum push).
 | WO-08 | Segmen baru: `resident` — porting pipeline import (staging 2-fasa + gates + dedup + PII) + generalisasi dispatcher ekstraksi; D-R1..R3 dikunci; replikasi pola visit | **complete (2026-11-19)** — approve owner; D-R4: birth_date tanpa encrypt; commit `ac3ca5e` lokal (belum push) | — | wo-08-segmen-resident.md |
 | WO-09 | Segmen baru: `sec` + `hsh` (kebutuhan) — registrasi dispatcher (pipeline import kedua plugin sudah ada, semantik upsert) + exceptions minimal; D-S1/D-S2 dikunci | **complete (2026-11-19)** — approve owner; commit `9f78ea1` lokal (belum push); swagger regenerasi menyusul | — | wo-09-segmen-sec-hsh.md |
 | WO-10 | Housekeeping & retensi sesi ingest — job periodik (90/30 hari, profil extracted imun, env konfigurabel, audit); **D-T1 (approve O-14) menunggu** | pending (2026-11-19) | — | wo-10-housekeeping-retensi.md |
-| WO-11 | Konfirmasi tebakan agent di editor — tombol "Setuju semua tebakan" + konfirmasi per baris; TANPA auto-confirm (D-7 tetap, aksi user via PUT mapping) | **complete (2026-11-19)** — murni frontend (§B backend tidak perlu); AC-1..AC-8 berbukti via API + UI; commit `a3a30d1` lokal (belum push) | a3a30d1 | wo-11-konfirmasi-tebakan-editor.md |
+| WO-11 | Konfirmasi tebakan agent di editor — tombol "Setuju semua tebakan" + konfirmasi per baris; TANPA auto-confirm (D-7 tetap, aksi user via PUT mapping) | **complete (2026-11-19)** — murni frontend (§B backend tidak perlu); AC-1..AC-8 berbukti via API + UI; revisi UX tombol Setujui (affordance) `df42bf5`; commit `a3a30d1` lokal (belum push) | a3a30d1, df42bf5 | wo-11-konfirmasi-tebakan-editor.md |
 | WO-04 | Integrasi editor ↔ CopilotKit + housekeeping (CP-4 final) — **DIREVISI pasca CP-2/CP-3** | pending (rancangan final; eksekusi setelah keputusan O-14) | — | — | — |
 
 **Aturan lintas WO (pinned):**

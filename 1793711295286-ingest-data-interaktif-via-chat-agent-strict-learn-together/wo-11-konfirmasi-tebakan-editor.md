@@ -162,6 +162,31 @@ menyimpan apa adanya. Jadi perubahan murni frontend, satu berkas.
   guard `ingest.write` (`plugin.go:118`) + `h.audit(c,"mapping",...)`
   (`handlers/mapping.go:101`); **nol route baru** ditambahkan.
 
+### Revisi UX (temuan uji owner 2026-11-19)
+
+Owner mengira tombol `✓` polos = status "sudah di-ACC" (affordance salah):
+diklik sekali lalu tombol+badge hilang, dan disangka bisa di-uncheck. Perbaikan
+(murni frontend, tanpa ubah perilaku/gate):
+
+- `IngestMappingPage.tsx:549` — tombol per baris diberi **label teks**
+  "✓ Setujui" (bukan ikon telanjang) + `title`/`aria-label` menjelaskan bahwa
+  nilai kolom tidak berubah. Menghilangkan kesan "checkbox status".
+- `IngestMappingPage.tsx:506-514` — **umpan balik positif**: baris yang sudah
+  disetujui menampilkan badge hijau "✓ disetujui" (`data-testid="ingest-guess-accepted-{i}"`)
+  alih-alih sekadar menghilang. Badge amber "tebakan — belum disetujui" tetap
+  tampil selama masih tebakan.
+- `IngestMappingPage.tsx:455` — teks bantuan kartu diperjelas: tebakan WAJIB
+  disetujui; pilih field yang benar, atau klik **Setujui** bila sudah tepat.
+- `IngestMappingPage.tsx:491,571` — kolom checkbox "Enkripsi" diberi sublabel
+  "proteksi PII" di header dan label per baris "wajib (PII)" / "tidak wajib"
+  (sebelumnya "wajib"/"opsional" yang mudah disalahpahami sebagai konfirmasi)
+  + `title` per checkbox.
+
+Terbukti UI (`:8082`, sesi `visit` 6 kolom tebakan): tombol tampil "✓ Setujui"
+×6; klik satu → badge amber baris itu berganti "✓ disetujui", tombol baris
+hilang, tombol bulk turun "(6)"→"(5)", tepat 1 `PUT mapping`. `npx tsc -b` +
+`npm run build` hijau.
+
 ### Bukti uji
 
 - API (curl, sesi `visit` hasil upload, 6 kolom `guess:true`): GET mapping →

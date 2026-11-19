@@ -233,7 +233,8 @@ Verifikasi independen (bukan hanya percaya laporan):
    "editor = persiapan" (konsisten arah owner: chat = jalur eksekusi).
    Peningkatan "sesi pure-chat dari `uploaded`" dicatat sebagai OPEN QUESTION
    ke owner: (a) tool kecil `introduce_session` di Node, atau (b) auto-introduce
-   saat pesan pertama agent. Menunggu keputusan owner; tidak blocker WO-02..05.
+   saat pesan pertama agent. **DIKUNCI owner 2026-11-20: opsi (a)** →
+   masuk WO-02a (`wo-02a-introduce-session-tool.md`, pending).
 3. **Sesi uji dev `wo01-smoke-1795126932`** → boleh dibersihkan via soft delete
    daftar sesi (WO-04a) kapan saja; tidak menahan apa pun.
 

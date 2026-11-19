@@ -50,6 +50,9 @@ warning `scheduled_at.warn_when_empty` dalam satu berkas uji.
   T-4 `submit_analysis` (penutup loop).
 - O-21: max 500 baris/petikan; O-22: approve cukup `ingest.write`;
   O-25: snapshot persisten ringan (jsonb), dibersihkan bersama retensi.
+- P-9: tombol Analisa menyimpan scope lalu auto-trigger SATU pesan
+  basa-basi di chat — detail diambil AI via tool (session id &
+  snapshot sudah di sesi); single-shot, tanpa data dalam pesan.
 
 ## 4. Lingkup per WO (3)
 
@@ -71,7 +74,9 @@ warning `scheduled_at.warn_when_empty` dalam satu berkas uji.
 
 - Panel "Baris Rejected" di `IngestMappingPage` (katalog field, Violates,
   usulan AI, status, checkbox default dari flag P-8 backend).
-- Tombol "Analisa (N)", "Setujui" per baris/kategori/semua, edit inline
+- Tombol "Analisa (N)" = simpan scope (analyze) → tutup editor →
+  auto-submit pesan basa-basi di chat (P-9; detail diambil AI via
+  tool), "Setujui" per baris/kategori/semua, edit inline
   (`edited_by: user`), tombol "perbaiki via chat" (link kontekstual).
 - AC-1..AC-6: listing tampil + persisten; checkbox mengontrol scope;
   edit manual masuk proposal; tombol Analisa memicu agent; RBAC; build

@@ -47,6 +47,9 @@ listing interaktif dua arah → checkbox scope → final ok.
 6. Kode fitur hanya di `plugins/ingest/` + UI
    `sub_app/webapp/src/pages/admin/ingest/` + Node
    `sub_app/ingest_runtime/` — tanpa state machine/tabel relasional baru.
+7. Tombol Analisa = simpan scope ke snapshot (analyze) → tutup editor
+   → auto-trigger SATU pesan basa-basi di chat (P-9); detail diambil
+   AI via tool, bukan dari isi pesan.
 
 ## Urutan eksekusi
 

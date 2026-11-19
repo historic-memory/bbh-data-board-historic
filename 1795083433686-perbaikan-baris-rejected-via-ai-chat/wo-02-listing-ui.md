@@ -24,8 +24,12 @@ Sumber: SPEC `spec.md` topic `1795083433686`. Prasyarat: WO-01
    disetujui/perlu keputusan manusia).
 2. **Edit manual inline** per baris → masuk proposal yang sama
    (`edited_by: user`) — jalur manual & AI bermuara ke satu proposal store.
-3. Tombol **"Analisa (N)"** → kirim scope row_no terpilih ke `analyze`
-   → loop agent jalan di sesi chat (hanya baris terpilih, P-7).
+3. Tombol **"Analisa (N)"** → simpan scope row_no terpilih ke `analyze`
+   → tutup/keluar mapping editor → auto-submit SATU pesan basa-basi ke
+   chat AI (mis. "Tolong analisa baris rejected yang barusan
+   disimpan") — TANPA data di pesan: session id & snapshot sudah ada
+   di sesi, AI mengambil via tool (P-9); loop agent berjalan atas
+   baris terpilih (P-7). Pesan single-shot: refresh tidak mengirim ulang.
 4. Tombol **"Setujui"** per baris / per kategori / semua →
    `apply_fixes` (T-3, WO-03) dengan `confirmed_by_user`.
 5. Tombol **"perbaiki via chat"** per baris/kelompok → buka chat dengan
@@ -41,8 +45,10 @@ Sumber: SPEC `spec.md` topic `1795083433686`. Prasyarat: WO-01
 - AC-2 Checkbox mengontrol scope Analisa; default sesuai flag P-8.
 - AC-3 Edit manual inline masuk proposal (`edited_by: user`) dan tampil
   di kolom usulan/status.
-- AC-4 Tombol "Analisa (N)" memicu loop agent atas baris terpilih
-  (terbukti di chat); hasil proposal muncul di kolom usulan AI.
+- AC-4 Tombol "Analisa (N)" menyimpan scope (analyze), menutup editor,
+  lalu chat otomatis terkirim SATU pesan basa-basi (single-shot, tidak
+  terkirim ulang saat refresh) dan loop agent berjalan atas baris
+  terpilih; hasil proposal muncul di kolom usulan AI.
 - AC-5 Tombol Setujui memanggil `apply_fixes` dengan
   `confirmed_by_user` (penerapan diuji penuh di WO-03).
 - AC-6 Link "perbaiki via chat" membuka chat dengan konteks baris.

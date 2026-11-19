@@ -29,19 +29,22 @@ dari workspace.
       tiap baris/kelompok: checkbox "perbaiki AI" + edit manual inline
 (3) SCOPE — user mencentang baris yang mau diserahkan ke AI
       (default cerdas P-8: format ☑, kelengkapan/ambigu ☐)
-(4) AGENT LOOP (mandiri, atas baris terpilih):
+(4) TRIGGER — tombol "Analisa (N)": simpan scope ke snapshot
+      (analyze, WO-01) → tutup mapping editor → chat menerima
+      SATU pesan otomatis BASA-BASI (P-9; tanpa data — AI ambil via tool)
+(5) AGENT LOOP (mandiri, atas baris terpilih):
       baca (deidentified) → klasifikasi salah-data vs pengecualian →
       tulis proposal batch (row-fix / rule dari katalog) → sisa dilaporkan
       batas: max 3 putaran analisa, max 500 baris/petikan (O-21)
-(5) CHECKPOINT — proposal tampil di listing (kolom "usulan AI",
+(6) CHECKPOINT — proposal tampil di listing (kolom "usulan AI",
       status menunggu) + ringkasan di chat (blok terstruktur, bukan teks LLM)
-(6) APPROVAL — user setujui (per baris / kategori / semua) dari listing
+(7) APPROVAL — user setujui (per baris / kategori / semua) dari listing
       ATAU kartu di chat → apply_fixes (confirmed_by_user eksplisit)
-(7) APPLY — rule → profil append-only (StatedBy=user); row-fix →
+(8) APPLY — rule → profil append-only (StatedBy=user); row-fix →
       Go bentuk CSV perbaikan → menggantikan berkas sesi (P-1)
-(8) RE-SCAN otomatis (dry run) → sisa pelanggaran tampil →
-      bisa centang lagi → analisa lagi (loop §4-§8 sampai gate hijau)
-(9) CONFIRM ULANG → EXTRACT → extracted (state machine existing;
+(9) RE-SCAN otomatis (dry run) → sisa pelanggaran tampil →
+      bisa centang lagi → analisa lagi (loop §5-§9 sampai gate hijau)
+(10) CONFIRM ULANG → EXTRACT → extracted (state machine existing;
       tidak ada state baru — revise path dipakai)
 ```
 
@@ -75,6 +78,13 @@ dari workspace.
   pelanggaran KELENGKAPAN/KEBIJAKAN (mis. HP kosong) → default ☐ (kandidat
   rule — **AI DILARANG mengarang nilai untuk data yang memang kosong**;
   penegak Go menolak row-fix field-wajib-kosong tanpa rule — fail-closed).
+- **P-9 Pesan trigger otomatis = BASA-BASI SAJA (owner 2026-11-19).**
+  Tombol "Analisa (N)": simpan scope ke snapshot (analyze) → tutup
+  mapping editor → kirim SATU pesan sederhana ke chat (mis. "Tolong
+  analisa baris rejected yang barusan disimpan"). Detail TIDAK dikirim
+  dalam pesan — session id & snapshot sudah ada di sesi; AI mengambil
+  data sendiri via `get_rejected_rows` (T-1). Pesan disusun frontend,
+  single-shot (tidak terkirim ulang saat refresh — chat persisten).
 
 ## 2. Desain tool call Node ↔ Go
 
@@ -153,8 +163,9 @@ Panel/tabel **"Baris Rejected"** di `IngestMappingPage` (mapping draft):
 - **Edit manual inline** per baris → masuk proposal yang sama dengan
   penanda `edited_by: user` — jalur manual & jalur AI bermuara ke
   SATU proposal store.
-- Tombol **"Analisa (N)"** → hanya baris tercentang yang diserahkan ke
-  AI (P-7); N di tombol.
+- Tombol **"Analisa (N)"** → simpan scope baris tercentang ke snapshot
+  (analyze) → tutup editor → auto-submit pesan basa-basi di chat (P-9);
+  N di tombol.
 - Tombol **"Setujui"** per baris/kategori/semua → `apply_fixes`.
 - **Dua arah chat ↔ listing**: tombol per baris/kelompok "perbaiki via
   chat" → buka sesi chat dengan konteks baris (blok terstruktur

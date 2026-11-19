@@ -54,29 +54,48 @@ ke satu modul tujuan per sesi.
 
 ## Keputusan desain
 
-**Ekstraksi multi-segmen: per segmen (partial commit) dengan gate
-fail-closed per segmen** (disetujui 2026-11-19).
+**Pendekatan yang dipilih: satu sesi per segmen, dipilih eksplisit oleh
+user, dengan konteks segmen diberikan ke AI** (keputusan 2026-11-19,
+menggantikan rancangan multi-segmen dalam satu sesi).
 
-- Gate tetap ketat per modul (kolom wajib, policy PII, dedup) sebelum
-  segmen itu boleh diekstraksi.
-- Kegagalan satu segmen tidak menjatuhkan segmen lain — laporan
-  enforcement per segmen (mengikuti pola `scanViolations`).
-- Konsisten dengan fail-closed: yang ditolak memang tidak masuk,
-  tanpa membuat satu kolom salah membatalkan impor segmen lain.
+Alasan (dari diskusi 2026-11-19): paling mudah dipahami user — jika user
+mau insert data A, user memilih segmentasi A dan mengurusi itu sampai
+selesai. Ketika user upload Excel A lalu memilih segmentasi A di map
+editor, AI memahami konteksnya. Backend praktis tidak berubah karena
+`target_plugin` per sesi sudah ada.
+
+Yang perlu dilengkapi:
+
+1. **Pemilihan segmentasi eksplisit & terlihat** — user memilih segmen
+   saat membuat sesi (atau di awal flow); pilihan itu tampil jelas di
+   map editor + chat, bukan tersembunyi di database.
+2. **Konteks segmen ke AI** — saat user upload Excel A di sesi A, agent
+   selalu tahu "ini sesi segmen A" dalam promptnya; AI tidak menebak
+   segmen dari isi berkas. Jika berkas tampak campur, AI berpesan
+   membuat sesi terpisah per segmen.
+3. **Guard kecocokan berkas vs segmen** — bila kolom berkas tidak ada
+   yang mirip field segmen sesi, editor memperingatkan sebelum confirm.
+4. **Ekstraksi tetap per sesi (partial commit antar sesi)** — gate
+   fail-closed tetap ketat per modul (kolom wajib, policy PII, dedup);
+   kegagalan satu sesi tidak menjatuhkan sesi segmen lain — laporan
+   enforcement mengikuti pola `scanViolations`.
 
 ## Opsi pendekatan
 
 - **A. Profil multi-segmen (v3)** — satu sesi, satu berkas, mapping
   dikelompokkan per segmen. Paling bersih; menyentuh model, validasi,
   ekstraksi.
-- **B. Pre-split** — tetap satu sesi per modul, berkas sama di-upload ke
-  beberapa sesi. Nol perubahan backend, UX berat, berkas mentah dibaca
-  berulang.
+- **B / B+. Satu sesi per segmen (DIPILIH)** — sesi tetap single-target
+  (`target_plugin` sudah ada), tapi dipilih eksplisit oleh user dan
+  konteksnya selalu diberikan ke AI. B+ menambahkan: picker segmen yang
+  terlihat, pesan AI saat berkas tampak campur, guard kecocokan berkas
+  vs segmen. Nol perubahan model mapping; hanya UX + prompt agent.
 - **C. Hybrid** — sesi multi-target, ekstraksi tetap dijalankan per segmen
-  dengan gate per segmen (kompromi A + transaksi per segmen).
+  dengan gate per segmen. Dicadangkan untuk masa depan bila kebutuhan
+  "satu berkas campur" benar-benar sering terjadi.
 
 ## Rekomendasi
 
-Opsi **C (hybrid)**: model profil multi-segmen, eksekusi ekstraksi per
-segmen dengan gate per segmen. Work order implementasi dibuat setelah
-analisa ini disetujui.
+Opsi **B+ (satu sesi per segmen, eksplisit, konteks ke AI)** — paling
+mudah dipahami user dan backend praktis tidak berubah. Work order
+implementasi dibuat setelah analisa ini disetujui.

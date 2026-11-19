@@ -1,7 +1,7 @@
 ---
 title: "WO-02 — Listing UI: tabel rejected + checkbox scope + edit manual + tombol Analisa"
 description: "Panel Baris Rejected di IngestMappingPage: checkbox default P-8, edit manual inline, tombol Analisa (N) memicu loop agent, Setujui per baris/kategori/semua, link perbaiki via chat; persisten O-25"
-status: pending
+status: progress
 created: "2026-11-19"
 updated: "2026-11-19"
 tags:
@@ -12,8 +12,8 @@ tags:
 # WO-02 — Frontend: listing UI + checkbox scope + edit manual + tombol Analisa
 
 Sumber: SPEC `spec.md` topic `1795083433686`. Prasyarat: WO-01
-(snapshot + tool T-1/T-2/T-4 hidup). Status: **pending (menunggu
-WO-01 selesai)**.
+(snapshot + tool T-1/T-2/T-4 hidup) — SELESAI (`ba7853c`, review
+Manager LULUS). Status: **progress** (mulai 2026-11-19).
 
 ## Lingkup
 

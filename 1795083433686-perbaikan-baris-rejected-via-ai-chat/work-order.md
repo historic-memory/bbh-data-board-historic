@@ -30,7 +30,7 @@ listing interaktif dua arah → checkbox scope → final ok.
 
 | WO | Judul | Status | Commit kode | Dok historic |
 |---|---|---|---|---|
-| WO-01 | Backend snapshot analisa + tool T-1/T-2/T-4 + fail-closed P-8 | **complete** (2026-11-19) | `fffe34c` | wo-01-backend-snapshot-tool.md |
+| WO-01 | Backend snapshot analisa + tool T-1/T-2/T-4 + fail-closed P-8 | **complete** (2026-11-19) | `ba7853c` | wo-01-backend-snapshot-tool.md |
 | WO-02 | Listing UI: tabel rejected + checkbox + edit manual + tombol Analisa | pending (siap: WO-01 complete) | — | wo-02-listing-ui.md |
 | WO-03 | Apply fixes + CSV perbaikan + re-scan loop + blok chat | pending (menunggu WO-01 & 02) | — | wo-03-apply-rescan-loop.md |
 

@@ -77,7 +77,7 @@ aturan proyek). Bukti verifikasi: `go build ./...` ✓, `go vet
 ./plugins/ingest/...` ✓, `go test ./plugins/ingest/...` ✓, `tsc --noEmit`
 (ingest_runtime) ✓, Bruno 58–71 ✓ (36 test), audit & pesan chat diperiksa di DB.
 
-Commit kode: `fffe34c`.
+Commit kode: `ba7853c`.
 
 ### A. Snapshot analisa
 

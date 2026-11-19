@@ -1,0 +1,12 @@
+id: "1795083433686"
+title: Perbaikan baris rejected via AI chat (gate rejected ingest)
+created: "2026-11-19"
+updated_at: "2026-11-19T10:17:13Z"
+extends: "1793711295286"
+files:
+    - id: 01a1f350-920e-76bf-978b-c1346731fe19
+      path: notes.md
+      type: file
+      status: draft
+      updated_at: "2026-11-19T00:00:00Z"
+assets: []

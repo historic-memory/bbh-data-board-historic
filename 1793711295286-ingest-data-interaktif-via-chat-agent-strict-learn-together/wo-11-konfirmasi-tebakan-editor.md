@@ -187,6 +187,27 @@ Terbukti UI (`:8082`, sesi `visit` 6 kolom tebakan): tombol tampil "✓ Setujui"
 hilang, tombol bulk turun "(6)"→"(5)", tepat 1 `PUT mapping`. `npx tsc -b` +
 `npm run build` hijau.
 
+### Perbaikan pesan error (temuan uji owner 2026-11-19, commit `702277f`)
+
+Owner menekan "Konfirmasi & kunci mapping" dan melihat **"Data tidak dapat
+disimpan karena bentrok dengan data lain."** Padahal backend memakai 409 untuk
+alasan berbeda-beda di jalur mapping. Akar: `lib/apiError.ts:47` memetakan
+SEMUA 409 ke teks generik "bentrok".
+
+- `IngestMappingPage.tsx` — helper baru `mappingFailureMessage(err)`:
+  1. `404` → "Sesi tidak ditemukan — mungkin sudah dihapus. Buka daftar sesi…"
+  2. `409` dengan `gates` → "Gate belum lolos: <detail tiap gate>"
+  3. selain itu → pakai `error` dari server bila ada (mis. "mapping terkunci
+     pada state sesi ini"), baru fallback `errorMessage()`.
+- Dipakai di semua catch editor (load, simpan, konfirmasi, ekstrak, resample)
+  agar pesan konsisten; `errorMessage()` generik TIDAK diubah global supaya
+  pemakaian lain (RBAC dsb.) tidak terpengaruh.
+
+Bukti UI: (a) klik Konfirmasi saat tebakan belum disetujui → "Gate belum lolos:
+tebakan belum dikonfirmasi: Nama *, Alamat, …" (bukan "bentrok"); (b) buka sesi
+yang sudah dihapus (`64b69107…`) → "Sesi tidak ditemukan — mungkin sudah
+dihapus…". `npx tsc -b` + `npm run build` hijau.
+
 ### Bukti uji
 
 - API (curl, sesi `visit` hasil upload, 6 kolom `guess:true`): GET mapping →

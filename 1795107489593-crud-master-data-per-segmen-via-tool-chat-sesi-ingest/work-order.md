@@ -29,10 +29,10 @@ API admin existing + proposal/approve untuk tulis.
 | WO | Judul | Status | Commit kode | Dok historic |
 |---|---|---|---|---|
 | WO-01 | Patch editor: hapus tombol Ekstrak & Konfirmasi + modal Simpan draft → chat | pending (2026-11-20) | — | wo-01-hapus-tombol-ekstrak-konfirmasi-editor.md |
-| WO-02 | Backend `segment_read` (whitelist + deidentify) + skema Node | pending | — | (dibuat setelah SPEC disetujui) |
-| WO-03 | Backend `segment_write_propose` + `apply_record_actions` + kartu approve | pending | — | (dibuat setelah SPEC disetujui) |
-| WO-04 | `MergeVisitors` plugin visit + endpoint admin | pending | — | (dibuat setelah SPEC disetujui) |
-| WO-05 | Prompt agent + Bruno + uji end-to-end duplikat kunjungan | pending | — | (dibuat setelah SPEC disetujui) |
+| WO-02 | Backend `segment_read` (whitelist + deidentify) + skema Node | pending (2026-11-20) | — | wo-02-segment-read.md |
+| WO-03 | Backend `segment_write_propose` + `apply_record_actions` + kartu approve | pending (2026-11-20) | — | wo-03-write-propose-apply.md |
+| WO-04 | `MergeVisitors` plugin visit + endpoint admin | pending (2026-11-20) | — | wo-04-merge-visitors-visit.md |
+| WO-05 | Prompt agent + Bruno + uji end-to-end duplikat kunjungan | pending (2026-11-20) | — | wo-05-prompt-bruno-e2e.md |
 
 ## Prinsip lintas WO (pinned)
 

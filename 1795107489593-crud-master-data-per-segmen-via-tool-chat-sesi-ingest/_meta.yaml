@@ -1,7 +1,7 @@
 id: "1795107489593"
 title: CRUD master data per segmen via tool chat sesi ingest
 created: "2026-11-19"
-updated_at: "2026-11-19T17:07:47Z"
+updated_at: "2026-11-19T21:33:47Z"
 extends: "1795083433686"
 files:
     - id: 01a1f4bf-4e53-799b-93b0-68e93c03979e
@@ -16,6 +16,26 @@ files:
       updated_at: "2026-11-20T00:00:00Z"
     - id: 01a1f4c2-5571-70a3-ab83-e99c08097108
       path: wo-01-hapus-tombol-ekstrak-konfirmasi-editor.md
+      type: file
+      status: pending
+      updated_at: "2026-11-20T00:00:00Z"
+    - id: 01a1f5ba-e229-70bc-aba2-28cc5257e641
+      path: wo-02-segment-read.md
+      type: file
+      status: pending
+      updated_at: "2026-11-20T00:00:00Z"
+    - id: 01a1f5ba-e229-7250-8a1f-0a37608921e5
+      path: wo-03-write-propose-apply.md
+      type: file
+      status: pending
+      updated_at: "2026-11-20T00:00:00Z"
+    - id: 01a1f5ba-e229-73c9-9d66-d7dd8bad5bb0
+      path: wo-04-merge-visitors-visit.md
+      type: file
+      status: pending
+      updated_at: "2026-11-20T00:00:00Z"
+    - id: 01a1f5ba-e22a-79f6-bbd8-0e7665f2f076
+      path: wo-05-prompt-bruno-e2e.md
       type: file
       status: pending
       updated_at: "2026-11-20T00:00:00Z"

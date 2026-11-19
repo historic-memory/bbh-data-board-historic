@@ -1,13 +1,13 @@
 ---
-title: "WO-06 — Segmentasi sesi eksplisit (satu sesi per segmen, konteks ke AI)"
-description: "Opsi B+ dari analisa multi-segmen: user memilih segmen (modul target) secara eksplisit saat membuat sesi, segmen tampil jelas di editor & chat, AI selalu tahu konteks segmen, plus guard kecocokan berkas vs segmen"
-status: review
+title: WO-06 — Segmentasi sesi eksplisit (satu sesi per segmen, konteks ke AI)
+description: 'Opsi B+ dari analisa multi-segmen: user memilih segmen (modul target) secara eksplisit saat membuat sesi, segmen tampil jelas di editor & chat, AI selalu tahu konteks segmen, plus guard kecocokan berkas vs segmen'
+status: complete
 created: "2026-11-19"
 updated: "2026-11-19"
 tags:
-  - ingest
-  - mapping
-  - frontend
+    - ingest
+    - mapping
+    - frontend
 ---
 # WO-06 — Segmentasi sesi eksplisit
 

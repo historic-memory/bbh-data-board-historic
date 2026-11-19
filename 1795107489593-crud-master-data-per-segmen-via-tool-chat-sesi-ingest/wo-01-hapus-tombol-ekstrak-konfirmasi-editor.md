@@ -116,4 +116,85 @@ jalur editor adalah persiapan, jalur eksekusi adalah chat.
 
 ## Catatan Implementasi (Dev)
 
-(belum ada — isi bertahap per bagian sesuai aturan pinned)
+Format: `berkas:baris` — apa yang dilakukan — kenapa (ref AC/D-x/gotcha).
+
+1. `sub_app/webapp/.../ingest/IngestMappingPage.tsx:99` — siklus tipe `busy`
+   dipangkas jadi `'load' | 'save' | 'resample' | ''` (buang `'confirm'`/
+   `'extract'`) — AC-1: dua state itu hanya melayani tombol yang dihapus.
+2. `IngestMappingPage.tsx:~100` — state `dedup`/`dryRun`/`gateReady` dihapus —
+   AC-1; `gateReady` sempat hanya dipakai untuk mengaktifkan tombol Ekstrak,
+   sedangkan `gateReady`-nya sendiri tidak lagi dibutuhkan di footer.
+3. `IngestMappingPage.tsx` import — buang `DEDUP_POLICIES`, `confirmMapping`,
+   `dedupPoliciesFor`, `extractMapping` dari `src/api/ingest.ts` — AC-6 "tidak
+   ada referensi mati"; API-nya sendiri TIDAK dihapus (dipakai tempat lain).
+4. `IngestMappingPage.tsx:87` — tambah `const navigate = useNavigate()` —
+   AC-2 butuh navigasi ke `/ingest/:id/chat` dari modal.
+5. `IngestMappingPage.tsx:102` — state baru `savePromptOpen` — AC-2/AC-7:
+   satu sumber kebenaran untuk visibilitas modal Simpan draft.
+6. `IngestMappingPage.tsx:232-256` — `persistColumns(next, successNotice,
+   promptChat=false)`; `save = () => persistColumns(payloadColumns, '', true)`
+   — AC-2: satu jalur PUT mapping untuk ketiga aksi (setuju tebakan / setuju
+   semua / Simpan draft), flag `promptChat` yang membedakan modal vs notice
+   inline. Aksi tebakan tetap notice inline supaya user tidak dipindahkan dari
+   editor saat masih memetakan kolom lain.
+7. `IngestMappingPage.tsx:252` — sukses simpan draft → `setSavePromptOpen(true)`
+   dan TIDAK set notice → AC-2 "jangan dobel" (notice pindah isi ke modal).
+8. `IngestMappingPage.tsx:608-621` — kartu sidebar "Ekstrak" diganti kartu
+   "Langkah berikutnya" berisi teks panduan konfirmasi/ekstraksi lewat chat +
+   `Link` "Buka chat sesi" (`data-testid="ingest-go-chat"`) — AC-1 + §A.5:
+   teks lama yang menyebut tombol dihapus diganti arahan ke sesi chat.
+9. `IngestMappingPage.tsx:731-733` — footer kini hanya "Simpan draft" — AC-1;
+   "Konfirmasi & kunci mapping" hilang beserta `confirm()`.
+10. `IngestMappingPage.tsx:741-765` — `<Modal open={savePromptOpen}
+    title="Draft tersimpan" size="sm" onClose={...}>` dengan 2 aksi:
+    "Lanjut edit" (`ingest-save-continue`) dan "Kembali ke chat"
+    (`ingest-save-go-chat` → `navigate('/ingest/${id}/chat')`) — AC-2/AC-7.
+    `onClose` = "Lanjut edit" sehingga Escape/klik-luar tidak menavigasi
+    (konsisten D-7: keputusan selalu manusia, tanpa navigasi otomatis).
+11. `IngestMappingPage.tsx` doc-comment header — langkah alur diperbarui jadi
+    "4. simpan draft → lanjut di chat" + ref WO-01 topic `1795107489593` — agar
+    pembaca berikutnya tidak mencari tombol konfirmasi di editor.
+12. `plugins/ingest/prompt/agent.md:89` — tambah bullet "Tombol konfirmasi/
+    ekstraksi TIDAK ADA di editor; konfirmasi & ekstraksi adalah tugasmu di
+    chat" — AC-4: agent tidak lagi mengarahkan user ke tombol yang sudah dihapus.
+13. `plugins/ingest/prompt/agent.md:86` — bullet "dry run juga keputusan
+    pengguna; jangan simpulkan dari jawaban dedup" — AC-4: prasyarat dedup/
+    dry-run pindah dari kartu Ekstrak ke percakapan chat.
+14. `plugins/ingest/prompt/agent.md:61` — tegaskan bentuk `mapping` = objek peta
+    `{"kolom":"ref field"}` — temuan smoke: agent sempat mengirim daftar
+    `[{source,target}]` → 400 "profil tidak valid".
+15. `plugins/ingest/prompt/agent.md:67` — bullet baru bentuk dokumen v2 +
+    `kind` untuk kolom PII — gotcha: bentuk peta legacy tidak membawa `kind`,
+    sehingga backend menolak `400 … melonggarkan policy bawaan … wajib
+    terdeidentifikasi` untuk `visit_visitors.full_name`/`phone_raw`
+    (`plugins/visit/schema/fields.yaml:35,95`). `flags.is_encrypt` TIDAK
+    dibaca validator — jangan sarankan itu ke agent.
+16. `sub_app/ingest_runtime/tool-schema.ts:40` — helper baru
+    `loosenFreeFormFields(schema, paths)` — AKAR temuan AC-3/AC-4:
+    `convertJsonSchemaToZodSchema` (@copilotkit/runtime/v2) membuang
+    `additionalProperties` sehingga `mapping`/`rules`/`flags`/`kinds` jadi
+    `{type:object, properties:{}, additionalProperties:false}` → model tidak
+    boleh mengisi satu kunci pun, dan `confirm_mapping` selalu gagal.
+17. `tool-schema.ts:44` — `loosen()` mengelompokkan dot-path, membuka
+    `ZodOptional._def.innerType`, dan membangun ulang lewat `schema.extend()`;
+    `openPath()` menangani `ZodArray` (item dibangun ulang) dan daun bebas
+    memakai `.passthrough()` — dipilih daripada `.catchall(z.any())` karena
+    round-trip JSON schema tetap `additionalProperties:true`/`{type:string}`.
+18. `sub_app/ingest_runtime/copilot-runtime.ts:203-236` — `confirm_mapping`
+    membungkus `mapping`/`rules`/`flags`; `:181-200` `get_mapping_guess`
+    membungkus `kinds`; `:289` `propose_fixes` membungkus `fixes.values`
+    (pola sama) — tanpa ini tool yang sama masih terkunci.
+19. `sub_app/ingest_runtime/tool-schema.test.ts` — 3 test (peta bebas diterima,
+    peta bersarang `fixes.values`, field bertipe tetap menolak tipe salah) +
+    `sub_app/ingest_runtime/package.json:10` menambah file itu ke `npm test` —
+    AC-6; tanpa test ini regresi skema tidak terdeteksi.
+20. Verifikasi smoke (Tailscale `http://100.125.175.34:5173`): sesi uji
+    `wo01-smoke-1795126932` — editor tanpa 2 tombol, gate panel + "Pengecualian
+    (aturan)" + "Simpan draft" tetap; modal Escape/klik-luar = "Lanjut edit",
+    "Kembali ke chat" → `/chat`; alur chat `confirm_mapping` 200 → state
+    `mapping_confirmed` → `run_extraction`(`dedup_policy=time_only`,
+    `dry_run=true`) 200 `status: staged` (batch `01a1f5f0-…`) — AC-3/AC-4
+    terbukti end-to-end. Catatan lingkungan (bukan bug WO ini): sesi baru dari
+    `uploaded` butuh aksi `introduce` yang hanya dijalankan editor
+    (`plugins/ingest/services/mapping.go:786`) — untuk uji chat murni, gate itu
+    dimajukan lewat `POST /admin/ingest/sessions/:id/transition`.

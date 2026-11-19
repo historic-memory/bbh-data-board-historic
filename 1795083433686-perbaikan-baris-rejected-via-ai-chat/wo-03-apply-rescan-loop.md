@@ -296,3 +296,39 @@ UI: `sub_app/webapp/src/api/ingest.ts`,
 `sub_app/webapp/src/pages/admin/ingest/IngestChatPage.tsx`.
 
 Bruno: `api-tests/ingest/72..78-*.bru`.
+
+## Review Manager
+
+**LULUS** (2026-11-20). Spot-check kode `18998f7` (23 berkas, +2.691):
+
+1. AC-1 fail-closed ✓ — `ConfirmedByUser *bool` (pointer: tidak dikirim ≠
+   dikirim false, keduanya ditolak); `ErrApplyNotConfirmed` → 400;
+   rute di-guard `ingest.write` + audit `provider='ingest-tool'`.
+2. AC-2 O-20 ✓ — rule divalidasi ULANG ke katalog (`RuleSet.Validate`)
+   sebelum masuk profil append-only sebagai VERSI BARU; `StatedBy` = admin
+   dari token; rule_id deterministik dari `violates`.
+3. AC-3 P-1 ✓ — row-fix membaca berkas ASLI, CSV perbaikan dari baris
+   MENTAH (`rawTableRows`, bukan tabel analisa terpotong O-21), peta kolom
+   dari dokumen mapping (bukan `values[].target` yang kosong), ref tanpa
+   sumber → fail-closed; `replaceSessionFile` menggantikan berkas sesi.
+4. AC-4 ✓ — `RescanAnalysis` TIDAK menyentuh `analysis_rounds` (jatah
+   3 putaran = jatah agent; re-scan = tindakan sistem setelah keputusan
+   manusia) dan mempertahankan proposals/repairs yang belum diterapkan.
+5. AC-5 ✓ — blok `rejected_listing` dibuat Go (pola `editor_link`), pesan
+   sistem via Go (O-18), `GET /rejected-listing` untuk kartu UI; Node hanya
+   skema + Bearer user; deskripsi tool menegaskan model tidak boleh
+   mengisi `confirmed_by_user` sendiri.
+6. Kedua catatan review WO-02 dieksekusi ✓ — kolom `origin` nyata
+   (`agent|user`, alias lama tetap terbaca) dan peta kolom dari dokumen
+   mapping.
+7. Temuan & perbaikan sendiri (`repairFilename` anti-penumpukan + unit
+   test) disetujui. Deviasi terdokumentasi diterima: AC-6 dengan fixture
+   sintetis ekuivalen (156 baris → 0 ditolak → extract 156/0) — berkas
+   asli owner diuji manual bila tersedia; Bruno 176 req tanpa kegagalan
+   baru vs baseline; env: restart runtime/server sebagai operasi dev.
+
+**Topic `1795083433686` SELESAI** — WO-01..WO-03 complete
+(`ba7853c` + `fc8edbe` + `18998f7`). Sisa tindak lanjut: uji berkas asli
+owner manual; 2 file kotor pre-existing (`AdminLayout.tsx`,
+`src/styles/index.css`) masih perlu kategorisasi (O-22 leftover topic
+induk).

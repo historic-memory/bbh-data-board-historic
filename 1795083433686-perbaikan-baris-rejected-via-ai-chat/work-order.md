@@ -1,6 +1,6 @@
 ---
 title: "Work order — Perbaikan baris rejected via AI chat"
-description: "Master index WO topic 1795083433686: 3 WO (backend snapshot+tool → listing UI → apply+loop+chat); SPEC progress (owner ok 2026-11-19); WO-01, WO-02 & WO-03 complete"
+description: "Master index WO topic 1795083433686: 3 WO semua COMPLETE (ba7853c + fc8edbe + 18998f7, review Manager LULUS); sisa uji berkas asli owner manual"
 status: progress
 created: "2026-11-19"
 updated: "2026-11-19"
@@ -15,7 +15,8 @@ tags:
 Topic `1795083433686` (extends `1793711295286`). Sumber kebenaran desain:
 `desain-flow-dan-toolcall.md` (final, owner ok 2026-11-19) + `spec.md`
 (progress — owner setujui 2026-11-19). **WO-01, WO-02 & WO-03 SELESAI**
-(`ba7853c` + `fc8edbe` + WO-03) — seluruh eksekusi topic ini tuntas,
+(`ba7853c` + `fc8edbe` + `18998f7`, review Manager LULUS 2026-11-20) —
+seluruh eksekusi topic ini tuntas;
 menunggu review Manager.
 
 ## Latar
@@ -32,8 +33,8 @@ listing interaktif dua arah → checkbox scope → final ok.
 | WO | Judul | Status | Commit kode | Dok historic |
 |---|---|---|---|---|
 | WO-01 | Backend snapshot analisa + tool T-1/T-2/T-4 + fail-closed P-8 | **complete** (2026-11-19) | `ba7853c` | wo-01-backend-snapshot-tool.md |
-| WO-02 | Listing UI: tabel rejected + checkbox + edit manual + tombol Analisa | **progress** (2026-11-19) | — | wo-02-listing-ui.md |
-| WO-03 | Apply fixes + CSV perbaikan + re-scan loop + blok chat | **progress** (2026-11-19) | — | wo-03-apply-rescan-loop.md |
+| WO-02 | Listing UI: tabel rejected + checkbox + edit manual + tombol Analisa | **complete** (2026-11-19) | `fc8edbe` | wo-02-listing-ui.md |
+| WO-03 | Apply fixes + CSV perbaikan + re-scan loop + blok chat | **complete** (2026-11-20) | `18998f7` | wo-03-apply-rescan-loop.md |
 
 ## Prinsip lintas WO (pinned)
 

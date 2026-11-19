@@ -1,7 +1,7 @@
 ---
 title: "WO-07 — Penanganan sesi `extracting` stale (cancel + delete)"
 description: "Sesi yang state-nya macet di `extracting` (server restart/run terputus) tidak bisa dihapus karena gate fail-closed; sediakan aksi cancel dari `extracting` + guard stale agar delete bisa jalan"
-status: draft
+status: review
 created: "2026-11-19"
 updated: "2026-11-19"
 tags:
@@ -105,3 +105,82 @@ penanganan, karena sesi sudah stale**.
 | §B | Aksi cancel, indikator terhenti, tombol hapus kembali aktif | Dev frontend |
 
 Urutan eksekusi: §A → §B. Effort kasar: §A ±1 hari; §B ±0,5 hari.
+
+---
+
+## Progres Dev — 2026-11-19
+
+Status: **implementasi §A + §B selesai**, verifikasi hijau. Belum di-commit push
+(sesuai instruksi), binari `bin/server` di container sudah dibangun ulang.
+
+### §A Backend (`plugins/ingest`)
+
+- **Migrasi** `2026_11_19_100000_add_ingest_sessions_run_started_at.up.sql`:
+  kolom `ingest_sessions.run_started_at TIMESTAMPTZ` + index parsial
+  `idx_ingest_sessions_extracting` (state='extracting'). Sudah diterapkan ke DB
+  dev (`console migrate up --plugin ingest`, versi 7).
+- **Penanda run** (`services/session_state.go`): transisi yang berakhir di
+  `extracting` mengisi `run_started_at = now()` — dan HANYA bila proses ini
+  memegang run (diklaim `RunExtraction`). State yang meninggalkan `extracting`
+  (complete/cancel/rollback/dry-run) mengosongkan penanda.
+- **Registry run in-process** (`services/extraction_run.go`): `claimExtractionRun`
+  menjamin invarian SATU run aktif per sesi (dua run paralel → 409), dilepas
+  lewat `defer`.
+- **Deteksi stale** (fungsi murni `model.EvaluateExtraction`, `model/stale.go`):
+  `extracting` + penanda kosong → stale (`no_marker`, kasus restart); penanda
+  lebih tua dari ambang → stale (`expired`). Ambang dari env
+  `INGEST_EXTRACTION_STALE_MINUTES` (default 30 menit, nilai invalid → default).
+  Fail-closed: penanda segar = run aktif.
+- **Cancel dari `extracting`** (`Transition`): sah HANYA bila stale; run aktif →
+  `ErrExtractionRunActive` → 409. `AllowedActionsFor` tidak menawarkan `cancel`
+  saat run aktif (UI tidak menampilkan aksi yang pasti ditolak).
+- **Sweep boot** (`SweepStaleExtractionRuns`, dipanggil `plugin.RegisterServices`):
+  mengosongkan penanda milik proses sebelumnya → tidak ada "run aktif" fiktif
+  setelah restart (AC-6). Best-effort (tabel belum dimigrasi → hanya log).
+- **API**: daftar sesi & `GET /sessions/:id/state` membawa `extraction`
+  (`{stale, reason, run_started_at, threshold_minutes}`). Audit aksi cancel dari
+  `extracting` memakai kelas `cancel_stale_extraction`; guard tetap `ingest.write`.
+- Delete dari `extracting` TETAP 409 (gate WO-04a tidak dilonggarkan); setelah
+  `cancelled`, soft/hard delete jalan normal.
+
+### §B Frontend (`sub_app/webapp`)
+
+- `api/ingest.ts`: tipe `IngestExtractionStatus`; `transitionIngestSession` +
+  `cancelIngestExtraction`; `IngestSession.extraction`.
+- `IngestSessionListPage.tsx`: badge `ekstraksi terhenti` (danger) hanya dari
+  `extraction.stale`; tombol **Batalkan ekstraksi** hanya untuk sesi stale +
+  modal konfirmasi ringan; tombol Hapus/Hapus permanen tetap nonaktif selama
+  `extracting` (fail-closed) dan aktif lagi setelah `cancelled`.
+
+### Bukti verifikasi
+
+- `go vet ./...` hijau; `go test ./...` hijau (termasuk
+  `model.TestEvaluateExtraction`, `services.TestStaleThresholdDefault`,
+  `services.TestAllowedActionsForCancelGate`).
+- `tsc -b` + `npm run build` (webapp) hijau; swagger di-regenerate
+  (`build.sh`, ada `ExtractionStatus`, `sessionStateResponse`).
+- Bruno (bru 4.2.1, server lokal):
+  - `54` state extracting stale → `extraction.stale=true` (`no_marker`),
+    `allowed_actions` memuat `cancel`; `55` cancel → 200 `cancelled`;
+    `56` delete sesi cancelled → 200 (AC-1/AC-3/AC-4).
+  - `57` cancel dengan penanda SEGAR → **409** `run ekstraksi masih aktif` (AC-2).
+- AC-6 diuji langsung: sesi `extracting` ber-penanda segar → restart server →
+  penanda dikosongkan saat boot → `stale=true` (`no_marker`).
+- Audit: baris `ingest_audit` kelas `cancel_stale_extraction` (200) dan
+  `transition_cancel` (409) tercatat.
+- UI (browser, Tailscale `http://100.125.175.34:8082/app/ingest`): badge
+  "ekstraksi terhenti" + tombol "Batalkan ekstraksi" tampil; klik → modal →
+  konfirmasi → sesi hilang dari badge terhenti (state `cancelled`).
+- Kasus nyata `01a1a5d6-7780-7369-9754-0c8f9dbc7edd` ("CP2 uji sintetis"):
+  dibatalkan lewat `cancel` (state `cancelled`) — sebelumnya macet di
+  `extracting` sejak 04 Nov.
+
+### Catatan / batasan
+
+- Invarian satu-run memakai registry memori → berlaku untuk deployment satu
+  instance (compose: satu container `app`). Multi-instance perlu kolom
+  kepemilikan di DB (belum diperlukan sekarang).
+- Transisi `extract` langsung lewat API tanpa run nyata tidak mengisi penanda →
+  sesi seperti itu langsung terbaca stale (bukan run aktif fiktif).
+- Sesuai instruksi Manager: status dok → `review`, belum push.
+

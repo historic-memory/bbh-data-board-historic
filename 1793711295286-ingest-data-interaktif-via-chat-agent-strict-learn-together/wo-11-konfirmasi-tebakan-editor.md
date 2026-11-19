@@ -1,7 +1,7 @@
 ---
 title: "WO-11 — Konfirmasi tebakan agent di editor: aksi eksplisit sekali klik (bulk + per baris)"
 description: "Perbaikan UX konfirmasi mapping editor: tebakan agent (guess:true) kini hanya bisa dikonfirmasi dengan mengubah dropdown ulang satu per satu — ditambah tombol Setuju semua tebakan + konfirmasi per baris; TETAP aksi user eksplisit via PUT mapping, TANPA auto-confirm oleh sistem (D-7 gate strict tetap)"
-status: pending
+status: complete
 created: "2026-11-19"
 updated: "2026-11-19"
 tags:
@@ -118,4 +118,68 @@ Effort kasar: §A ±0,5 hari; §B ±0,25 hari; §C ±0,5 hari.
 
 ## Catatan Implementasi (Dev)
 
-(belum ada — isi bertahap per bagian sesuai aturan pinned)
+Status: selesai (2026-11-19). Porsi backend §B ternyata **tidak perlu** —
+kontrak mapping v2 sudah punya `guess` + `validated_by`, dan `PUT mapping`
+menyimpan apa adanya. Jadi perubahan murni frontend, satu berkas.
+
+- `sub_app/webapp/src/pages/admin/ingest/IngestMappingPage.tsx:188` —
+  tambah `guessPendingCount` (predikat `guess && !validated_by && !skip`).
+  Sengaja **disamakan** dengan penegak gate di
+  `plugins/ingest/services/mapping.go` (`evaluateGates`, gate "mapping") agar
+  tombol bulk muncul tepat ketika gate itu tertahan — tidak ada drift UI↔gate.
+- `IngestMappingPage.tsx:200` — `persistColumns(next, notice)` mengekstrak jalur
+  simpan yang sudah ada (`saveMapping` → `PUT /sessions/:id/mapping`). `save`
+  draft, konfirmasi per baris, dan bulk kini lewat jalur API yang sama —
+  bukti AC-3 (konfirmasi tetap aksi user `PUT mapping`), bukan endpoint baru
+  maupun auto-confirm sistem (D-7 tetap).
+- `IngestMappingPage.tsx:219` — `save` lama diubah jadi delegasi
+  `persistColumns(payloadColumns, 'Mapping tersimpan sebagai versi baru.')`
+  supaya perilaku Simpan draft tidak berubah (regresi nol).
+- `IngestMappingPage.tsx:228` — `confirmGuess(index)` (AC-2): hanya set
+  `guess:false` + `validated_by:'admin'` pada satu kolom. `target` **tidak
+  disentuh** → nilai tebakan dipertahankan (AC-4); `chooseTarget` (jalur
+  dropdown manual) tetap seperti semula sehingga editor tanpa tebakan tidak
+  berubah.
+- `IngestMappingPage.tsx:243` — `agreeAllGuesses()` (AC-1): map semua kolom
+  pending → `guess:false` + `validated_by:'admin'`, lalu satu
+  `persistColumns`. Nilai kolom dipertahankan (AC-4).
+- `IngestMappingPage.tsx:458` — tombol "Setuju semua tebakan (N)" di
+  `CardHeader` kartu kolom; hanya render bila `guessPendingCount > 0`, disabled
+  saat `busy !== ''`, `title` menjelaskan efek ("nilai kolom tidak berubah"),
+  `data-testid="ingest-agree-all-guesses"` untuk uji. Label N = jumlah tebakan
+  tersisa, jadi user melihat progres.
+- `IngestMappingPage.tsx:~505` — tombol ✓ per baris di sel "Field tujuan",
+  hanya render untuk kolom `guess && !validated_by && !skip`; `aria-label`
+  menyebut nama kolom (aksestabilitas) dan `data-testid="ingest-confirm-guess-{i}"`.
+- Badge "tebakan — belum dikonfirmasi" **tidak diubah** — tetap satu-satunya
+  penanda tebakan sampai user menyetujui (§A.3).
+- §B backend: **tidak ada perubahan**. Alasan: `saveMapping` mengirim seluruh
+  daftar kolom dan `SaveMapping` (`services/mapping.go`) menyimpan dokumen apa
+  adanya tanpa men-stempel ulang `guess`; field `validated_by` sudah ada di
+  `model.ColumnMapping`. Menambah `confirmed_by_user` akan menduplikasi makna
+  (additive tanpa manfaat) → ditolak, sesuai catatan WO ("hanya bila perlu").
+- AC-6 jalur RBAC/audit tetap: route `PUT /admin/ingest/sessions/:id/mapping`
+  guard `ingest.write` (`plugin.go:118`) + `h.audit(c,"mapping",...)`
+  (`handlers/mapping.go:101`); **nol route baru** ditambahkan.
+
+### Bukti uji
+
+- API (curl, sesi `visit` hasil upload, 6 kolom `guess:true`): GET mapping →
+  gate mapping `tertahan`; PUT mapping dengan `guess:false`+`validated_by:admin`
+  (nilai `target` sama) → gate mapping `lolos`, `target` seluruh kolom
+  identik (AC-1/AC-3/AC-4). `ingest_audit` mencatat `PUT .../mapping` 200
+  (AC-6).
+- UI (Vite `:5173`, Tailscale `100.125.175.34`, root admin): halaman
+  `/app/ingest/:id/map` menampilkan badge 6 kolom + tombol "Setuju semua
+  tebakan (6)" + 6 tombol ✓.
+  - Klik ✓ baris-1 → **satu** `PUT mapping` (AC-2), badge hilang 1, tombol
+    jadi "(5)", gate mapping detail menyempit.
+  - Klik "Setuju semua tebakan (5)" → **satu** `PUT mapping` (AC-1), badge 0,
+    gate mapping `lolos`, tombol bulk hilang.
+  - Konfirmasi → gate semua lolos → Ekstrak → `extracted` ("Ekstraksi
+    selesai") → pipeline tak berubah (AC-7).
+- Build: `npx tsc -b` bersih + `npm run build` hijau (dist 22.95s). Backend
+  tidak disentuh sehingga `go build/vet/test` tak terpengaruh.
+- Data uji dibersihkan (hard delete 2 sesi uji; tidak ada master data baru —
+  laporan ekstraksi `created=0/skipped=2`).
+

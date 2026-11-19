@@ -9,4 +9,9 @@ files:
       type: file
       status: draft
       updated_at: "2026-11-20T00:00:00Z"
+    - id: 01a1f4c2-5571-70a3-ab83-e99c08097108
+      path: wo-01-hapus-tombol-ekstrak-konfirmasi-editor.md
+      type: file
+      status: pending
+      updated_at: "2026-11-20T00:00:00Z"
 assets: []

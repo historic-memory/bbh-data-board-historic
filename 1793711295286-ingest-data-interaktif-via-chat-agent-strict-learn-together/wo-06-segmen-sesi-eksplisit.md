@@ -118,6 +118,22 @@ Urutan eksekusi disarankan: §A → §B → §C. Effort kasar: §A ±0,5–1 har
 
 ---
 
+## Usulan revisi TERTUNDA — 2026-11-19 (owner, pasca-WO-06 complete)
+
+Owner mengusulkan revisi arah UX: **chat dibuka bebas tanpa memilih segmen;
+segmen baru ditentukan di mapping editor** (dropdown menonjol di editor;
+sesi boleh lahir tanpa `target_plugin`; kunci 409 hanya bila profil mapping
+sudah ada; agent tanpa segmen tidak menebak mapping dan mengarahkan ke
+editor).
+
+**Status: TERTUNDA — owner memilih mencoba implementasi saat ini dulu**
+(picker segmen saat "Sesi baru" dinilai bagus dan ingin diuji). Revisi
+dievaluasi ulang setelah pengujian; bila disetujui, dibuat WO baru /WO-06
+revisi dengan perubahan §A/§B/§C seperti uraian di atas. Dokumen ini TIDAK
+diubah lingkupnya oleh usulan ini.
+
+---
+
 ## Progres Dev — 2026-11-19 (status: review)
 
 Urutan §A → §B → §C selesai dan divalidasi. Model mapping v2, state machine,

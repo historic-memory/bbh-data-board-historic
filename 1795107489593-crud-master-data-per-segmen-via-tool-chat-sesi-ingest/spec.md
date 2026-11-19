@@ -1,7 +1,7 @@
 ---
 title: "SPEC — CRUD master data per segmen via tool chat generik (Hybrid)"
 description: "SPEC final: 2 tool generik segment_read (proxy whitelist GET + deidentify) & segment_write_propose (proposal→kartu approve→apply_record_actions) untuk SEMUA segmen + MergeVisitors plugin visit; guard whitelist per segmen + RBAC target; WO-01..WO-05"
-status: draft
+status: progress
 created: "2026-11-20"
 updated: "2026-11-20"
 tags:
@@ -11,6 +11,9 @@ tags:
     - spec
 ---
 # SPEC — CRUD master data per segmen via tool chat generik (Hybrid)
+
+> **Status: DISETUJUI owner 2026-11-20** ("ok aku setuju"). Menjadi
+> acuan eksekusi WO-01..WO-05 topic ini. Status dok: `progress`.
 
 Topic `1795107489593` (extends `1795083433686`, turunan induk
 `1793711295286`). Sumber: `notes.md` (DESAIN FINAL owner ok 2026-11-20).

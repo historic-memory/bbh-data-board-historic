@@ -1,7 +1,7 @@
 ---
 title: "WO-01 — Hapus tombol Ekstrak & Konfirmasi dari editor mapping (aksi jalan via chat AI)"
 description: "Hapus tombol 'Ekstrak sekarang' (kartu Ekstrak: dedup + dry run ikut hilang) dan 'Konfirmasi & kunci mapping' di IngestMappingPage — konfirmasi/ekstraksi cukup lewat tool chat AI (confirm_mapping/run_extraction); Simpan draft tetap; prasyarat data dedup/dry-run pindah ke alur chat"
-status: pending
+status: progress
 created: "2026-11-20"
 updated: "2026-11-20"
 tags:
@@ -12,8 +12,21 @@ tags:
 # WO-01 — Hapus tombol Ekstrak & Konfirmasi dari editor mapping
 
 Sumber: owner 2026-11-20 — "sesuai rencana kita pakai tools AI chat".
-Topic `1795107489593` (extends `1795083433686`). Status: **pending**.
+Topic `1795107489593` (extends `1795083433686`). Status: **progress**
+(handoff ke dev 2026-11-20 setelah SPEC disetujui owner).
 Patch frontend kecil (pola patch langsung, bukan fitur besar).
+
+## Handoff Manager → Dev (2026-11-20)
+
+- SPEC topic ini **disetujui owner** — mulai eksekusi dok ini.
+- Urutan kerja: Lingkup A (hapus tombol/kartu + state) → A.4 modal
+  Simpan draft (WAJIB, komponen `ui/Modal` existing) → B verifikasi
+  alur dedup/dry-run di chat (bila jalur tanya dedup belum ada di
+  prompt, tambahkan kecil — JANGAN restore tombol) → C verifikasi
+  build + smoke Tailscale.
+- Aturan pinned: isi **Log Implementasi (Dev)** bertahap per bagian;
+  lapor balik ke Manager dengan ringkasan + hash commit saat selesai
+  untuk direview (pola topic `1795083433686`).
 
 ## Latar
 

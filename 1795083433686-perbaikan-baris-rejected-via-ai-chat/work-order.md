@@ -1,6 +1,6 @@
 ---
 title: "Work order — Perbaikan baris rejected via AI chat"
-description: "Master index WO topic 1795083433686: 3 WO (backend snapshot+tool → listing UI → apply+loop+chat); SPEC progress (owner ok 2026-11-19); WO-01 complete, WO-02/03 pending"
+description: "Master index WO topic 1795083433686: 3 WO (backend snapshot+tool → listing UI → apply+loop+chat); SPEC progress (owner ok 2026-11-19); WO-01, WO-02 & WO-03 complete"
 status: progress
 created: "2026-11-19"
 updated: "2026-11-19"
@@ -14,9 +14,9 @@ tags:
 
 Topic `1795083433686` (extends `1793711295286`). Sumber kebenaran desain:
 `desain-flow-dan-toolcall.md` (final, owner ok 2026-11-19) + `spec.md`
-(progress — owner setujui 2026-11-19). **WO-01 & WO-02 SELESAI
-(`ba7853c` + `fc8edbe`); WO-03 AKTIF (progress)** — eksekusi terakhir
-di topic ini.
+(progress — owner setujui 2026-11-19). **WO-01, WO-02 & WO-03 SELESAI**
+(`ba7853c` + `fc8edbe` + WO-03) — seluruh eksekusi topic ini tuntas,
+menunggu review Manager.
 
 ## Latar
 

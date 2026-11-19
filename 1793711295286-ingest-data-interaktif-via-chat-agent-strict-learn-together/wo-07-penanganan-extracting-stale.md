@@ -1,12 +1,12 @@
 ---
-title: "WO-07 — Penanganan sesi `extracting` stale (cancel + delete)"
-description: "Sesi yang state-nya macet di `extracting` (server restart/run terputus) tidak bisa dihapus karena gate fail-closed; sediakan aksi cancel dari `extracting` + guard stale agar delete bisa jalan"
-status: review
+title: WO-07 — Penanganan sesi `extracting` stale (cancel + delete)
+description: Sesi yang state-nya macet di `extracting` (server restart/run terputus) tidak bisa dihapus karena gate fail-closed; sediakan aksi cancel dari `extracting` + guard stale agar delete bisa jalan
+status: complete
 created: "2026-11-19"
 updated: "2026-11-19"
 tags:
-  - ingest
-  - session-lifecycle
+    - ingest
+    - session-lifecycle
 ---
 # WO-07 — Penanganan sesi `extracting` stale
 

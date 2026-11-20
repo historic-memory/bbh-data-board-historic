@@ -1,6 +1,6 @@
 ---
 title: "Work order — CRUD master data per segmen via tool chat generik"
-description: "Master index WO topic 1795107489593: 5 WO (patch editor → segment_read → write/apply+kartu → MergeVisitors → prompt+e2e); SPEC disetujui owner 2026-11-20; WO-01 progress (handoff dev), WO-02..05 pending"
+description: "Master index WO topic 1795107489593: 5 WO (patch editor → segment_read → write/apply+kartu → MergeVisitors → prompt+e2e); SPEC disetujui owner 2026-11-20; WO-01/02/02a/03 complete, WO-04..05 pending"
 status: progress
 created: "2026-11-20"
 updated: "2026-11-20"
@@ -15,10 +15,35 @@ Topic `1795107489593` (extends `1795083433686`). Sumber kebenaran:
 `notes.md` (DESAIN FINAL owner ok 2026-11-20) + `spec.md` (draft).
 **SPEC disetujui owner 2026-11-20**. WO-01 complete (review LULUS 2026-11-20,
 kode `111bf03`+`8d0eafb`); WO-02 & WO-02a complete (2026-11-20, kode
-`9aa0933`); WO-03..05 pending (urutan WO-03→04→05).
+`9aa0933`); WO-03 complete (2026-11-20); WO-04..05 pending (urutan
+WO-04→05).
 Backlog dari review WO-01 (tidak blocker): (a) default `kind` dari
 `fields.yaml` untuk bentuk mapping legacy; (c) sesi uji dev
 `wo01-smoke-1795126932` boleh dibersihkan.
+
+## Bukti WO-03 (2026-11-20)
+
+- Go: `record.go` (model), migrasi jsonb `record_proposals`, service
+  `record_write.go` (whitelist TULIS per segmen, terpisah dari whitelist baca),
+  `record_apply.go` (approval wajib, preview delete/merge, eksekusi HTTP
+  self-call dengan Bearer user), handler + 3 route, 10 unit test.
+- `go build/vet/test ./...` hijau; `gofmt -l` kosong; `tsc --noEmit` hijau;
+  `npm test` 21/21; `npm run build` webapp hijau; swagger diregenerasi.
+- Migrasi `ingest` 9 diterapkan; `bin/server` & `ingest-runtime` di-restart.
+- Bruno `api-tests/ingest-crud` 25/25 request, **55/55 tes PASS**: propose
+  create → apply (baris DB nyata) → path terlarang 400 → tanpa
+  `confirmed_by_user` 400 → apply ulang 409 → ID tak ada 400 → merge
+  non-visit 409.
+- Bukti propose TIDAK menulis: baris `visit_visitors` hanya muncul setelah
+  `apply_record_actions`.
+- Bukti audit ganda: `ingest_audit provider='ingest-tool'` mencatat
+  `segment_write_propose`/`apply_record_actions` (200/400/409); endpoint asli
+  mencatat aksinya.
+- Smoke UI `http://100.125.175.34:5173`: kartu "Usulan perubahan data · 1 aksi
+  · proposed" tampil, Setujui → `applied` + "1 berhasil", baris
+  `Smoke Kartu WO-03` ada di `visit_visitors`.
+- Regresi: 4 tool analisa + `segment_read` + `introduce_session` (folder
+  `ingest-crud`) tetap 55/55 PASS.
 
 ## Bukti WO-02 / WO-02a (2026-11-20)
 
@@ -57,7 +82,7 @@ API admin existing + proposal/approve untuk tulis.
 | WO-01 | Patch editor: hapus tombol Ekstrak & Konfirmasi + modal Simpan draft → chat | **complete** (review LULUS 2026-11-20) | `111bf03`, `8d0eafb` | wo-01-hapus-tombol-ekstrak-konfirmasi-editor.md |
 | WO-02 | Backend `segment_read` (whitelist + deidentify) + skema Node | **complete** (2026-11-20) | `9aa0933` | wo-02-segment-read.md |
 | WO-02a | Tool `introduce_session` (chat murni dari `uploaded`) — keputusan owner review WO-01 | **complete** (2026-11-20) | `9aa0933` | wo-02a-introduce-session-tool.md |
-| WO-03 | Backend `segment_write_propose` + `apply_record_actions` + kartu approve | pending (2026-11-20) | — | wo-03-write-propose-apply.md |
+| WO-03 | Backend `segment_write_propose` + `apply_record_actions` + kartu approve | **complete** (2026-11-20) | `2a898f3` | wo-03-write-propose-apply.md |
 | WO-04 | `MergeVisitors` plugin visit + endpoint admin | pending (2026-11-20) | — | wo-04-merge-visitors-visit.md |
 | WO-05 | Prompt agent + Bruno + uji end-to-end duplikat kunjungan | pending (2026-11-20) | — | wo-05-prompt-bruno-e2e.md |
 

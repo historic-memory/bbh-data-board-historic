@@ -1,7 +1,7 @@
 id: "1795107489593"
 title: CRUD master data per segmen via tool chat sesi ingest
 created: "2026-11-19"
-updated_at: "2026-11-20T01:37:54Z"
+updated_at: "2026-11-20T01:39:51Z"
 extends: "1795083433686"
 files:
     - id: 01a1f4bf-4e53-799b-93b0-68e93c03979e
@@ -48,5 +48,5 @@ files:
       path: work-order.md
       type: file
       status: progress
-      updated_at: "2026-11-20T01:37:54Z"
+      updated_at: "2026-11-20T01:39:51Z"
 assets: []

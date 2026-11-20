@@ -1,7 +1,7 @@
 ---
-title: "SPEC — Siklus revisi & analisa dari chat pasca ekstraksi ingest"
-description: "SPEC draft: tool transition_session (revise/cancel) + analyze_session + tombol revise UI + prompt Kontrak supaya siklus extracted→revise→confirm→extract→analisa bisa dituntaskan murni dari chat (kasus nyata sesi 873db24a & d1f3d30b)"
-status: draft
+title: SPEC — Siklus revisi & analisa dari chat pasca ekstraksi ingest
+description: 'SPEC draft: tool transition_session (revise/cancel) + analyze_session + tombol revise UI + prompt Kontrak supaya siklus extracted→revise→confirm→extract→analisa bisa dituntaskan murni dari chat (kasus nyata sesi 873db24a & d1f3d30b)'
+status: progress
 created: "2026-11-20"
 updated: "2026-11-20"
 tags:

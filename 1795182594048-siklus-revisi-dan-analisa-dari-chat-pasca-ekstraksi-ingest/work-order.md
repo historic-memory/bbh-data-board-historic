@@ -1,7 +1,7 @@
 ---
-title: "Work Order — Siklus revisi & analisa dari chat pasca ekstraksi ingest"
-description: "Daftar WO topic 1795182594048: tool transisi state, tool analisa, tombol revise UI, patch prompt agent"
-status: draft
+title: Work Order — Siklus revisi & analisa dari chat pasca ekstraksi ingest
+description: 'Daftar WO topic 1795182594048: tool transisi state, tool analisa, tombol revise UI, patch prompt agent'
+status: progress
 created: "2026-11-20"
 updated: "2026-11-20"
 tags:

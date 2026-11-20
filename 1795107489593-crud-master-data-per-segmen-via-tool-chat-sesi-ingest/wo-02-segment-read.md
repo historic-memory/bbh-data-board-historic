@@ -1,7 +1,7 @@
 ---
 title: "WO-02 — Backend segment_read (whitelist + deidentify) + skema Node"
 description: "POST /admin/ingest/tools/segment_read — proxy GET-only ke API admin segmen sesi dengan whitelist prefix per segmen (fail-closed di Go), RBAC baca plugin target, deidentify tunggal sebelum response ke LLM (ID utuh), paginasi max 200; skema Node pola existing"
-status: pending
+status: complete
 created: "2026-11-20"
 updated: "2026-11-20"
 tags:
@@ -91,4 +91,101 @@ Sumber: SPEC `spec.md` topic `1795107489593` + desain final `notes.md`
 
 ## Catatan Implementasi (Dev)
 
-(belum ada — isi bertahap per bagian sesuai aturan pinned)
+### §A. Endpoint Go
+
+1. `plugins/ingest/services/segment_read.go:72` — `segmentReadWhitelist` =
+   map statis per segmen (`visit` 5 pola, `resident` 8, `sec`/`hsh` pola
+   `*`). Fail-closed: segmen tanpa entri tidak bisa membaca apa pun
+   (AC-2 / SPEC §3).
+2. `plugins/ingest/services/segment_read.go:93` — `segmentReadBannedPrefix`
+   (`admins`, `groups`, `audit`, `ingest`, `providers`, …). Sebagian sudah
+   tertutup whitelist, tapi daftar ini membuat penolakannya EKSPLISIT dan
+   pesannya jelas (O-22) — terutama untuk `sec/*`/`hsh/*` yang berpola `*`.
+3. `plugins/ingest/services/segment_read.go:160` (`SegmentReadPath`) —
+   satu tempat validasi: normalisasi path → cek larangan keras → cocokkan
+   whitelist. Diekspor khusus supaya bisa diuji tanpa DB.
+4. `plugins/ingest/services/segment_read.go:180` (`normalizeSegmentPath`) —
+   tolak path absolut (`/api/admin/...`), `://`, `?#`, `\`, `%`, segmen
+   kosong, `.`/`..`. Alasan: bentuk absolut membuka jalan memutar
+   (mis. `/api/admin/admins`) dan escape URL mem-bypass pencocokan pola.
+5. `plugins/ingest/services/segment_read.go:216` (`matchSegmentPath`) —
+   mendukung `/*` (sub-pohon) dan `:id` (SATU segmen dinamis, menolak `*`/`?`
+   di dalamnya). Ini yang membedakan `visit/visits/:id` sah vs
+   `visit/visits/1/2` ditolak.
+6. `plugins/ingest/services/segment_read.go:246` (`SegmentRead`) — urutan
+   gerbang: sesi → segmen sesi (`ErrSegmentRequired` bila kosong) → path →
+   GET-only → Bearer wajib (`SegmentUpstreamError{401}`) → query →
+   fail-closed deidentify → upstream → deidentify → truncate. Urutan ini
+   penting: cek deidentify SEBELUM upstream supaya payload mentah tidak
+   pernah sempat lewat (P-5).
+7. `plugins/ingest/services/segment_read.go:333` (`segmentReadQuery`) —
+   hanya skalar/daftar skalar yang diteruskan, `limit` dijepit ≤200, nilai
+   kosong/nil/bukan-skalar dibuang. Model tidak bisa menyelundupkan bentuk
+   yang tidak dikenal ke API asli (W-7).
+8. `plugins/ingest/services/segment_read.go:415` (`fetchSegmentRead`) —
+   `GET /api/admin/<path>` dengan `Authorization` MILIK USER (bukan service
+   token). Konsekuensi: endpoint asli tetap penegak RBAC + audit → audit
+   ganda (W-8). 401 dipaksa ada di level service juga, bukan hanya guard.
+9. `plugins/ingest/services/segment_read.go:450` (`upstreamStatusForTool`) —
+   401/403/404 diteruskan apa adanya, 4xx lain → 400, 5xx → 502 (bukan 500:
+   kegagalan ada di upstream, bukan di tool).
+10. `plugins/ingest/services/segment_read.go:487` (`deidentifyJSON`) +
+    `deidentifyNode` — walker JSON rekursif; PII dimask, **ID tidak pernah
+    disentuh** (AC-5, P-5). Gotcha: nilai PII bertipe OBJEK (mis. `mother`
+    hasil embed) tidak dimask mentah — diturunkan dulu supaya key di
+    dalamnya dinilai sendiri; tanpa ini bentuk objeknya hancur jadi string.
+11. `plugins/ingest/services/segment_read.go:591` (`segmentPIITargets`) —
+    sumber utama `encrypt: true` dari `fields.yaml` (via `targetFor`), plus
+    alias turunan (`visitor_name`, `visitor_phone`, `mother_name`) karena API
+    admin meng-embed kolom JOIN dengan nama lain.
+12. `plugins/ingest/services/segment_read.go:643` (`truncateSegmentRows`) —
+    kenali amplop `{items,total}` dan array polos; `truncated` = "petikan
+    memuat lebih sedikit baris daripada total". **Koreksi saat uji Bruno**:
+    versi pertama hanya menandai true bila SERVER memotong, sehingga
+    `total=2990, returned=200` keluar `truncated:false` — menyesatkan model
+    (W-7). Sekarang `truncated = total > len(items)`.
+13. `plugins/ingest/handlers/segment_read.go:55` — handler hanya memetakan
+    sentinel → status HTTP; kebijakan tetap di service (D-11). Pre-check
+    `<segment>.read` (`middleware.Permissions`) dilakukan SEBELUM upstream
+    agar penolakan 403 jelas (AC-3), lalu endpoint asli tetap memeriksa
+    sendiri.
+14. `plugins/ingest/handlers/segment_read.go:106` — `segmentReadStatus`:
+    `errors.As` ke `SegmentUpstreamError` dulu (status asli), baru sentinel
+    → 400/404/503. Deidentify kosong sengaja 503 (fail-closed, bukan 500).
+15. `plugins/ingest/plugin.go:163` — route `POST /admin/ingest/tools/segment_read`
+    memakai guard **`read`** (`ingest.read`), bukan `write`. Alasan: tool
+    ini hanya membaca; dengan `ingest.write` viewer ber-`visit.read` akan
+    403 dan AC-3 tidak mungkin lulus (keputusan owner 2026-11-20).
+
+### §B. Node
+
+16. `sub_app/ingest_runtime/copilot-runtime.ts:420` — `segmentReadParameters`
+    memakai `loosenFreeFormFields([...], ['query'])`. Gotcha WO-01 terulang:
+    konverter mematikan `additionalProperties` → Zod `catchall: never` →
+    model tidak boleh mengirim `q`/`limit`/`offset` sama sekali.
+17. `sub_app/ingest_runtime/copilot-runtime.ts:820` — tool `segment_read`
+    memakai `withSession(args)` (segmen sesi aktif memang penentu whitelist),
+    berbeda dengan `introduce_session` di bawah.
+18. `sub_app/ingest_runtime/copilot-runtime.ts:570` — `segmentLabel` dapat
+    `case 'hsh'` → "Kebutuhan Rumah Tangga". Tanpa ini label mentah `hsh`
+    bocor ke percakapan.
+
+### Uji & verifikasi
+
+19. `plugins/ingest/services/segment_read_test.go` — 13 test: whitelist
+    per segmen, lintas segmen, larangan keras, higiene path, `:id`, jepitan
+    `limit`, deidentify (ID utuh + objek PII), `segmentPIITargets`,
+    truncation (3 bentuk termasuk "upstream sudah terpaginasi"), key kosong
+    fail-closed, pemetaan status upstream.
+20. `sub_app/ingest_runtime/tool-schema.test.ts:93` — regresi `query` bebas
+    (`q`/`limit`/`branch_key` lolos). `npm test` 21/21.
+21. Bruno `api-tests/ingest-crud/` (01–11, 12 request/25 test) — HIJAU.
+    Temuan uji: assertion `truncated` pertama salah PREMIS (bukan bug tool),
+    lalu justru mengungkap semantik `truncated` yang menyesatkan (poin 12).
+22. Smoke UI `http://100.125.175.34:5173`: sesi baru → chat "modulnya
+    Kunjungan" → agent memanggil `introduce_session` → DB `state=introduced`
+    → lalu "tampilkan 3 pengunjung pakai segment_read" → agent memanggil
+    `segment_read` dan menjawab tabel **tanpa** `full_name`/`phone_raw`,
+    menyebut `truncated: true` + `total 2990`, dan menganjurkan operasi by ID.
+    `ingest_audit provider='ingest-tool'` mencatat status 200 untuk keduanya.
+

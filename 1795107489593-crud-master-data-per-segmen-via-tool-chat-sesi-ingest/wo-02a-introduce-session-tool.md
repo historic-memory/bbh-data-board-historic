@@ -154,3 +154,12 @@ pintu (tetap valid untuk persiapan manual).
     08–14 terbukti PRE-EXISTING (variabel `sessionId` tidak pernah di-set
     di koleksi itu), bukan akibat perubahan ini.
 
+## Review Manager (2026-11-20) — LULUS ✅ (kode `9aa0933`)
+
+Verifikasi independen: `introduce_session` pada state `introduced` →
+**409** dengan pesan state (dijalankan Manager via curl); transisi
+dipusatkan `introduceFromUploaded` (satu sumber, dipakai `SaveMapping` —
+AC-4); audit `ingest_audit` `provider='ingest-tool'` tercatat termasuk
+introduce; bukti AC-1 (sesi `uploaded` → chat murni → `introduced` tanpa
+editor) diterima dari smoke dev.
+

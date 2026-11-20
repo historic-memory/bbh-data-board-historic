@@ -220,3 +220,25 @@ approve → apply → master bersih + audit ganda terisi.
 34. File `sub_app/webapp/src/layouts/AdminLayout.tsx` dan
     `sub_app/webapp/src/styles/index.css` dalam keadaan modified
     **sebelum** WO ini dan **tidak** ikut di-commit.
+
+## Review Manager (2026-11-20) — LULUS ✅ (kode `bf50384`) — PENUTUP TOPIC
+
+Verifikasi independen (dijalankan Manager sendiri):
+
+- Kontrak 8 di `agent.md` lengkap (baca → usul → setujui → terapkan;
+  `confirmed_by_user` milik tombol kartu; bulk ≤200; pseudonim PII
+  diberi catatan; merge hanya visit + delta). Kontrak 0–7 utuh
+  (grep terverifikasi).
+- Bruno `ingest-crud` penuh dijalankan Manager: **87/87 test PASS**
+  (angka 141 dev = semua assertion termasuk kondisional yang skip di
+  lingkungan Manager; semua yang jalan lulus).
+- **Bukti DB kasus nyata** (kunjungan dobel dev): audit
+  `visit_visitor_merges` pasca-02:40 = 13 aksi batch + 1 attempt;
+  isi konsisten (8/8/8 dan 1/1/1); `visits` TETAP (pindah, bukan hapus),
+  `visitors` turun ~97 — sesuai laporan dev. Perbedaan angka absolut
+  (27 audit total, 2907 visitors saat verifikasi) karena data uji
+  review WO-03/WO-04 ikut menggeser jumlah — DELTA yang sahih.
+- Regresi: tidak ada kegagalan Bruno baru; kegagalan lama terdokumentasi
+  (`dashboard/04,05` BBH_VIEWER_TOKEN; fixture lama `ingest/*`).
+- Temuan non-blocker (kartu fetch sekali saat mount → reload) = kandidat
+  perbaikan lanjutan, tercatat backlog.

@@ -1,7 +1,7 @@
 ---
 title: "Work order — CRUD master data per segmen via tool chat generik"
 description: "Master index WO topic 1795107489593: 5 WO (patch editor → segment_read → write/apply+kartu → MergeVisitors → prompt+e2e); SPEC disetujui owner 2026-11-20; WO-01/02/02a/03/04/05 complete"
-status: progress
+status: complete
 created: "2026-11-20"
 updated: "2026-11-20"
 tags:

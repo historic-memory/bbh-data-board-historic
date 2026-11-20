@@ -189,3 +189,15 @@ Sumber: SPEC `spec.md` topic `1795107489593` + desain final `notes.md`
     menyebut `truncated: true` + `total 2990`, dan menganjurkan operasi by ID.
     `ingest_audit provider='ingest-tool'` mencatat status 200 untuk keduanya.
 
+## Review Manager (2026-11-20) — LULUS ✅
+
+Verifikasi independen: P-5 dibuktikan via banding DB vs respons (ID sama:
+nama asli `(Rahayu) Taksu Laboratorium Klinik` → pseudonim `Luca Miller`;
+HP asli `085785112259 / 081999071713` → `0853947171` — pseudonim
+deterministik format-preserving, ID utuh); `admins` 400; lintas segmen
+`sec/items` 400; Bruno `ingest-crud` 17 req / 37 test PASS (dijalankan
+Manager); audit 39 baris pasca-00:15. **SIMPANGAN DIRATIFIKASI**: guard
+route = `ingest.read` + pre-check `<segment>.read` di handler (bukan
+`ingest.write` per dok awal) — baca butuh izin baca; semantik
+`truncated = total > returned` diterima.
+

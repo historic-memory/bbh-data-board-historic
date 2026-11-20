@@ -17,10 +17,15 @@ files:
     - id: 01a1f4c2-5571-70a3-ab83-e99c08097108
       path: wo-01-hapus-tombol-ekstrak-konfirmasi-editor.md
       type: file
-      status: progress
+      status: complete
       updated_at: "2026-11-20T00:00:00Z"
     - id: 01a1f5ba-e229-70bc-aba2-28cc5257e641
       path: wo-02-segment-read.md
+      type: file
+      status: pending
+      updated_at: "2026-11-20T00:00:00Z"
+    - id: 01a1f652-eb5e-710d-bf68-85de095b3b3d
+      path: wo-02a-introduce-session-tool.md
       type: file
       status: pending
       updated_at: "2026-11-20T00:00:00Z"

@@ -1,6 +1,6 @@
 ---
 title: "Work order — CRUD master data per segmen via tool chat generik"
-description: "Master index WO topic 1795107489593: 5 WO (patch editor → segment_read → write/apply+kartu → MergeVisitors → prompt+e2e); SPEC disetujui owner 2026-11-20; WO-01/02/02a/03 complete, WO-04..05 pending"
+description: "Master index WO topic 1795107489593: 5 WO (patch editor → segment_read → write/apply+kartu → MergeVisitors → prompt+e2e); SPEC disetujui owner 2026-11-20; WO-01/02/02a/03/04 complete, WO-05 pending"
 status: progress
 created: "2026-11-20"
 updated: "2026-11-20"
@@ -16,7 +16,7 @@ Topic `1795107489593` (extends `1795083433686`). Sumber kebenaran:
 **SPEC disetujui owner 2026-11-20**. WO-01 complete (review LULUS 2026-11-20,
 kode `111bf03`+`8d0eafb`); WO-02 & WO-02a complete (review LULUS, kode
 `9aa0933`); WO-03 complete (review LULUS dgn catatan, kode `2a898f3`);
-WO-04..05 pending (urutan WO-04→05).
+WO-04 complete (kode `f583d78`); WO-05 pending (urutan WO-05).
 Koreksi W-8 (review WO-03): audit tepercaya = `ingest_audit` per aksi +
 RBAC/validasi endpoint asli (Bearer user); `endpoint_audit` = milik
 federasi, BUKAN audit admin generik.
@@ -24,8 +24,37 @@ Backlog: (a) default `kind` dari `fields.yaml` untuk bentuk mapping
 legacy; (b) audit baris CRUD di plugin target (terpisah, butuh WO baru);
 (c) bersih-bersih sesi uji dev.
 
-## Bukti WO-03 (2026-11-20)
+## Bukti WO-04 (2026-11-20)
 
+- Go: `visitor_merge.go` (service: `MergeVisitors` satu transaksi, dry-run
+  rollback, `MergeConflictError`, `SuggestSurvivor` read-only), `models.go`
+  (`VisitorMerge`), migrasi `visit_visitor_merges`, handler + 2 route
+  (`/visitors/merge` guard `write`, `/visitors/suggest-survivor` guard
+  `read`), 7 test DB. `record_apply.go`: payload merge diperbaiki (bug body
+  kosong) + preview dampak `?dry_run=1`.
+- `go build ./...`/`go vet`/`go test ./plugins/visit/... ./plugins/ingest/...`
+  hijau; `gofmt -l` kosong; swagger diregenerasi; migrasi `visit` diterapkan.
+- AC-1 atomik: test rollback (`CHECK (false) NOT VALID`) — rollback penuh,
+  tanpa baris audit tertinggal. AC-2 dedup: konflik E.164 luar grup → 409,
+  tanpa perubahan. AC-3 dry-run: `visits_moved` benar, `deleted_count=0`,
+  audit `audit_id` null. AC-4 RBAC: viewer 401/403. AC-5 `SuggestSurvivor`
+  read-only (HP valid menang). AC-6 test DB hijau.
+- Bruno `api-tests/visit` 27/27 request, **54/54 tes PASS** (pojok: merge
+  positif, preview, validasi 400 survivor∈merged, 404 id hilang, RBAC).
+- Smoke jalur chat penuh (Tailscale `100.125.175.34`): propose merge →
+  apply preview (`preview_needed:true`, note "1 kunjungan akan pindah...") →
+  apply lagi → `status applied`, `applied 1`, **HTTP 200 (bukan 409)**.
+  DB sebelum: kandidat 1 kunjungan, survivor 0. DB sesudah: survivor 1
+  kunjungan, kandidat terhapus, `phone_e164` unik (0 duplikat), baris
+  `visit_visitor_merges` (merged_count=1, visits_moved=1, deleted_count=1,
+  changed_by=admin). Audit `ingest_audit provider='ingest-tool'` mencatat
+  propose + apply 200.
+- Regresi: `ingest-crud` 55/55, `visit` 54/54, `ingest-hsh`/`ingest-sec`/
+  `ingest-resident`/`residents`/`facilities`/`smoke`/`secondary`/`templates`/
+  `needs` PASS. Catatan pra-ada: `dashboard/04,05` 401 karena `BBH_VIEWER_TOKEN`
+  kosong di env lokal — bukan regresi WO-04.
+
+## Bukti WO-03 (2026-11-20)
 - Go: `record.go` (model), migrasi jsonb `record_proposals`, service
   `record_write.go` (whitelist TULIS per segmen, terpisah dari whitelist baca),
   `record_apply.go` (approval wajib, preview delete/merge, eksekusi HTTP
@@ -86,7 +115,7 @@ API admin existing + proposal/approve untuk tulis.
 | WO-02 | Backend `segment_read` (whitelist + deidentify) + skema Node | **complete** (2026-11-20) | `9aa0933` | wo-02-segment-read.md |
 | WO-02a | Tool `introduce_session` (chat murni dari `uploaded`) — keputusan owner review WO-01 | **complete** (2026-11-20) | `9aa0933` | wo-02a-introduce-session-tool.md |
 | WO-03 | Backend `segment_write_propose` + `apply_record_actions` + kartu approve | **complete** (review LULUS dgn catatan 2026-11-20) | `2a898f3` | wo-03-write-propose-apply.md |
-| WO-04 | `MergeVisitors` plugin visit + endpoint admin | pending (2026-11-20) | — | wo-04-merge-visitors-visit.md |
+| WO-04 | `MergeVisitors` plugin visit + endpoint admin | **complete** (2026-11-20) | `f583d78` | wo-04-merge-visitors-visit.md |
 | WO-05 | Prompt agent + Bruno + uji end-to-end duplikat kunjungan | pending (2026-11-20) | — | wo-05-prompt-bruno-e2e.md |
 
 ## Prinsip lintas WO (pinned)

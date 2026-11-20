@@ -174,3 +174,23 @@ Format: `berkas:baris` — mengapa.
     — kegagalan langkah (a) di suntik lewat `CHECK (false) NOT VALID` pada
     `visit_visits` (baris lama tak divalidasi ulang) untuk membuktikan AC-1:
     rollback penuh, tanpa baris audit tertinggal.
+
+## Review Manager (2026-11-20) — LULUS ✅ (kode `f583d78`)
+
+Verifikasi independen (dijalankan Manager sendiri via API + DB):
+
+- Buat 2 visitor (HP beda) + 1 visit di candidate → `?dry_run=1` →
+  **200** `{visits_moved:1, deleted_count:0, dry_run:true}`; candidate
+  MASIH ADA pasca preview (bukti preview tidak menulis — AC-3).
+- Merge sungguhan → **200**; DB pasca merge: candidate hilang (0 baris),
+  visit kandidat kini `visitor_id=survivor`, baris
+  `visit_visitor_merges` `{visits_moved:1, deleted_count:1,
+  merged_count:1, changed_by terisi}` — atomik + audit domain terbukti
+  (AC-1/AC-4).
+- Invarian dedup create terbukti samping: create kedua dengan E.164 sama
+  → **409 dedup** (perilaku benar; catatan bahwa uji bentrok
+  merge-luar-grup sudah tercakup unit/test + Bruno 22-24).
+- Data uji Manager dihapus sendiri (visit + survivor). Bentuk kontrak
+  `{survivor_id, merged_ids[]}` + `?dry_run=1` PERSIS yang
+  `apply_record_actions` butuhkan (bug payload merge di record_apply.go
+  ikut diperbaiki — nilai tambah).

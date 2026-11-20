@@ -14,12 +14,15 @@ tags:
 Topic `1795107489593` (extends `1795083433686`). Sumber kebenaran:
 `notes.md` (DESAIN FINAL owner ok 2026-11-20) + `spec.md` (draft).
 **SPEC disetujui owner 2026-11-20**. WO-01 complete (review LULUS 2026-11-20,
-kode `111bf03`+`8d0eafb`); WO-02 & WO-02a complete (2026-11-20, kode
-`9aa0933`); WO-03 complete (2026-11-20); WO-04..05 pending (urutan
-WO-04→05).
-Backlog dari review WO-01 (tidak blocker): (a) default `kind` dari
-`fields.yaml` untuk bentuk mapping legacy; (c) sesi uji dev
-`wo01-smoke-1795126932` boleh dibersihkan.
+kode `111bf03`+`8d0eafb`); WO-02 & WO-02a complete (review LULUS, kode
+`9aa0933`); WO-03 complete (review LULUS dgn catatan, kode `2a898f3`);
+WO-04..05 pending (urutan WO-04→05).
+Koreksi W-8 (review WO-03): audit tepercaya = `ingest_audit` per aksi +
+RBAC/validasi endpoint asli (Bearer user); `endpoint_audit` = milik
+federasi, BUKAN audit admin generik.
+Backlog: (a) default `kind` dari `fields.yaml` untuk bentuk mapping
+legacy; (b) audit baris CRUD di plugin target (terpisah, butuh WO baru);
+(c) bersih-bersih sesi uji dev.
 
 ## Bukti WO-03 (2026-11-20)
 
@@ -82,7 +85,7 @@ API admin existing + proposal/approve untuk tulis.
 | WO-01 | Patch editor: hapus tombol Ekstrak & Konfirmasi + modal Simpan draft → chat | **complete** (review LULUS 2026-11-20) | `111bf03`, `8d0eafb` | wo-01-hapus-tombol-ekstrak-konfirmasi-editor.md |
 | WO-02 | Backend `segment_read` (whitelist + deidentify) + skema Node | **complete** (2026-11-20) | `9aa0933` | wo-02-segment-read.md |
 | WO-02a | Tool `introduce_session` (chat murni dari `uploaded`) — keputusan owner review WO-01 | **complete** (2026-11-20) | `9aa0933` | wo-02a-introduce-session-tool.md |
-| WO-03 | Backend `segment_write_propose` + `apply_record_actions` + kartu approve | **complete** (2026-11-20) | `2a898f3` | wo-03-write-propose-apply.md |
+| WO-03 | Backend `segment_write_propose` + `apply_record_actions` + kartu approve | **complete** (review LULUS dgn catatan 2026-11-20) | `2a898f3` | wo-03-write-propose-apply.md |
 | WO-04 | `MergeVisitors` plugin visit + endpoint admin | pending (2026-11-20) | — | wo-04-merge-visitors-visit.md |
 | WO-05 | Prompt agent + Bruno + uji end-to-end duplikat kunjungan | pending (2026-11-20) | — | wo-05-prompt-bruno-e2e.md |
 

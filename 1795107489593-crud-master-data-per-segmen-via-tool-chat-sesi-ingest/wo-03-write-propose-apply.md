@@ -1,7 +1,7 @@
 ---
 title: "WO-03 — Backend segment_write_propose + apply_record_actions + kartu approve chat + Node"
 description: "Tulis generik: usulan create/update/delete/merge → proposal store (snapshot sesi) + kartu approve di chat (backend Go pola rejected_listing WO-03) → apply_record_actions confirmed_by_user wajib → eksekusi via API admin asli (RBAC + audit ganda) + dry-run preview + max 200 aksi"
-status: progress
+status: complete
 created: "2026-11-20"
 updated: "2026-11-20"
 tags:
@@ -256,4 +256,39 @@ pada berkas fixture lama: `ingest/08..14` memakai variabel `{{sessionId}}` yang
 tidak pernah di-set oleh request mana pun, dan `ingest/05` membandingkan
 `bruno-sesi-1` padahal `04` menulis id bertimestamp. Tidak ada berkas itu yang
 disentuh WO-03; `ingest-crud` (folder yang relevan) lulus penuh.
+
+## Review Manager (2026-11-20) — LULUS DENGAN CATATAN ✅ (kode `2a898f3`)
+
+Verifikasi independen (dijalankan Manager sendiri via API + DB):
+
+- `segment_write_propose` 200 → proposal `rp_…` status `proposed` + kartu
+  `chat_block` (kind/session/proposal_id/status/applied_count/…).
+- `apply_record_actions` TANPA `confirmed_by_user` → **400** ("butuh
+  confirmed_by_user=true") — fail-closed P-3 terbukti.
+- Dengan confirm → 200 `status: applied`; **bukti DB**: baris
+  `visit_visitors` baru muncul SETELAH apply (data uji Manager sudah
+  dihapus sendiri).
+- Apply ulang → **409** ("proposal tulis sudah diterapkan") — idempotensi
+  kartu.
+- Whitelist TULIS terpisah dari baca + eksplisit per endpoint (bukan
+  wildcard) + reuse bans baca — arsitektur fail-closed yang benar.
+
+### TEMUAN PENTING — koreksi klaim "audit ganda" (W-8)
+
+`endpoint_audit` TIDAK mencatat POST `/api/admin/visit/visitors` dari
+self-call — tabel itu milik plugin `endpoints` (federasi) dan BUKAN audit
+admin generik; plugin visit TIDAK punya audit baris per request admin.
+Konsekuensi: klaim SPEC "audit endpoint asli tercatat otomatis" TIDAK
+akurat untuk plugin target. Nilai aktual: (1) RBAC + validasi tetap
+ditegakkan endpoint asli per request (Bearer user — terbukti desain),
+(2) audit tepercaya = `ingest_audit provider='ingest-tool'` per
+propose/apply (409/400/200 semuanya tercatat + admin_id + request_id).
+**Putusan**: terima; dok WO dianggap diamendemen — W-8 = "audit
+ingest-tool per aksi + RBAC/validasi endpoint asli". Audit baris CRUD di
+plugin target = BACKLOG terpisah (jangan dikerjakan tanpa WO baru).
+
+### Posisi AC
+AC-1..AC-7 terpenuhi; AC-6 (dry-run preview delete/merge, dua langkah
+persetujuan: proposed → previewed → applied) terverifikasi dari kode +
+test; merge → 404 dipetakan 409 sampai WO-04 jujur.
 

@@ -1,7 +1,7 @@
 id: "1795107489593"
 title: CRUD master data per segmen via tool chat sesi ingest
 created: "2026-11-19"
-updated_at: "2026-11-20T01:39:51Z"
+updated_at: "2026-11-20T01:44:22Z"
 extends: "1795083433686"
 files:
     - id: 01a1f4bf-4e53-799b-93b0-68e93c03979e
@@ -33,7 +33,7 @@ files:
       path: wo-03-write-propose-apply.md
       type: file
       status: progress
-      updated_at: "2026-11-20T01:37:54Z"
+      updated_at: "2026-11-20T01:44:22Z"
     - id: 01a1f5ba-e229-73c9-9d66-d7dd8bad5bb0
       path: wo-04-merge-visitors-visit.md
       type: file
@@ -48,5 +48,5 @@ files:
       path: work-order.md
       type: file
       status: progress
-      updated_at: "2026-11-20T01:39:51Z"
+      updated_at: "2026-11-20T01:44:22Z"
 assets: []

@@ -1,6 +1,6 @@
 ---
 title: "Work order — CRUD master data per segmen via tool chat generik"
-description: "Master index WO topic 1795107489593: WO-01/02/02a complete (review LULUS); sisa WO-03 (write/apply+kartu) → WO-04 (MergeVisitors) → WO-05 (prompt+e2e)"
+description: "Master index WO topic 1795107489593: 5 WO (patch editor → segment_read → write/apply+kartu → MergeVisitors → prompt+e2e); SPEC disetujui owner 2026-11-20; WO-01 progress (handoff dev), WO-02..05 pending"
 status: progress
 created: "2026-11-20"
 updated: "2026-11-20"
@@ -42,29 +42,6 @@ Backlog dari review WO-01 (tidak blocker): (a) default `kind` dari
 - Regresi editor (AC-4 WO-02a): `SaveMapping` tetap memakai transisi yang
   sama (`introduceFromUploaded`); koleksi `ingest/` tidak berubah perilaku.
 
-## Review Manager WO-02/02a (2026-11-20) — LULUS ✅
-
-Verifikasi independen (bukan hanya percaya laporan dev):
-
-- **P-5 terbukti via DB**: banding DB vs respons tool ID sama —
-  `(Rahayu) Taksu Laboratorium Klinik` → `Luca Miller`,
-  `085785112259 / 081999071713` → `0853947171` (pseudonim deterministik
-  format-preserving; ID utuh). Catatan: mask "nyata mirip" — pembaca
-  harus sadar itu pseudonim, bukan nilai asli.
-- Negatif via curl: `admins` 400; `sec/items` pada sesi visit 400;
-  `introduce_session` pada state `introduced` → **409** pesan state.
-- Bruno `ingest-crud` dijalankan Manager: **17 req / 37 test PASS**
-  (dev lapor 18/39 — selisih 1 request kondisional; semua yang jalan lulus).
-- Audit DB: 39 baris `provider='ingest-tool'` pasca-00:15.
-- Env note (bukan bug): biner server lama (00:06) sempat melayani →
-  rebuild + restart by PID diperlukan sebelum verifikasi.
-
-**SIMPANGAN DIRATIFIKASI**: guard route `segment_read` = `ingest.read`
-(bukan `ingest.write` per dok WO-02 awal) + pre-check `<segment>.read` di
-handler (403) — masuk akal: baca butuh izin baca. Dok WO-02 dianggap
-diamendemen. Backlog tetap: (a) default `kind` legacy shape; (c)
-bersih-bersih sesi uji dev.
-
 ## Latar
 
 Owner ingin agent chat punya tools CRUD lengkap untuk master data segmen
@@ -78,8 +55,8 @@ API admin existing + proposal/approve untuk tulis.
 | WO | Judul | Status | Commit kode | Dok historic |
 |---|---|---|---|---|
 | WO-01 | Patch editor: hapus tombol Ekstrak & Konfirmasi + modal Simpan draft → chat | **complete** (review LULUS 2026-11-20) | `111bf03`, `8d0eafb` | wo-01-hapus-tombol-ekstrak-konfirmasi-editor.md |
-| WO-02 | Backend `segment_read` (whitelist + deidentify) + skema Node | **complete** (review LULUS 2026-11-20) | `9aa0933` | wo-02-segment-read.md |
-| WO-02a | Tool `introduce_session` (chat murni dari `uploaded`) — keputusan owner review WO-01 | **complete** (review LULUS 2026-11-20) | `9aa0933` | wo-02a-introduce-session-tool.md |
+| WO-02 | Backend `segment_read` (whitelist + deidentify) + skema Node | **complete** (2026-11-20) | `9aa0933` | wo-02-segment-read.md |
+| WO-02a | Tool `introduce_session` (chat murni dari `uploaded`) — keputusan owner review WO-01 | **complete** (2026-11-20) | `9aa0933` | wo-02a-introduce-session-tool.md |
 | WO-03 | Backend `segment_write_propose` + `apply_record_actions` + kartu approve | pending (2026-11-20) | — | wo-03-write-propose-apply.md |
 | WO-04 | `MergeVisitors` plugin visit + endpoint admin | pending (2026-11-20) | — | wo-04-merge-visitors-visit.md |
 | WO-05 | Prompt agent + Bruno + uji end-to-end duplikat kunjungan | pending (2026-11-20) | — | wo-05-prompt-bruno-e2e.md |

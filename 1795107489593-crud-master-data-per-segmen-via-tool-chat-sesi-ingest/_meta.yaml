@@ -12,7 +12,7 @@ files:
     - id: 01a1f4c8-f805-7c15-b3b8-12d9a16c95ab
       path: spec.md
       type: spec
-      status: progress
+      status: complete
       updated_at: "2026-11-20T03:01:00Z"
     - id: 01a1f4c2-5571-70a3-ab83-e99c08097108
       path: wo-01-hapus-tombol-ekstrak-konfirmasi-editor.md
@@ -47,6 +47,6 @@ files:
     - id: 01a1f4c8-f806-773f-89e9-0eba2b35a868
       path: work-order.md
       type: file
-      status: progress
+      status: complete
       updated_at: "2026-11-20T03:01:00Z"
 assets: []

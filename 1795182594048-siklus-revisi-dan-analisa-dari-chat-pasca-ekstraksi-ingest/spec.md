@@ -1,7 +1,7 @@
 ---
 title: SPEC — Siklus revisi & analisa dari chat pasca ekstraksi ingest
-description: 'SPEC draft: tool transition_session (revise/cancel) + analyze_session + tombol revise UI + prompt Kontrak supaya siklus extracted→revise→confirm→extract→analisa bisa dituntaskan murni dari chat (kasus nyata sesi 873db24a & d1f3d30b)'
-status: progress
+description: 'SPEC final topic 1795182594048: transition_session (revise/cancel) + analyze_session + tombol revise UI + Kontrak 9 — topic COMPLETE 2026-11-20, review Manager LULUS'
+status: complete
 created: "2026-11-20"
 updated: "2026-11-20"
 tags:
@@ -12,8 +12,10 @@ tags:
 ---
 # SPEC — Siklus revisi & analisa dari chat pasca ekstraksi ingest
 
-> **Status: DRAFT — menunggu review owner.** Belum ada persetujuan;
-> WO belum boleh dieksekusi.
+> **Topic COMPLETE 2026-11-20** — SPEC disetujui owner; semua 5 WO
+> complete; Review Manager LULUS (uji live: revise 200 → mapping_draft,
+> analyze 200 snapshot, action asing 400; Bruno ingest-cycle 17/17 —
+> 36/36 test PASS dijalankan Manager). Detail review di `work-order.md`.
 
 Topic `1795182594048`. Sumber: kasus nyata sesi resident
 `873db24a-596c-47a8-b824-08c906919909` dan `d1f3d30b-9561-47de-bd89-a41d8cd47f61`

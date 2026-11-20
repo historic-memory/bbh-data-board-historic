@@ -1,7 +1,7 @@
 id: "1795182594048"
 title: Siklus revisi dan analisa dari chat pasca ekstraksi ingest
 created: "2026-11-20"
-updated_at: "2026-11-20T14:25:37Z"
+updated_at: "2026-11-20T14:52:08Z"
 files:
     - id: 01a1f93b-9675-75f0-a45e-5bf4e4733eaa
       path: notes.md
@@ -12,10 +12,10 @@ files:
       path: spec.md
       type: spec
       status: progress
-      updated_at: "2026-11-20T13:53:14Z"
+      updated_at: "2026-11-20T14:52:08Z"
     - id: 01a1f93b-9676-763c-8855-2a9022ab2014
       path: work-order.md
       type: file
       status: progress
-      updated_at: "2026-11-20T14:25:37Z"
+      updated_at: "2026-11-20T14:52:08Z"
 assets: []

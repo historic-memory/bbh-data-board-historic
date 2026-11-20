@@ -1,7 +1,7 @@
 ---
 title: Work Order — Siklus revisi & analisa dari chat pasca ekstraksi ingest
-description: 'Daftar WO topic 1795182594048: tool transisi state, tool analisa, tombol revise UI, patch prompt agent'
-status: progress
+description: 'Master index WO topic 1795182594048 — semua WO complete, Review Manager LULUS, topic COMPLETE 2026-11-20'
+status: complete
 created: "2026-11-20"
 updated: "2026-11-20"
 tags:
@@ -101,6 +101,28 @@ tags:
     timing 67–68, daftar 05); folder WO ini tidak menambah kegagalan baru.
 13. Server di-restart (rebuild `bin/server`) + `ingest-runtime` restart supaya
     route & prompt baru aktif; health `:8082` 200.
+
+## Review Manager (2026-11-20) — LULUS ✅ — PENUTUP TOPIC
+
+Verifikasi independen Manager (bukan mengandalkan laporan dev):
+
+| Cek | Hasil |
+|---|---|
+| Commits WO-01..05 | Semua ada di master (`f014e31`,`e95d45e`,`9fc0cf9`,`84fc4d6`,`5e0bb8c`), pesan commit jelas + referensi topic |
+| WO-01 fail-closed | Kode audit: whitelist `revise\|cancel` di `normalizeToolAction`, 400 SEBELUM menyentuh state machine, pesan error menyebut tool masing-masing; kebijakan state tetap di `svc.Transition` (tidak direplikasi) |
+| WO-02 | Proxy murni ke `AnalyzeSession` (snapshot persisten, tanpa mengubah state/profil) + audit |
+| Uji live negatif | `action: confirm` → **400** ✓, `action: introduce` → **400** ✓ (server berjalan) |
+| Uji live positif | `transition_session(revise)` di sesi `extracted` → `mapping_draft` ✓; `analyze_session` → snapshot 200 ✓; audit tercatat `transition_revise` + `analyze_session` ✓ |
+| WO-03 | `ErrMappingLocked` menyebut revise + tombol `ingest-revise-mapping` hanya saat `extracted` |
+| WO-04 | Kontrak 9 lengkap & tegas: wajib cek state, larang jalan pintas PUT profil, larang laporan bug tanpa uji; Kontrak 0–8 utuh |
+| WO-05 | Bruno `ingest-cycle` dijalankan Manager sendiri: **17/17 request, 36/36 test PASS** |
+| Regresi | `go build ./...` OK, `go test ./plugins/ingest/...` OK (dijalankan Manager); sisa regersi webapp/runtime mengikuti laporan dev, konsisten |
+
+**Topic COMPLETE 2026-11-20.** Semua 5 WO complete. Batasan dipatuhi:
+`model/session.go` tidak disentuh, tidak ada ekspose ganda aksi, tidak ada push.
+Backlog tersisa (non-blocker, tercatat): rule aktif hilang saat simpan draft
+(diff/warning), peringatan kolom NIK teks di template, ringkasan ekstraksi
+yang lebih menonjolkan "X masuk / Y ditolak".
 
 ### Catatan
 

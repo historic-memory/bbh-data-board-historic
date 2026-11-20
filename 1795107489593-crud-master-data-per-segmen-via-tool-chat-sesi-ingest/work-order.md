@@ -1,6 +1,6 @@
 ---
 title: "Work order — CRUD master data per segmen via tool chat generik"
-description: "Master index WO topic 1795107489593: 5 WO (patch editor → segment_read → write/apply+kartu → MergeVisitors → prompt+e2e); SPEC disetujui owner 2026-11-20; WO-01/02/02a/03/04 complete, WO-05 pending"
+description: "Master index WO topic 1795107489593: 5 WO (patch editor → segment_read → write/apply+kartu → MergeVisitors → prompt+e2e); SPEC disetujui owner 2026-11-20; WO-01/02/02a/03/04/05 complete"
 status: progress
 created: "2026-11-20"
 updated: "2026-11-20"
@@ -16,13 +16,46 @@ Topic `1795107489593` (extends `1795083433686`). Sumber kebenaran:
 **SPEC disetujui owner 2026-11-20**. WO-01 complete (review LULUS 2026-11-20,
 kode `111bf03`+`8d0eafb`); WO-02 & WO-02a complete (review LULUS, kode
 `9aa0933`); WO-03 complete (review LULUS dgn catatan, kode `2a898f3`);
-WO-04 complete (kode `f583d78`); WO-05 pending (urutan WO-05).
+WO-04 complete (kode `f583d78`); WO-05 complete (kode `bf50384`, menunggu
+review Manager — bila LULUS topic `1795107489593` ditutup).
 Koreksi W-8 (review WO-03): audit tepercaya = `ingest_audit` per aksi +
 RBAC/validasi endpoint asli (Bearer user); `endpoint_audit` = milik
 federasi, BUKAN audit admin generik.
 Backlog: (a) default `kind` dari `fields.yaml` untuk bentuk mapping
 legacy; (b) audit baris CRUD di plugin target (terpisah, butuh WO baru);
 (c) bersih-bersih sesi uji dev.
+
+## Bukti WO-05 (2026-11-20)
+
+- Prompt: `plugins/ingest/prompt/agent.md:251` → Kontrak 8 (baca → usul →
+  setujui → terapkan; `confirmed_by_user` milik kartu; whitelist guide+pagar;
+  PII pseudonym; merge hanya visit + delta; delete/merge 2 langkah; bulk ≤200).
+  Kontrak 0–7 (`agent.md:8`–`230`) tidak diubah. Perlu
+  `docker compose restart ingest-runtime` agar aktif (prompt dibaca runtime).
+- Bruno: `api-tests/ingest-crud/25..43` (19 berkas baru) — rantai E2E
+  positif, negatif (tanpa segmen, bulk >200, viewer, tanpa token), dan
+  rantai merge visit. Run gabungan `ingest-crud` + `visit`:
+  **70 request / 141 test, 100% PASS**.
+- Bukti kasus nyata (chat UI Tailscale, sesi
+  `01a1f6d5-a676-7a91-a4ff-d3f68de8a29c`): agent membaca 3001 visitor,
+  mengusulkan **13 merge**. Kartu: approve #1 → `previewed` ("Pratinjau
+  dampak (110 record) — 8 kunjungan akan pindah"); approve #2 → `applied`,
+  "13 berhasil".
+- DB sebelum: `dup_groups 177`, `visitors 3001`, `visits 3065`,
+  `visit_visitor_merges 12`. Sesudah: `dup_groups 164`, `visitors 2904`,
+  `visits 3065`, `visit_visitor_merges 25`. Delta: −13 grup, −97 visitor,
+  **0 kunjungan hilang** (dipindah), +13 audit (Σ merged 98,
+  Σ visits_moved 99, Σ deleted 98). Data nyata konsisten dengan asumsi.
+- Regresi: `go build ./...` OK, `go vet` OK, `go test ./plugins/visit/...
+  ./plugins/ingest/...` OK; `tsc --noEmit` OK; `npm run build` ✓ built.
+  Bruno `smoke residents facilities secondary needs templates dashboard`:
+  2 kegagalan **known pre-existing** (`dashboard/04`,`05` — `BBH_VIEWER_TOKEN`
+  kosong lokal). Bruno `ingest ingest-hsh ingest-sec ingest-resident`:
+  14 kegagalan seluruhnya di `ingest/` lama (fixture `sessionId` 08–14,
+  state 54–57, timing 67–68, daftar 05) — tidak disentuh WO ini, tanpa
+  kegagalan baru di hsh/sec/resident.
+- Catatan: kartu usulan fetch sekali saat mount → perlu reload bila usulan
+  lahir setelah halaman terbuka (kandidat perbaikan lanjutan, di luar WO).
 
 ## Bukti WO-04 (2026-11-20)
 
@@ -116,7 +149,7 @@ API admin existing + proposal/approve untuk tulis.
 | WO-02a | Tool `introduce_session` (chat murni dari `uploaded`) — keputusan owner review WO-01 | **complete** (2026-11-20) | `9aa0933` | wo-02a-introduce-session-tool.md |
 | WO-03 | Backend `segment_write_propose` + `apply_record_actions` + kartu approve | **complete** (review LULUS dgn catatan 2026-11-20) | `2a898f3` | wo-03-write-propose-apply.md |
 | WO-04 | `MergeVisitors` plugin visit + endpoint admin | **complete** (2026-11-20) | `f583d78` | wo-04-merge-visitors-visit.md |
-| WO-05 | Prompt agent + Bruno + uji end-to-end duplikat kunjungan | pending (2026-11-20) | — | wo-05-prompt-bruno-e2e.md |
+| WO-05 | Prompt agent + Bruno + uji end-to-end duplikat kunjungan | **complete** (2026-11-20) | `bf50384` | wo-05-prompt-bruno-e2e.md |
 
 ## Prinsip lintas WO (pinned)
 

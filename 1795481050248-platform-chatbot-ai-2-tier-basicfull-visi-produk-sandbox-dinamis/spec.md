@@ -1,6 +1,6 @@
 ---
 title: spec
-description: "Visi produk platform chatbot AI 2-tier: Basic (chatbot + tools basic, tanpa sandbox) dan Full (sandbox dinamis ketat ala Goose — runner persistent + launcher spawn per-sesi + config provider dari DB) — dipakai sebagai fondasi integrasi AI untuk project client."
+description: "doniswork — visi produk platform chatbot AI 2-tier: Basic (chatbot + tools basic, tanpa sandbox) dan Full (sandbox dinamis ketat ala Goose — runner persistent + launcher spawn per-sesi + config provider dari DB) — dipakai sebagai fondasi integrasi AI untuk project client."
 status: draft
 created: "2026-11-24"
 updated: "2026-11-24"
@@ -28,6 +28,7 @@ Lahir dari diskusi topic `1795470770884` (chatbot ACP Goose) saat WO-CP1 revisi 
    | **Full** | Jalur sandbox ketat ala Goose + permission + fail-closed | Sedang dibangun (topic `1795470770884`, CP-1..CP-3) |
    - Tier = jalur integrasi yang dipilih per deployment/client; dapat menjadi flag per deployment di DB (masih usulan, belum dikunci).
 3. **Bentuk penyajian: SaaS** — platform ini disiapkan sebagai SaaS, dengan "kemudahan-kemudahan" untuk client (detail di bawah).
+4. **Nama platform: `doniswork`** — dikunci owner (2026-11-24). Nama resmi produk platform (paket Basic & Full); dipakai untuk penamaan dokumen/repo/nama produk ke depan.
 
 ## Detail Tier BASIC (dari owner, 2026-11-24 — SaaS)
 Goal Basic = SaaS self-service untuk bikin chatbot ber-tools, tanpa sandbox:

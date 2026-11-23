@@ -108,11 +108,11 @@ Rute `/warehouse/*`, nav grup "Gudang" (`warehouse.read`):
 | 08 | Swagger/README/Bruno |
 | 09 | Integrasi AI chat (segmen `wh` di plugin ingest) |
 
-## 8. Micro-decision (O-1..O-3; SEMUA TERKUNCI 2026-11-23)
+## 8. Micro-decision (O-1..O-3; O-1/O-2 TERKUNCI 2026-11-23)
 
 - **O-1 — TERKUNCI (owner, 2026-11-23): AUTO-CREATE.** Kategori & produk yang belum terdaftar saat impor **dibuat otomatis** (nama = teks di template; `is_active=true`; produk baru wajib punya kategori). Alasan: katalog lentur, ramah pengguna. Diwujudkan di WO-06 (`findOrCreateCategory`/`findOrCreateItem`) dan dilaporkan sebagai `new_masters`.
 - **O-2 — TERKUNCI (owner, 2026-11-23): FAIL-CLOSED.** Gudang yang tidak cocok `wh_warehouses` **TIDAK** dibuat otomatis → **baris ditolak** (HTTP 200 + laporan per baris; `strict=1` → 400). Alasan: gudang = struktur operasional fisik, butuh registrasi sadar (bukan typo-tolerant). Diwujudkan di WO-06 (`resolveWarehouse`).
-- **O-3 — TERKUNCI (owner, 2026-11-23): WHITELIST SAJA, TANPA TOOL BARU.** Lingkup tool chat gudang = baca (summary/batches/items) lewat whitelist `segment_read`; tulis (usul → setujui) hanya `POST /wh/batches` dan `POST /wh/movements`. Master data (kategori/produk/gudang) **TIDAK lewat chat**. Alasan: mencegah agent mengarang master + memakai ulang tool segmen yang sudah ada (tanpa tool baru). Diwujudkan di WO-09.
+- **O-3** (WO-09): lingkup tool chat (usulan: read = summary/stok item; write-propose = batch masuk & movement keluar; master kategori/produk tetap via UI) — masih terbuka.
 
 ## 9. Integrasi AI chat (D-10, detail di WO-09)
 

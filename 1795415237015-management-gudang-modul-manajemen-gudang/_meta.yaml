@@ -1,0 +1,18 @@
+id: "1795415237015"
+title: Management Gudang — modul manajemen gudang
+created: "2026-11-23"
+updated_at: "2026-11-23T06:55:14Z"
+files:
+    - id: 01a20729-5911-79e3-bc8b-d5ac074a85b2
+      path: notes.md
+      type: file
+      status: progress
+      updated_at: "2026-11-23T06:55:14Z"
+    - id: 01a20729-5afe-76a9-a4bd-cee5a073b4ca
+      path: spec.md
+      type: spec
+      status: draft
+      updated_at: "2026-11-23T06:55:14Z"
+assets:
+    - path: conversation.md
+      type: markdown

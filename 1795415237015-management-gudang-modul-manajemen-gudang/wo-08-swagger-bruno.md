@@ -147,3 +147,25 @@ GET /api/admin/wh/summary → {"total_items":0,"total_batches":0,"total_remainin
 Akun uji (`whviewer.wo08@test.local`, `whviewer.wo08b@test.local`) di-soft-delete via
 `./bin/console auth delete-admin --id <uuid>`; daftar admin menunjukkan seluruh akun uji `soft_deleted=t`.
 
+
+## Review Manager (2026-11-23) — LULUS ✅
+
+Verifikasi independen Manager:
+
+| Cek | Hasil |
+|---|---|
+| `build.sh --verify-docs` (container, diulang Manager) | EXIT=0, byte-identik ✅ |
+| Paritas path `wh` di swagger.json | Manager hitung ulang: 15 path / 25 ops (awal saya dapat 16/26 karena filter substring `'wh'` ikut menangkap `/api/business/whoami` — keliru filter, bukan dev) → **cocok dengan klaim dev 15/25** ✅ |
+| Total repo | 141 path / 209 ops — identik klaim dev ✅ |
+| README root | Seksi "Plugin `warehouse` — Management Gudang" ada (README.md:737, +168 baris) — pelaporan "README tidak diubah" merujuk `sub_app/webapp/README.md` (tanpa pola per-modul) ✅ |
+| Proses | 10 commit lokal tanpa push; AdminLayout/index.css tak disentuh; data uji 0 baris ✅ |
+
+**Keputusan review:**
+1. **WO-08 DITERIMA.**
+2. **`e85c0f6` (fix blocker `swag` pre-existing di `plugins/ingest/handlers/analyze_tool.go`) DIPERTAHANKAN** — minimal (import + blank-var, pola identik fix hsh/sec), mem-unblock `--verify-docs` seluruh repo, di-commit terpisah dengan label jelas. Manager mencatat di repo memory: perlu retro-catatan di topic ingest `1793711295286` (bukan pembatalan WO apa pun; `go test` tetap hijau).
+3. **Diskrepansi baseline 78/129 → tidak bisa direproduksi = benar**; angka 78/129 itu snapshot usang di catatan Manager dari era WO-08 visit (sebelum banyak plugin ditambah). Keputusan: angka KANON = hasil pengukuran (141/209). Ke depan, handoff Manager tidak lagi memakai baseline hitung usang — hanya minta angka paritas dua arah.
+4. Bruno folder 45 req/111 test + smoke 13/36 PASS diterima.
+
+**WO-08 DITERIMA. WO-09 DIBUKA — mulai sekarang** (handoff terpisah di chat; ini WO TERAKHIR).
+
+Jabatan: Manager Agent — Nama Tugas: Review WO-08 warehouse. Sayonara.

@@ -124,3 +124,25 @@ Catatan bukti: tanpa data DB, dropdown Kategori & Gudang **tidak dibuat** (bukan
 
 Kebersihan: data uji dihapus setelah verifikasi → `cats=0 whs=0 items=0 batches=0 movements=0`, admin uji `0`. Tanpa `push`. `sub_app/webapp/src/layouts/AdminLayout.tsx` dan `sub_app/webapp/src/styles/index.css` tidak disentuh (milik topik lain, tetap uncommitted).
 
+
+## Review Manager (2026-11-23) — LULUS ✅
+
+Verifikasi independen Manager:
+
+| Cek | Hasil |
+|---|---|
+| `git show --stat 739c9b0` | Scope bersih: `plugins/warehouse/**` + `api-tests/warehouse/**` saja ✅ |
+| `go test -count=1` (container) | `services` + `schema` ok ✅ |
+| Gotcha Sqref | Ditegakkan (`strings.Split(dv.Sqref, ":")[0]`) + test ✅ |
+| Data uji | `wh_*` 0/0/0/0/0 bersih ✅ |
+| Proses | 4 commit lokal tanpa push; AdminLayout/index.css tak disentuh ✅ |
+| Dokumen | wo-04 complete (open+closed), master index terisi ✅ |
+
+**Catatan review:**
+1. Path FLAT `/admin/wh-template` benar (terhindar dari wildcard `/wh/*`).
+2. Sumber kosong → dropdown dilewati (bukan rentang `$A$2:$A$1`) — sesuai pola `referenceIndex()`; pastikan WO-05 validator juga mengikuti pola ini.
+3. Kategori dropdown dari DB, Satuan dari fields.yaml, Gudang dari DB — konsisten D-8/O-2.
+
+**WO-04 DITERIMA. WO-05 DIBUKA — mulai sekarang.**
+
+Jabatan: Manager Agent — Nama Tugas: Review WO-04 warehouse. Sayonara.

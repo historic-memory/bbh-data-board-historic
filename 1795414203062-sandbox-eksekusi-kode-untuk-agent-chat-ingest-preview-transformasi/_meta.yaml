@@ -1,0 +1,21 @@
+id: "1795414203062"
+title: Sandbox eksekusi kode untuk agent chat ingest (preview transformasi)
+created: "2026-11-23"
+updated_at: "2026-11-23T06:11:09Z"
+files:
+    - id: 01a20707-9b1d-7da3-b994-5b2c5ebfd368
+      path: spec.md
+      type: file
+      status: create
+      updated_at: "2026-11-23T06:11:08Z"
+    - id: 01a20707-9cab-76a0-86fa-b88efed6cebd
+      path: wos/01-wo.md
+      type: task
+      status: create
+      updated_at: "2026-11-23T06:11:09Z"
+    - id: 01a20707-9e35-7ed6-ac45-0fa880b2973f
+      path: notes.md
+      type: file
+      status: create
+      updated_at: "2026-11-23T06:11:09Z"
+assets: []

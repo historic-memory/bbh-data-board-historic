@@ -38,6 +38,28 @@ Goal Basic = SaaS self-service untuk bikin chatbot ber-tools, tanpa sandbox:
 
 Catatan: **versi ACP/Full = paket berbeda** dengan kasus berbeda (kerja dokumen di sandbox) — tidak dicampur fitur dengan Basic; Saya mempertahankan pemisahan tier.
 
+## Riset Feasibility Tier Basic (Manager, 2026-11-24)
+Owner menantang feasibility ("tapi possible gak seperti itu") → Manager riset web. **Kesimpulan: YA, POSSIBLE** — keempat pilar Basic punya preseden industri:
+
+1. **Routing antar-agent** — terbukti:
+   - **OpenAI Agents SDK** (docs resmi): handoffs *"are represented as tools to the LLM"* — tool `transfer_to_<agent_name>`, `handoff_description` sebagai hint kapan model memilih handoff, `handoff()` kustom (`input_type`, `input_filter`, `is_enabled`); input filter membersihkan history tool saat handover.
+   - **AutoGen SelectorGroupChat** (Microsoft): next-speaker **dipilih model** berdasar `name` + `description` tiap agent (capability-descriptor routing); ada `selector_prompt`, `selector_func`/`candidate_func` kustom, termination conditions; contoh e2e Planning/WebSearch/DataAnalyst.
+   - Implikasi: routing = **deskriptor capability per agent** (+ handoff-as-tool atau selector terpusat); disarankan tetap ada **policy mesin** (bukan murni prompt) untuk keandalan.
+2. **Format declarative function tools** — ada standar: **OpenAPI 3.2.1** (spec.openapis.org) = *"standard, language-agnostic interface description"*; YAML↔JSON round-trip; Schema Object = superset **JSON Schema Draft 2020-12** → format YAML tool-spec (nama, deskripsi, parameter JSON-Schema) selaras standar de-facto function calling.
+3. **Scripting stateless tanpa sandbox** — kelas **expression engine** terbukti aman (BUKAN full scripting JS/Python):
+   - **expr-lang/expr** (Go, v1.18.1, MIT): TIGA jaminan eksplisit di README — **"Memory-Safe"**, **"Side-Effect-Free"** (output hanya dari input, tanpa efek samping), **"Always Terminating"** (tidak ada infinite loop); static typing; dipakai produksi Google Cloud Platform, Uber, GoDaddy, ByteDance, Argo, OpenTelemetry, CoreDNS. Go-native → cocok backend bbh Go.
+   - Alternatif: **CEL** (Google, cel-spec) — common expression language gradual typing, didesain safe/fast.
+   - Implikasi: scripting = **expression-only**; karena sengaja TANPA IO/network, sandbox TIDAK diperlukan — safety dari desain bahasa + evaluator.
+4. **Platform SaaS agent-builder eksisting** — **Botpress**: Studio drag-and-drop agent builder + integrations/tools/channels + webchat embed → pola "user/client bikin agent" sudah jadi produk nyata.
+
+Gagal fetch (tidak krusial): higress.ai, docs.n8n.io advanced-ai/multi-agent (404).
+
+**Jawaban atas 4 pertanyaan terbuka** (section di bawah):
+- Format editor → **terjawab**: YAML deklaratif ala OpenAPI/JSON-Schema; scripting minimal bila perlu = expression engine (expr/CEL).
+- Mekanisme routing → **terjawab**: capability-descriptor + handoff-as-tool/selector; tambah policy mesin.
+- Keamanan scripting → **terjawab**: expression engine side-effect-free + always-terminating (bukan interpreter umum).
+- Model multi-tenant → **masih terbuka** (isolasi data/billing/onboarding).
+
 ## Pertanyaan/keputusan teknis yang terbuka (untuk topic teknis nanti)
 - Format tool editor final: YAML deklaratif vs scripting minimal vs hybrid (YAML + hook logic).
 - Mekanisme routing antar-agent: router terpusat vs deskriptor capability vs prompt-based handover.

@@ -1,7 +1,7 @@
 ---
 title: notes
 description: "Catatan meeting tim & keputusan terbuka modul Management Gudang"
-status: progress
+status: complete
 created: "2026-11-23"
 updated: "2026-11-23"
 tags:

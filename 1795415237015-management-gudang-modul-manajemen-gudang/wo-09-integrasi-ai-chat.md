@@ -36,6 +36,28 @@ EX-2 owner: modul gudang bisa dibaca/diusul lewat AI chat, memakai pola topic `1
 
 Tool edit master, tool impor excel via chat (bisa jadi WO lanjutan bila owner mau).
 
+## Review Manager (2026-11-23) — LULUS ✅ (WO TERAKHIR)
+
+Verifikasi independen Manager:
+
+| Cek | Hasil |
+|---|---|
+| `git show --stat 02e7661` | 36 berkas +1451/−17; scope: `plugins/ingest/**` + UI ingest + Bruno/README — **AdminLayout/index.css tak disentuh** ✅ |
+| `go test ./plugins/ingest/... -count=1` (container, diulang Manager) | 4 paket ok ✅ |
+| Spot-check `record_write.go` | Whitelist tulis HANYA `wh/batches` + `wh/movements` (baris 113-114) — persis O-3 ✅ |
+| **Bukti E2E dari tab browser sesi uji** (`/app/ingest/01a20893-…/chat`) | Kartu usulan **"1 aksi · applied / 1 berhasil"** (create → `wh/movements`); jawaban stok DARI SERVER (`total sisa 48`, batch id, qty_in 48); alur baca → usul ("Belum ada yang ditulis — ini baru usulan") → setujui → terapkan ✅ |
+| DB | 7 tabel `wh_*` = **0 semua**; sesi uji dihapus ✅ |
+| Proses | 11 commit lokal tanpa push; log implementasi; master index WO-09 complete + baris bukti ✅ |
+
+**Catatan review:**
+1. Bug prompt `moved_at` RFC3339 tertangkap lewat E2E nyata (bukan unit test) — diperbaiki di agent.md; pelajaran bagus.
+2. Keputusan segmen chat-only (`supported:false`, upload 400, mapping disembunyikan) konsisten O-3 — master tetap via UI.
+3. Catatan dev "di luar lingkup" (`seg.supported` di mapping picker, `target_plugin` tidak menambah warehouse) — disetujui Manager (diff minimal, tanpa jalur mati baru).
+
+**WO-09 DITERIMA. SEMUA WO-01..09 COMPLETE — Manager menutup topik: `spec.md` → complete, `work-order.md` → complete, `notes.md` → complete (lihat section Penutup Topik di master index).**
+
+Jabatan: Manager Agent — Nama Tugas: Review WO-09 & penutupan topik. Sayonara.
+
 ## Catatan Implementasi (Dev)
 
 ### 1. Segmen chat-only (keputusan desain inti)

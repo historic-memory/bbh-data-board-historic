@@ -1,7 +1,7 @@
 ---
 title: spec
 description: "SPEC modul Management Gudang — keputusan terkunci D-1..D-12"
-status: progress
+status: complete
 created: "2026-11-23"
 updated: "2026-11-23"
 tags:

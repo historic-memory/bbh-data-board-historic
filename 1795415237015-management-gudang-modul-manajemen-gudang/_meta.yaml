@@ -1,18 +1,18 @@
 id: "1795415237015"
 title: Management Gudang — modul manajemen gudang
 created: "2026-11-23"
-updated_at: "2026-11-23T13:46:20Z"
+updated_at: "2026-11-23T13:55:04Z"
 files:
     - id: 01a20729-5911-79e3-bc8b-d5ac074a85b2
       path: notes.md
       type: file
-      status: progress
-      updated_at: "2026-11-23T07:57:51Z"
+      status: complete
+      updated_at: "2026-11-23T13:55:04Z"
     - id: 01a20729-5afe-76a9-a4bd-cee5a073b4ca
       path: spec.md
       type: spec
-      status: progress
-      updated_at: "2026-11-23T10:24:11Z"
+      status: complete
+      updated_at: "2026-11-23T13:55:04Z"
     - id: 01a20766-952f-7ea2-adbc-86a7db1ef05b
       path: wo-01-skeleton-migrasi.md
       type: file
@@ -57,12 +57,12 @@ files:
       path: wo-09-integrasi-ai-chat.md
       type: file
       status: complete
-      updated_at: "2026-11-23T13:46:20Z"
+      updated_at: "2026-11-23T13:55:04Z"
     - id: 01a20766-93ac-79aa-9383-0b7623a65340
       path: work-order.md
       type: file
-      status: progress
-      updated_at: "2026-11-23T12:21:08Z"
+      status: complete
+      updated_at: "2026-11-23T13:55:04Z"
 assets:
     - path: conversation.md
       type: markdown

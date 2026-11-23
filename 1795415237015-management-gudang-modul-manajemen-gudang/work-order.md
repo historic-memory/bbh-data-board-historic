@@ -29,7 +29,7 @@ Plugin `plugins/warehouse` (ID `wh` di tabel/endpoint; permission `warehouse.*`)
 |---|---|---|
 | WO-01 | `wo-01-skeleton-migrasi.md` | complete |
 | WO-02 | `wo-02-permission-master.md` | complete |
-| WO-03 | `wo-03-transaksi-stok.md` | pending |
+| WO-03 | `wo-03-transaksi-stok.md` | complete |
 | WO-04 | `wo-04-generator-template.md` | pending |
 | WO-05 | `wo-05-validator.md` | pending |
 | WO-06 | `wo-06-importer.md` | pending |
@@ -49,5 +49,6 @@ O-1/O-2 (WO-06 impor: auto-create kategori/produk; gudang fail-closed), O-3 (WO-
 |---|---|---|
 | WO-01 | `f0b3ff6` | `migrate --plugin warehouse up/down` → 5/0 tabel + 15 index + 3 CHECK; `up` ulang idempoten; `go build/vet/test ./...` hijau; `wh version` OK; server boot + `/healthz` 200 |
 | WO-02 | `c73127c` | migrasi auth → 3 permission `warehouse.*` (admin=read+write, viewer=read, delete root-only); 15 route `/api/admin/wh/*`; 8 test DB RUN (409 dup, 400 kategori asing, 400 unit asing, 409 in-use, `forceInactive`); curl 16 kasus 201/200/404/409/400/401; viewer GET 200/POST 403/DELETE 403; admin POST 201/DELETE 403; root DELETE 200 |
+| WO-03 | `26d5a31` | 5 route stok (`/wh/batches`, `/wh/batches/:id`, `/wh/batches/:id/movements`, `/wh/movements`, `/wh/summary`); 10 test DB RUN termasuk race 20 goroutine (10 sukses/10×409, sisa 0); curl 26 kasus 201/200/400/401/404/409; viewer read 200 & write 403, admin read+write; stok = `SUM(qty_remaining)` 1 query agregat; data uji 0/0/0/0/0 |
 
 

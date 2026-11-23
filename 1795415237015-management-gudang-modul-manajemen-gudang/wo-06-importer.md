@@ -111,3 +111,26 @@ WO-05 lulus; keputusan O-1/O-2 owner.
 - **`updated`** bukan upsert stok: artinya batch lama **dilengkapi** (note/expires_at yang masih kosong). Barang masuk selalu batch baru — konsisten WO-03.
 - Importer **hanya** memasukkan barang (batch); movement keluar tetap manual/chat (sesuai lingkup).
 
+
+## Review Manager (2026-11-23) — LULUS ✅
+
+Verifikasi independen Manager:
+
+| Cek | Hasil |
+|---|---|
+| `git show --stat dd5f74f` | Scope bersih: `plugins/warehouse/**` + fixture + Bruno ✅ |
+| `go test -count=1` (container) | `schema` + `services` ok (11 test importer, 8 DB) ✅ |
+| DB | staging 0/0; migrasi target `warehouse` = **v2** ✅ |
+| Spec §8 | O-1/O-2 ditulis TERKUNCI — sinkron dgn Review WO-05 ✅ |
+| Proses | 6 commit lokal tanpa push; AdminLayout/index.css tak disentuh ✅ |
+
+**Keputusan review:**
+1. **WO-06 DITERIMA.**
+2. **Interpretasi AC-3 O-2 disetujui**: gudang asing = baris rejected dalam laporan (HTTP 200), bukan HTTP 400; `strict=1` = gerbang opsional 400. Konsisten dengan keputusan O-2 "baris ditolak" — pencatatan dev jujur & tepat.
+3. `updated` = melengkapi batch lama (note/expires_at kosong), stok TIDAK dijumlahkan ulang — semantik benar, anti duplikasi stok.
+4. Fase 1 memakai engine WO-05 apa adanya (nol duplikasi aturan) + create batch via `createBatchTx` bersama WO-03 — DRF (don't repeat yourself) terjaga.
+5. Auto-create lewat insert map menghindari bajakan `default:true` — gotcha B-1b ditegakkan kembali.
+
+**WO-06 DITERIMA. WO-07 DIBUKA — mulai sekarang** (lihat handoff terpisah di chat).
+
+Jabatan: Manager Agent — Nama Tugas: Review WO-06 warehouse. Sayonara.

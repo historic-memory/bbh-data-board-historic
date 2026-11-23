@@ -1,7 +1,7 @@
 id: "1795415237015"
 title: Management Gudang — modul manajemen gudang
 created: "2026-11-23"
-updated_at: "2026-11-23T10:24:11Z"
+updated_at: "2026-11-23T10:49:33Z"
 files:
     - id: 01a20729-5911-79e3-bc8b-d5ac074a85b2
       path: notes.md
@@ -42,7 +42,7 @@ files:
       path: wo-06-importer.md
       type: file
       status: complete
-      updated_at: "2026-11-23T10:24:11Z"
+      updated_at: "2026-11-23T10:49:33Z"
     - id: 01a20766-9e68-79ab-a9dc-07239723dfc8
       path: wo-07-ui-admin.md
       type: file

@@ -1,8 +1,9 @@
 ---
 title: notes
-description: "Konteks diskusi & keputusan konsep ingest data interaktif via chat (agent strict, learn-together)"
+description: Konteks diskusi & keputusan konsep ingest data interaktif via chat (agent strict, learn-together)
 status: draft
 created: "2026-11-03"
+updated: "2026-11-23"
 ---
 # Ingest Data Interaktif via Chat — Agent Strict Learn-Together
 
@@ -663,3 +664,11 @@ Diukur dari percakapan nyata CP-1, bukan estimasi:
   nilainya tetap wajib dikirim — Go menolak (400) bila kosong. Tombol Ekstrak
   mengunci sampai gate + kebijakan siap.
 
+
+## Retro-note lintas topik (2026-11-23) — commit e85c0f6
+
+Saat review WO-08 topik **Management Gudang** (`1795415237015`), Manager menerima commit `e85c0f6` — `fix(ingest): resolve model.AnalysisSnapshot untuk swag init (blocker pre-existing)`. Isi: perbaikan blocker `swag init` yang sudah ada sebelumnya di `plugins/ingest/handlers/analyze_tool.go` (import + blank-var, pola identik fix hsh/sec), di-commit terpisah agar scope jelas.
+
+Verifikasi Manager: `build.sh --verify-docs` EXIT=0, `go test ./plugins/ingest/...` hijau. Catatan ini **bukan pembatalan WO ingest mana pun** — hanya agar topik ini tahu ada patch kecil di berkas miliknya yang lahir dari lintas topik. Patch sudah ikut terpush ke origin/master bersama 11 commit gudang.
+
+Jabatan: Manager Agent — Nama Tugas: Retro-note e85c0f6 topic ingest. Sayonara.

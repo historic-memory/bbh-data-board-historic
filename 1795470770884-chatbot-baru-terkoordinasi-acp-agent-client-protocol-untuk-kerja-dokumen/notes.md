@@ -66,7 +66,7 @@ Arsitektur final CP-1 (revisi 2): **runner persistent** (`goose-agent`, hardened
 WO-CP1 ditulis ulang (revisi 2) — smoke 2 fase: hardening statik + spawn dinamis dengan Test A/B/C/D (D = bukti 2 config berbeda terisolasi antar sesi).
 
 ## Visi owner: platform 2-tier (2026-11-24)
-Konfirmasi owner atas dua hal: (1) konsep sandbox dinamis (runner persistent + launcher spawn per-sesi + config dari DB) akan dipakai sebagai dasar **platform produk** yang dijual/dipakai project client yang ingin integrasi AI — bukan hanya fitur internal bbh-data-board; (2) platform itu berbau **2 versi/tier**: **Basic** = chatbot dengan tools basic TANPA sandbox (seperti ingest chat eksisting sekarang) dan **Full** = jalur sandbox ketat ala Goose ini. Implikasi ke topic ini: WO tetap jalur Full; tiering dicatat sebagai visi produk (TOP-1.5) yang tidak mengubah scope CP-1..CP-3, tapi mempengaruhi arah desain CP-2 (UI/role) agar tidak mengunci sesuatu yang akan jadi murah/mahal sesuai tier.
+→ DIPINDAHKAN ke topic `1795481050248` (Platform chatbot AI 2-tier Basic/Full — visi produk). Ringkasnya: konsep sandbox dinamis akan jadi dasar platform untuk project client, dengan 2 tier — Basic (chatbot tools basic, tanpa sandbox = ingest chat eksisting) dan Full (jalur sandbox ketat ala Goose ini). Tidak mengubah scope CP-1..CP-3.
 
 ## Riset detail Goose untuk draft WO-CP1 (2026-11-24)
 Sumber: goose-docs.ai (AAIF) — halaman `oi-kit/acp`, `getting-started/installation`, `getting-started/providers`.

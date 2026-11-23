@@ -20,15 +20,18 @@ Listing stok sederhana gaya "mini market" (M-1..M-4, sumber `conversation.md`/`n
 ## 2. Skema (usulan, prefix `wh_`)
 
 ```
-wh_items        master barang
-  id (UUIDv7 TEXT), name (UNIQUE per instance), unit, granularity? (SPECIFIC|MIXED — G-5)
-  note, is_active, timestamps
+wh_categories   kategori umum (Minyak Angin, Susu, Popok, Beras, Mainan, ...)
+  id (UUIDv7 TEXT), name (UNIQUE per instance), note, is_active, timestamps
 
-wh_warehouses   (HANYA bila G-2 = tabel)
+wh_items        produk — nama bebas per kategori; fleksibilitas spesifik/campur = penamaan (M-5, tanpa flag)
+  id (UUIDv7 TEXT), category_id → wh_categories, name (UNIQUE per kategori),
+  unit, note, is_active, timestamps
+
+wh_warehouses   gudang per cabang — SATU cabang BOLEH punya BANYAK gudang
   id, name, note, timestamps
 
 wh_batches      masuk barang = sumber "umur di gudang"
-  id, item_id → wh_items, warehouse_id → wh_warehouses (?G-2)
+  id, item_id → wh_items, warehouse_id → wh_warehouses (NOT NULL)
   qty_in, qty_remaining (diturunkan/dikunci transaksional), entered_at (tanggal masuk)
   expires_at? (G-4 — susu/perishable), note, created_by, timestamps
 
@@ -50,7 +53,7 @@ wh_movements    keluar + penyesuaian
 - Movement OUT: `qty_remaining -= qty` dalam SATU transaksi; stok tak cukup → 409. `qty_remaining >= 0` CHECK.
 - ADJUST (stock opname/koreksi): selisih positif/negatif, wajib `reason`.
 - `destination` hanya catatan bebas (mis. "kirim ke gudang Jawa") — M-3: pihak penerima mencatat sendiri.
-- Item spesifik (G-5): bila `granularity=SPECIFIC`, satu item = satu produk+varian (susu per merk+usia, popok per ukuran). Bukan penegakan keras — pembimbing UI/impor.
+- **Kategori → produk (M-5, dikunci)**: `wh_categories` = kelompok umum; `wh_items` (produk) memakai `name` bebas dalam kategori. Minyak angin = 1 produk gabung semua merek; susu = produk terpisah per varian (SGM 0–1 th, Morinaga 1–2 th). Tidak ada flag granularitas — keputusan penamaan saat membuat produk.
 
 ## 4. API (guard RBAC `wh.read/write/delete`, seed via migrasi plugin auth)
 

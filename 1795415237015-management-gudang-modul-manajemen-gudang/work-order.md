@@ -27,7 +27,7 @@ Plugin `plugins/warehouse` (ID `wh` di tabel/endpoint; permission `warehouse.*`)
 
 | WO | File | Status |
 |---|---|---|
-| WO-01 | `wo-01-skeleton-migrasi.md` | pending |
+| WO-01 | `wo-01-skeleton-migrasi.md` | complete |
 | WO-02 | `wo-02-permission-master.md` | pending |
 | WO-03 | `wo-03-transaksi-stok.md` | pending |
 | WO-04 | `wo-04-generator-template.md` | pending |
@@ -45,5 +45,8 @@ O-1/O-2 (WO-06 impor: auto-create kategori/produk; gudang fail-closed), O-3 (WO-
 
 ## Bukti & commit
 
-(diisi per WO saat selesai)
+| WO | Commit kode | Bukti |
+|---|---|---|
+| WO-01 | `f0b3ff6` | `migrate --plugin warehouse up/down` → 5/0 tabel + 15 index + 3 CHECK; `up` ulang idempoten; `go build/vet/test ./...` hijau; `wh version` OK; server boot + `/healthz` 200 |
+
 

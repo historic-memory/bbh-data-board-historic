@@ -45,5 +45,13 @@ Sumber: agentclientprotocol.com/overview/agents (daftar agent ACP resmi, dipoton
 1. Ekosistem ACP jauh lebih matang dari dugaan — 50+ agent, 100+ client/connector. Banyak jalan: (a) pakai agent CLI siap-pakai, (b) bungkus agent sendiri lewat SDK ACP (TS/Rust/Python), (c) pakai jembatan AG-UI agar UI tetap CopilotKit.
 2. Pertanyaan kunci baru: **"agent 1 paket" vs "agent kita sendiri ber-ACP"** — agent sendiri (opsi b/c) lebih mudah dikontrol (no-net by design, tools whitelist kita sendiri) dan lebih selaras D-11; agent CLI siap-pakai lebih cepat tapi hardening lebih sulit.
 3. **donis-agent deterministik** bisa masuk via kelas 1 provider OpenAI-compatible (Goose/Qwen/Docker cagent) atau kelas 2 (agent sendiri memakai donis-agent sebagai LLM provider).
-4. Pelajaran ACP: `session/request_permission` adalah konseptual setara kartu propose_fixes — konsep fail-closed kita punya padanan natif di protokol.
+## Riset Goose sebagai pilihan agent (2026-11-24, follow-up owner)
+Owner condong ke **Goose** (Block, Apache-2.0, Linux Foundation/AAIF; 56.9k★; v1.60.2; Rust). Fakta kunci dari repo/dok resmi:
+- **Dukungan ACP resmi built-in**: `goose acp` = goose sebagai agent subprocess di belakang aplikasi kita ("your app sends prompts and receives streamed responses, tool activity, and permission requests"). Persis pola yang kita butuhkan.
+- **85+ provider LLM configurable** (OpenAI-compatible included) → jalur memakai **donis-agent** milik owner sebagai provider mungkin.
+- **oi-kit** (Open Intelligence Kit): runtime Rust yang bisa dikomposisi (state machine, approvals, tools, context management, local model in-process) — kelas "agent kita sendiri ber-ACP" juga terbuka lewat oi-kit bila suatu saat perlu kontrol lebih dalam.
+- Ada Dockerfile resmi di repo (docs BUILDING_DOCKER) — container-izable.
+- **Jawaban pertanyaan owner "setup container isolasi ketat?"**: YA — itu justru prasyarat desain. Rencana isolation minimal: (1) container khusus `goose` terpisah dari `app`/`ingest-runtime`; (2) network internal/egress deny kecuali LLM provider via proxy whitelist; (3) volume kerja per-sesi (scratch) hanya berkas snapshot read-only; (4) non-root user, cap memori/CPU, timeout; (5) permission prompt ACP (`session/request_permission`) dipakai sebagai gerbang approve/deny — diterjemahkan jadi kartu konfirmasi di UI chatbot baru; (6) keluaran kerja = usulan/diff, penyimpanan tetap lewat validasi Go (fail-closed pola ingest).
+- PERHATIAN: memilih goose = keputusan O-1 diarahkan, tapi belum KUNCI final sampai: O-2 (container terpisah vs menumpang ingest_runtime — rekomendasi Manager: container terpisah) dan O-3 (provider LLM: donis-agent vs eksternal) diputus. Catat sebagai usulan finalis.
+
 

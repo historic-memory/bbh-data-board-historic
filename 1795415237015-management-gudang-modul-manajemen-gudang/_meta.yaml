@@ -56,7 +56,7 @@ files:
     - id: 01a20766-a158-7d94-ac16-6cf1aac0d9cf
       path: wo-09-integrasi-ai-chat.md
       type: file
-      status: pending
+      status: complete
       updated_at: "2026-11-23T07:57:51Z"
     - id: 01a20766-93ac-79aa-9383-0b7623a65340
       path: work-order.md

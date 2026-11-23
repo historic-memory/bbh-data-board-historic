@@ -1,7 +1,7 @@
 ---
 title: WO-09 — Integrasi AI chat (plugin ingest)
 description: "Segmen wh: baca stok via chat, usul transaksi, terapkan"
-status: pending
+status: complete
 created: "2026-11-23"
 updated: "2026-11-23"
 tags:

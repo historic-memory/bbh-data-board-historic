@@ -11,11 +11,11 @@ files:
     - id: 01a1f93b-9675-7dbe-a84d-7d030cddbb2f
       path: spec.md
       type: spec
-      status: progress
+      status: complete
       updated_at: "2026-11-20T14:52:08Z"
     - id: 01a1f93b-9676-763c-8855-2a9022ab2014
       path: work-order.md
       type: file
-      status: progress
+      status: complete
       updated_at: "2026-11-20T14:52:08Z"
 assets: []

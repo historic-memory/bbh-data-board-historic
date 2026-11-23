@@ -30,7 +30,7 @@ Plugin `plugins/warehouse` (ID `wh` di tabel/endpoint; permission `warehouse.*`)
 | WO-01 | `wo-01-skeleton-migrasi.md` | complete |
 | WO-02 | `wo-02-permission-master.md` | complete |
 | WO-03 | `wo-03-transaksi-stok.md` | complete |
-| WO-04 | `wo-04-generator-template.md` | pending |
+| WO-04 | `wo-04-generator-template.md` | complete |
 | WO-05 | `wo-05-validator.md` | pending |
 | WO-06 | `wo-06-importer.md` | pending |
 | WO-07 | `wo-07-ui-admin.md` | pending |
@@ -50,5 +50,6 @@ O-1/O-2 (WO-06 impor: auto-create kategori/produk; gudang fail-closed), O-3 (WO-
 | WO-01 | `f0b3ff6` | `migrate --plugin warehouse up/down` → 5/0 tabel + 15 index + 3 CHECK; `up` ulang idempoten; `go build/vet/test ./...` hijau; `wh version` OK; server boot + `/healthz` 200 |
 | WO-02 | `c73127c` | migrasi auth → 3 permission `warehouse.*` (admin=read+write, viewer=read, delete root-only); 15 route `/api/admin/wh/*`; 8 test DB RUN (409 dup, 400 kategori asing, 400 unit asing, 409 in-use, `forceInactive`); curl 16 kasus 201/200/404/409/400/401; viewer GET 200/POST 403/DELETE 403; admin POST 201/DELETE 403; root DELETE 200 |
 | WO-03 | `26d5a31` | 5 route stok (`/wh/batches`, `/wh/batches/:id`, `/wh/batches/:id/movements`, `/wh/movements`, `/wh/summary`); 10 test DB RUN termasuk race 20 goroutine (10 sukses/10×409, sisa 0); curl 26 kasus 201/200/400/401/404/409; viewer read 200 & write 403, admin read+write; stok = `SUM(qty_remaining)` 1 query agregat; data uji 0/0/0/0/0 |
+| WO-04 | `739c9b0` | route flat `/api/admin/wh-template` guard `warehouse.read`; kolom 100% dari `schema/fields.yaml` (tanpa hard-code); XLSX 4 sheet — PETUNJUK/DATA/**REFERENSI(hidden)**/CONTOH, 8 kolom DATA, dropdown `A2:A201 => REFERENSI!$A$2:$A$2` (Kategori), `C2:C201 => REFERENSI!$C$2:$C$2` (Gudang), `E2:E201 => REFERENSI!$B$2:$B$10` (Satuan); CSV 200 BOM `ef bb bf` header-only; `format=pdf` 400; tanpa token 401; viewer 200; 6 unit test PASS (incl. Sqref string & dropdown ikut katalog); Bruno 4 request/10 test PASS; data uji 0/0/0/0/0 |
 
 

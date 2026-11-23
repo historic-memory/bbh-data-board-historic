@@ -60,4 +60,24 @@ Route/permission/CRUD (WO-02), transaksi (WO-03), template/impor (WO-04..06), UI
 - **AC-3**: `./bin/console wh version` → `warehouse plugin 0.1.0`; `./bin/server` boot sukses (GIN listening `:8080`), `GET /healthz` = **200**.
 - Tidak ada push. Commit kode terpisah dari commit dokumen historic.
 
+## Review Manager (2026-11-23) — LULUS ✅
+
+Verifikasi independen Manager (bukan hanya mengambil laporan dev):
+
+| Cek | Hasil |
+|---|---|
+| `git show --stat f0b3ff6` | Scope bersih: hanya `cmd/server` + `cmd/console` (registrasi) + `plugins/warehouse/**` — TIDAK ada file `internal/` berubah ✅ |
+| DB spot-check | `pg_tables LIKE 'wh\_%'` = **5**; CHECK `wh_batches_qty_in_check`, `wh_batches_qty_remaining_check`, `wh_movements_direction_check` terpasang ✅ |
+| `go test ./plugins/warehouse/...` (container) | `schema` ok (9 test), sisanya no test files (wajar skeleton) ✅ |
+| `git log origin/master..HEAD` | Hanya `f0b3ff6` — tidak ada push ✅ |
+| Master index | `work-order.md` progress, wo-01 complete, progress 8% ✅ |
+| Log implementasi | 17 entri, rujuk D-x/gotcha, kualitas baik ✅ |
+
+**Keputusan review:**
+1. **WO-01 DITERIMA.** WO-02 DIBUKA — mulai sekarang (tidak perlu konfirmasi ulang).
+2. **Perubahan pra-ada `AdminLayout.tsx` + `index.css`** = fix UI halaman **chat ingest** (tinggi viewport CopilotKit) — milik topic ingest `1793711295286`, BUKAN warehouse. Dev: **BIARKAN uncommitted, jangan disertakan commit WO warehouse manapun.** Manager tangani terpisah (patch UI ingest).
+3. Semantik `Movement.Qty` bertanda untuk ADJUST dicatat Manager → WAJIB ditegakkan + ditest di WO-03 (OUT > 0 selalu; ADJUST ±, 409 bila minus melebihi sisa).
+
+Jabatan: Manager Agent — Nama Tugas: Review WO-01 warehouse. Sayonara.
+
 

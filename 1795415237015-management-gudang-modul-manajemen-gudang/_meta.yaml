@@ -1,7 +1,7 @@
 id: "1795415237015"
 title: Management Gudang — modul manajemen gudang
 created: "2026-11-23"
-updated_at: "2026-11-23T08:27:19Z"
+updated_at: "2026-11-23T08:30:57Z"
 files:
     - id: 01a20729-5911-79e3-bc8b-d5ac074a85b2
       path: notes.md
@@ -17,7 +17,7 @@ files:
       path: wo-01-skeleton-migrasi.md
       type: file
       status: complete
-      updated_at: "2026-11-23T08:27:19Z"
+      updated_at: "2026-11-23T08:30:57Z"
     - id: 01a20766-96ad-7d17-aaf8-8b747cc6b481
       path: wo-02-permission-master.md
       type: file

@@ -11,7 +11,23 @@ related: ["1795469702082", "1795414203062", "1793711295286"]
 # SPEC — Chatbot Baru Terkoordinasi ACP (Catatan Awal)
 
 ## Status
-CATATAN AWAL — riset & SPEC menyusul. Belum ada keputusan desain final, belum ada WO teknis.
+RANCANGAN FINAL — Goose terkunci sebagai agent; menunggu review owner sebelum WO dibuat.
+
+## Keputusan Terkunci (2026-11-24, owner "aku mantap")
+- **O-1 DIKUNCI**: agent = **Goose** (Block, Apache-2.0, Linux Foundation/AAIF) via `goose acp` sebagai subprocess.
+- **O-2 DIKUNCI**: container **terpisah** khusus `goose` (rekomendasi Manager disetujui owner) — bukan menumpang `ingest-runtime`.
+- **O-3 DIKUNCI**: provider LLM = **donis-agent** (OpenAI-compatible, proyek owner) via konfigurasi provider Goose; fallback env provider lain disiapkan hanya sebagai dev convenience, bukan produksi. PII tetap dideidentify di Go sebelum berkata keluar sandbox.
+- Isolasi ketat container = prasyarat desain (tabel 6 lapis di notes 2026-11-24).
+
+## Rencana Checkpoint (usulan Manager — pola checkpoint ingesti)
+- **CP-1**: container `goose` terisolasi + `goose acp` hidup + smoke test JSON-RPC stdio dari proses Node (tanpa data bisnis; fixture fiktif).
+- **CP-2**: UI chatbot baru (halaman admin terpisah, ACP client sisi Node) + kartu permission (approve/deny dari `session/request_permission`) + audit aksi ke tabel audit baru (`acp_audit`).
+- **CP-3**: integrasi kerja dokumen ingest: snapshot berkas sesi read-only → Goose usul transform/diff → approve → eksekusi lewat validasi Go. Pembersihan referensi "deterministik usang" (rules.go:18 + dok) masuk WO housekeeping CP-3.
+
+## Pertanyaan Terbuka Sisa
+- O-4: mapping RBAC → permission prompt ACP (siapa boleh approve apa).
+- O-5: scoping data: berkas apa yang boleh masuk sandbox per sesi (usulan: hanya snapshot read-only berkas sesi aktif).
+
 
 ## Keputusan Owner (2026-11-24)
 1. Chatbot **baru, terpisah** dari ingest chat eksisting (`/ingest/:id/chat` via CopilotKit) — tidak menghapus/mengubah yang sekarang.

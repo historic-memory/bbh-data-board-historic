@@ -59,7 +59,11 @@ Owner setuju tanpa revisi: **O-1 Goose**, **O-2 container terpisah**, **O-3 prov
 - **CP-1** container `goose` terisolasi + `goose acp` hidup + smoke test JSON-RPC stdio dari Node (fixture fiktif, tanpa data bisnis).
 - **CP-2** UI chatbot baru (halaman admin, ACP client di Node) + kartu permission approve/deny + tabel audit `acp_audit`.
 - **CP-3** integrasi kerja dokumen ingest: snapshot read-only → Goose usul diff → approve → eksekusi via validasi Go; pembersihan referensi "deterministik" usang (rules.go:18) masuk housekeeping WO di topic ini.
-Sisa terbuka: **O-4** (RBAC ↔ permission prompt ACP) dan **O-5** (scoping data per-sesi) — didraft saat WO CP-2/CP-3. Langkah berikutnya: drafting WO CP-1.
+## Revisi 2 WO-CP1: sandbox dinamis (2026-11-24)
+Owner mengamati compose lama punya `environment` statik — benar: dibekukan saat container dibuat, ikut restart dengan nilai lama, 1 config untuk semua sesi, dan perubahan config dari DB tidak berpengaruh tanpa recreate. Owner meminta: sandbox Goose di-spin **dinamis saat load**, start-config disusun dari aplikasi (contoh: API key provider yang sudah di database).
+Grounding: klaim "provider config di DB" TERVERIFIKASI di kode — `plugins/ingest/services/providers.go` (CRUD + `ActiveProviderConfig()` :286) dan `plugins/ingest/services/provider_key.go` (key AES-GCM di DB, dekripsi hanya Go via `INGEST_DB_KEY_ENC`, D-11: Node tak pernah pegang secret mentah).
+Arsitektur final CP-1 (revisi 2): **runner persistent** (`goose-agent`, hardened, tanpa secret di env) + **launcher** (`cmd/goose-launcher`, stdlib Go) dengan `POST /spawn` (HOME per-sesi + `config.yaml` semua-extension-off + env proses `OPENAI_API_KEY`/host/model + `GOOSE_SERVER__SECRET_KEY` acak per-sesi + port dinamis), `POST /kill` (kill + wipe dir), timeout & cap sesi. Secret: DB → dekripsi Go → payload spawn internal → env proses (bukan argv — terbaca via /proc). Integrasi `ActiveProviderConfig()` dari Go existing = WO CP-2 (CP-1 pakai payload fixture, Go existing tidak disentuh). Dual-homing: `app` join `goose-net`; runner tidak di `backend`.
+WO-CP1 ditulis ulang (revisi 2) — smoke 2 fase: hardening statik + spawn dinamis dengan Test A/B/C/D (D = bukti 2 config berbeda terisolasi antar sesi).
 
 ## Riset detail Goose untuk draft WO-CP1 (2026-11-24)
 Sumber: goose-docs.ai (AAIF) — halaman `oi-kit/acp`, `getting-started/installation`, `getting-started/providers`.

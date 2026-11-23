@@ -32,16 +32,16 @@ Plugin `plugins/warehouse` (ID `wh` di tabel/endpoint; permission `warehouse.*`)
 | WO-03 | `wo-03-transaksi-stok.md` | complete |
 | WO-04 | `wo-04-generator-template.md` | complete |
 | WO-05 | `wo-05-validator.md` | complete |
-| WO-06 | `wo-06-importer.md` | pending |
+| WO-06 | `wo-06-importer.md` | complete |
 | WO-07 | `wo-07-ui-admin.md` | pending |
 | WO-08 | `wo-08-swagger-bruno.md` | pending |
 | WO-09 | `wo-09-integrasi-ai-chat.md` | pending |
 
 Urutan: WO-01 → WO-02 → WO-03 → (WO-04 → WO-05 → WO-06) → WO-07 → WO-08 → WO-09.
 
-## Micro-decision terbuka
+## Micro-decision
 
-O-1/O-2 (WO-06 impor: auto-create kategori/produk; gudang fail-closed), O-3 (WO-09 lingkup tool). Default usulan ada di `spec.md` §8; konfirmasi owner saat eksekusi WO terkait.
+O-1 (auto-create kategori/produk) & O-2 (gudang asing fail-closed per baris) **TERKUNCI** oleh owner 2026-11-23 dan sudah diwujudkan di WO-06 (lihat `spec.md` §8). Sisa: O-3 (WO-09 lingkup tool chat).
 
 ## Bukti & commit
 
@@ -52,5 +52,6 @@ O-1/O-2 (WO-06 impor: auto-create kategori/produk; gudang fail-closed), O-3 (WO-
 | WO-03 | `26d5a31` | 5 route stok (`/wh/batches`, `/wh/batches/:id`, `/wh/batches/:id/movements`, `/wh/movements`, `/wh/summary`); 10 test DB RUN termasuk race 20 goroutine (10 sukses/10×409, sisa 0); curl 26 kasus 201/200/400/401/404/409; viewer read 200 & write 403, admin read+write; stok = `SUM(qty_remaining)` 1 query agregat; data uji 0/0/0/0/0 |
 | WO-04 | `739c9b0` | route flat `/api/admin/wh-template` guard `warehouse.read`; kolom 100% dari `schema/fields.yaml` (tanpa hard-code); XLSX 4 sheet — PETUNJUK/DATA/**REFERENSI(hidden)**/CONTOH, 8 kolom DATA, dropdown `A2:A201 => REFERENSI!$A$2:$A$2` (Kategori), `C2:C201 => REFERENSI!$C$2:$C$2` (Gudang), `E2:E201 => REFERENSI!$B$2:$B$10` (Satuan); CSV 200 BOM `ef bb bf` header-only; `format=pdf` 400; tanpa token 401; viewer 200; 6 unit test PASS (incl. Sqref string & dropdown ikut katalog); Bruno 4 request/10 test PASS; data uji 0/0/0/0/0 |
 | WO-05 | `1393cd0` | route flat `/api/admin/wh-template/validate` guard `warehouse.read`, **read-only** (0 baris DB berubah sebelum/sesudah seluruh matriks); aturan 100% dari blok `validation:` + `tables` di `fields.yaml` (tambah kind `min_value`); `.xls` ditolak via ekstensi **dan** magic OLE2 → 400; `template_version` mismatch → file-level reject (5/0/5); CSV `wh-broken-template.csv` 9 baris → **9 total/2 valid/7 ditolak**; feedback XLSX sheet `HASIL`+`RINGKASAN` / CSV +`hasil_validasi`+`alasan_ditolak` (header ASLI, bukan normalisasi); `strict=1` → 422 body sama; tanpa token 401; viewer 200; **keputusan owner: Kategori/Gudang asing = WARNING** (fail-closed di importer WO-06); 14 test PASS (incl. DB: warning-only & katalog cocok senyap); Bruno 3 request/8 test PASS (folder 7 req/18 test) |
+| WO-06 | `dd5f74f` | migrasi v2 `2026_11_23_140600_create_wh_import_tables` (`wh_import_batches` + `wh_import_rows`, paritas fields.yaml hijau); route flat `/api/admin/wh-template/import` guard `warehouse.write` (+header `X-Import-Batch/Total/Created/Skipped/Rejected`) & `GET /api/admin/wh/import-batches/:id` guard read; fasa 1 = engine WO-05 apa adanya (nol tulisan master); fasa 2 = **satu transaksi** (gudang resolve O-2 fail-closed → kategori/produk **auto-create O-1** lewat map insert → batch via `createBatchTx`, `qty_remaining = qty_in`); dedup `(warehouse_id, item_id, entered_at, qty_in)` termasuk duplikat dalam berkas; CSV 4 baris → **4 total/3 dibuat/1 dilewati**, re-impor → **0/0/4 skipped** + count tak berubah (`SUM(qty_remaining)` 44.50, movements 0); gudang asing → **baris rejected, HTTP 200** + laporan (keputusan owner; `strict=1` → 400); `dry_run=1` → master 0/0/0/0/0 (snapshot identik) & baris `pending`; `.xls` 400; 0 byte 400; header-saja 400; tanpa token 401; viewer write 403 & read 200; item nonaktif → rejected (kontrak WO-03); 11 test importer PASS (8 DB-backed); Bruno folder **18 request/46 test PASS**; data uji 0/0/0/0/0 + admin uji dihapus |
 
 

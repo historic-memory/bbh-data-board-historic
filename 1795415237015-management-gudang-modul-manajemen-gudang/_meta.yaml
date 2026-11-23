@@ -1,7 +1,7 @@
 id: "1795415237015"
 title: Management Gudang — modul manajemen gudang
 created: "2026-11-23"
-updated_at: "2026-11-23T09:50:15Z"
+updated_at: "2026-11-23T10:24:11Z"
 files:
     - id: 01a20729-5911-79e3-bc8b-d5ac074a85b2
       path: notes.md
@@ -12,7 +12,7 @@ files:
       path: spec.md
       type: spec
       status: progress
-      updated_at: "2026-11-23T07:57:51Z"
+      updated_at: "2026-11-23T10:24:11Z"
     - id: 01a20766-952f-7ea2-adbc-86a7db1ef05b
       path: wo-01-skeleton-migrasi.md
       type: file
@@ -41,8 +41,8 @@ files:
     - id: 01a20766-9cf0-78df-8d6a-f4f52d21e3b4
       path: wo-06-importer.md
       type: file
-      status: pending
-      updated_at: "2026-11-23T07:57:51Z"
+      status: complete
+      updated_at: "2026-11-23T10:24:11Z"
     - id: 01a20766-9e68-79ab-a9dc-07239723dfc8
       path: wo-07-ui-admin.md
       type: file
@@ -62,7 +62,7 @@ files:
       path: work-order.md
       type: file
       status: progress
-      updated_at: "2026-11-23T09:47:36Z"
+      updated_at: "2026-11-23T10:24:11Z"
 assets:
     - path: conversation.md
       type: markdown

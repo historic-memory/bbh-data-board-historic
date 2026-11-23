@@ -135,3 +135,26 @@ Template/impor (WO-04..06), UI (WO-07).
 
 **Cleanup**: `wh_movements/wh_batches/wh_items/wh_categories/wh_warehouses` dihapus (0/0/0/0/0), akun uji `*@test.local` dihapus berikut baris `admin_groups`-nya, server dev dimatikan. Tanpa push; commit kode dipisah dari commit dokumen historic.
 
+
+## Review Manager (2026-11-23) — LULUS ✅
+
+Verifikasi independen Manager:
+
+| Cek | Hasil |
+|---|---|
+| `git show --stat 26d5a31` | Scope bersih: hanya `plugins/warehouse/**` (6 file, +1133/−2) ✅ |
+| `go test ./plugins/warehouse/... -count=1` (container) | `services` + `schema` ok (18 test total RUN) ✅ |
+| Spot-check `movement.go` | OUT = qty>0; ADJUST = bertanda non-zero + `reason` wajib (baris 79/84/90); `clause.Locking{Strength:"UPDATE"}` nyata (baris 122) ✅ |
+| Data uji | `wh_*` 0/0/0/0/0 bersih ✅ |
+| Semua 3 commit lokal, tanpa push; AdminLayout/index.css tak disentuh | ✅ |
+| Log implementasi | Ada (36 entri-baris); kualitas baik ✅ |
+
+**Catatan review:**
+1. Semantik `Movement.Qty` bertanda (lanjutan Review WO-01) **terbukti ditegakkan + ditest** — kewajiban terpenuhi.
+2. Dua jebakan teknis (cast `?::int`, `MAX` umur tertua) ditemukan & diperbaiki dev sendiri dengan test — kerja bagus.
+3. Keputusan item/gudang nonaktif: batch lama boleh bergerak, batch baru ditolak 400 — **disetujui Manager**, tercatat sebagai kontrak modul (sebelumnya hanya usulan di handoff).
+4. Race test 20 goroutine (10 sukses/10×409) membuktikan FOR UPDATE.
+
+**WO-03 DITERIMA. WO-04 DIBUKA — mulai sekarang.**
+
+Jabatan: Manager Agent — Nama Tugas: Review WO-03 warehouse. Sayonara.

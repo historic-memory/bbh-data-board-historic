@@ -20,7 +20,7 @@ RANCANGAN FINAL — Goose terkunci sebagai agent; menunggu review owner sebelum 
 - Isolasi ketat container = prasyarat desain (tabel 6 lapis di notes 2026-11-24).
 
 ## Rencana Checkpoint (usulan Manager — pola checkpoint ingesti)
-- **CP-1**: container `goose` terisolasi + `goose acp` hidup + smoke test JSON-RPC stdio dari proses Node (tanpa data bisnis; fixture fiktif).
+- **CP-1**: container `goose` terisolasi + `goose acp` hidup + smoke test JSON-RPC stdio dari proses Node (tanpa data bisnis; fixture fiktif). → **WO-CP1 didraft 2026-11-24** (`wos/01-cp1-container-goose-acp-smoke.md`, status planned): transport final = `goose serve` HTTP di network internal (alasan: container terpisah membuat stdio subprocess tidak bisa tanpa mount docker.sock = DITOLAK; `goose serve` adalah mekanisme resmi goose dengan auth `X-Secret-Key` di port 3284).
 - **CP-2**: UI chatbot baru (halaman admin terpisah, ACP client sisi Node) + kartu permission (approve/deny dari `session/request_permission`) + audit aksi ke tabel audit baru (`acp_audit`).
 - **CP-3**: integrasi kerja dokumen ingest: snapshot berkas sesi read-only → Goose usul transform/diff → approve → eksekusi lewat validasi Go. Pembersihan referensi "deterministik usang" (rules.go:18 + dok) masuk WO housekeeping CP-3.
 

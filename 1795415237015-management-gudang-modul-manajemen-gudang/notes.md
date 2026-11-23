@@ -30,20 +30,25 @@ Sumber: `conversation.md` (meeting owner × Ari).
 
 - **G-5 DIKUNCI (owner, M-5)**: struktur **dua lapis kategori → produk**; TANPA flag `granularity`. Fleksibilitas spesifik/campur ditentukan saat pembuatan produk (nama bebas per kategori). Skema: `wh_categories` + `wh_items(category_id, name, unit)`.
 
-## Keputusan terbuka (G-1..G-8) — menunggu owner
+## Keputusan terbuka (G-1..G-8) — SEMUA DITUTUP (owner "ok siapkan work order" 2026-11-23)
 
-| # | Pertanyaan | Usulan Manager |
-|---|---|---|
-| G-1 | Nama plugin & prefix tabel/permission/endpoint | `plugins/warehouse`, prefix `wh` |
-| G-2 | Gudang = entitas DB (`wh_warehouses`) atau cukup per-instance `INSTANCE_KEY`? Satu cabang bisa >1 gudang? | Usulan: tabel warehouses (record keluar/masuk menyebut gudang mana). Owner menanyakan 1 cabang banyak gudang → usulan dipertegas: pakai tabel |
-| G-3 | Struktur inti: master item + **batch masuk** (qty, tanggal, gudang) + transaksi keluar; umur per batch | Ya (usulan) |
-| G-4 | Perlu **tanggal kadaluarsa** di batch (susu/perishable, FEFO/alert near-expiry)? | Usul keras: ya |
-| G-5 | ~~Flag granularity?~~ → **DIKUNCI**: dua lapis kategori→produk, tanpa flag (lihat M-5) | Dikunci owner 2026-11-23 |
-| G-6 | Transaksi keluar ke mana — dipakai cabang/anak, hangus/rusak? Perlu enum reason? | Usulan: `reason` bebas + enum kategori keluar |
-| G-7 | Satuan: bebas atau dropdown REFERENSI seperti `hsh` (`fields.yaml`)? | Dropdown konsisten pola existing |
-| G-8 | Data awal: template impor + validator + importer seperti modul lain, atau manual entry dulu? | Ikuti pola existing (template → validate → import) |
+| # | Keputusan |
+|---|---|
+| G-1 | **DIKUNCI**: plugin `warehouse`, prefix `wh` (usulan disetujui) |
+| G-2 | **DIKUNCI**: tabel `wh_warehouses`; 1 cabang boleh banyak gudang; batch.warehouse_id NOT NULL |
+| G-3 | **DIKUNCI**: master item + batch masuk + movement keluar; umur per batch |
+| G-4 | **DIKUNCI**: `expires_at` nullable + near-expiry di summary/UI |
+| G-5 | **DIKUNCI**: dua lapis kategori→produk, tanpa flag (M-5) |
+| G-6 | **DIKUNCI**: `reason` teks bebas (wajib ADJUST), tanpa enum — sederhana (D-7) |
+| G-7 | **DIKUNCI**: satuan dropdown REFERENSI fields.yaml, DB teks (D-8) |
+| G-8 | **DIJAWAB owner (EX-1)**: jalur Excel penuh (template→validate→import) |
+
+## Tambahan owner (EX-1, EX-2)
+
+- **EX-1** — "sertakan excel juga": modul wajib punya jalur Excel (generator template + validator + importer).
+- **EX-2** — "integrasi ke AI chat": modul gudang masuk lingkup plugin `ingest` (segmen tools, pola topic `1795107489593`) — WO-09.
 
 ## Design Plan draft
 
-Lihat `spec.md` (status `draft`). Setelah G-1..G-8 dijawab owner → kunci keputusan D-x di SPEC → buat `work-order.md`.
+Terealisasi di `spec.md` (status `progress`, D-1..D-12) dan `work-order.md` + `WO-01..WO-09`.
 

@@ -1,7 +1,7 @@
 ---
 title: spec
-description: "SPEC modul Management Gudang (draft — menunggu keputusan G-1..G-8)"
-status: draft
+description: "SPEC modul Management Gudang — keputusan terkunci D-1..D-12"
+status: progress
 created: "2026-11-23"
 updated: "2026-11-23"
 tags:
@@ -11,7 +11,24 @@ tags:
 
 # SPEC — Modul Management Gudang
 
-Status: **DRAFT**. Semua keputusan di bawah masih USULAN Manager; yang belum dikunci ditandai `?`.
+Status: **PROGRESS** — keputusan terkunci D-1..D-12 (owner "ok siapkan work order" 2026-11-23, usulan Manager disetujui + tambahan EX-1 excel & EX-2 AI chat). Sisa micro-decision di WO: O-1..O-3.
+
+## 0. Keputusan terkunci (D-1..D-12)
+
+| # | Keputusan |
+|---|---|
+| D-1 | Plugin `plugins/warehouse` (ID `warehouse`), prefix tabel `wh_`, permission `warehouse.read/write/delete` (seed via migrasi plugin auth), endpoint `/api/admin/wh/...` (G-1) |
+| D-2 | Tabel `wh_warehouses`; 1 cabang (`INSTANCE_KEY`) BOLEH punya banyak gudang; `wh_batches.warehouse_id` NOT NULL (G-2) |
+| D-3 | Struktur inti: kategori → produk (item) → batch masuk → movement keluar; umur = per batch (G-3) |
+| D-4 | `expires_at` NULLABLE di batch; near-expiry tampil di summary + UI badge (G-4) |
+| D-5 | TANPA sinkronisasi antar gudang (M-3); `destination` = catatan teks bebas |
+| D-6 | TANPA flag granularitas — fleksibilitas spesifik/campur = keputusan penamaan produk (M-5, G-5) |
+| D-7 | `direction` enum statis `OUT\|ADJUST` (CHECK); `reason` = teks bebas (WAJIB untuk ADJUST, opsional OUT); tanpa enum kategori keluar — sederhana sesuai M-1 (G-6) |
+| D-8 | Satuan = dropdown REFERENSI di template (`fields.yaml`), DB simpan teks (pola hsh) (G-7) |
+| D-9 | Jalur Excel LENGKAP: generator xlsx/csv → validator → importer staging 2 fase (EX-1, owner "sertakan excel") (G-8) |
+| D-10 | Integrasi AI chat via pola plugin `ingest` (segmen tools): baca stok/summary via chat; tulis = usul → user setujui → terapkan (EX-2) |
+| D-11 | UI SPA `/warehouse/*`, nav grup "Gudang", PermissionGate level halaman |
+| D-12 | Seed data awal DITUNDA (pola hsh O-7) — kategori/produk dibuat user via UI/impor |
 
 ## 1. Ringkasan
 
@@ -43,8 +60,8 @@ wh_movements    keluar + penyesuaian
 
 - Tidak ada tabel stok counter — stok = `SUM(qty_remaining)` batch aktif (anti desinkron).
 - Mengikuti aturan user: **fitur = plugin** `plugins/warehouse`, tanpa kode di `internal/`.
-- Tanpa `ref_*` (D-3 pola resident): enum statis di kode + CHECK constraint.
-- Multi-DB: tanpa dimensi cabang eksplisit — batas data = `INSTANCE_KEY` (pola hsh/sec N-1). `?` konfirmasi.
+- Tanpa `ref_*`: enum statis di kode + CHECK constraint.
+- Multi-DB: tanpa dimensi cabang eksplisit — batas data = `INSTANCE_KEY` (pola hsh/sec N-1).
 
 ## 3. Aturan bisnis (usulan)
 
@@ -73,24 +90,29 @@ Rute `/warehouse/*`, nav grup "Gudang" (`warehouse.read`):
 - Form masuk (batch baru), modal keluar (pilih batch, reason/destination).
 - Pola komponen `src/components/ui/*`, PermissionGate level halaman.
 
-## 6. Template & impor (jika G-8 = ikuti pola existing)
+## 6. Template & impor (D-9 — jalur Excel penuh)
 
-`schema/fields.yaml` → generator xlsx/csv (`GET /api/admin/wh-template`) → validator (`POST .../wh-template/validate`) → importer staging 2 fase (`POST .../wh-template/import`, tabel `wh_import_batches/rows`). Bisa dipisah WO lanjutan.
+`schema/fields.yaml` → generator xlsx/csv (`GET /api/admin/wh-template`) → validator (`POST .../wh-template/validate`) → importer staging 2 fase (`POST .../wh-template/import`, tabel `wh_import_batches/rows`). Pola hsh/sec.
 
-## 7. Rencana Work Order (usulan)
+## 7. Rencana Work Order
 
 | WO | Isi |
 |---|---|
-| 01 | Skeleton plugin `wh` + migrasi (items/batches/movements ± warehouses) |
-| 02 | Permission (migrasi plugin auth) + CRUD item (+warehouses) |
+| 01 | Skeleton plugin `wh` + migrasi inti (5 tabel) |
+| 02 | Permission (migrasi auth) + CRUD master (categories/items/warehouses) |
 | 03 | Batch masuk + movement keluar + summary (transaksional, 409) |
-| 04 | Generator template |
+| 04 | Generator template xlsx/csv |
 | 05 | Validator |
-| 06 | Importer |
-| 07 | UI admin |
+| 06 | Importer staging |
+| 07 | UI admin `/warehouse/*` |
 | 08 | Swagger/README/Bruno |
+| 09 | Integrasi AI chat (segmen `wh` di plugin ingest) |
 
-## 8. Terbuka (→ notes.md G-1..G-8)
+## 8. Micro-decision terbuka (O-1..O-3, dijawab saat eksekusi WO terkait)
 
-G-1 nama/prefix, G-2 entitas gudang, G-4 expiry, G-5 granularity flag, G-6 reason keluar, G-7 satuan, G-8 jalur data awal. Setelah dijawab owner: kunci D-1..D-x, SPEC `progress` → buat `work-order.md`.
+- **O-1** (WO-06): impor auto-create kategori & produk dari teks (usulan: YA, teks bebas ala hsh N-16, tanpa alias); **O-2** (WO-06): gudang tidak dikenal saat impor (usulan: fail-closed 400, gudang harus di-register UI dulu — struktur operasional); **O-3** (WO-09): lingkup tool chat (usulan: read = summary/stok item; write-propose = batch masuk & movement keluar; master kategori/produk tetap via UI).
+
+## 9. Integrasi AI chat (D-10, detail di WO-09)
+
+Segmen `wh` ditambahkan ke whitelist plugin `ingest` (`segment_read` GET-only fail-closed; `segment_write_propose` + `apply_record_actions` usul→setujui→terapkan dengan `confirmed_by_user`). Data stok bukan PII → tanpa deidentify (beda dari visit), tapi whitelist fail-closed + audit tetap jalan. Prinsip D-11 topic ingest: strictness & gate tetap di backend Go.
 

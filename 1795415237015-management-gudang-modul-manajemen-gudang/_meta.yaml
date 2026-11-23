@@ -1,18 +1,68 @@
 id: "1795415237015"
 title: Management Gudang — modul manajemen gudang
 created: "2026-11-23"
-updated_at: "2026-11-23T07:11:24Z"
+updated_at: "2026-11-23T07:57:51Z"
 files:
     - id: 01a20729-5911-79e3-bc8b-d5ac074a85b2
       path: notes.md
       type: file
       status: progress
-      updated_at: "2026-11-23T07:11:24Z"
+      updated_at: "2026-11-23T07:57:51Z"
     - id: 01a20729-5afe-76a9-a4bd-cee5a073b4ca
       path: spec.md
       type: spec
-      status: draft
-      updated_at: "2026-11-23T07:11:24Z"
+      status: progress
+      updated_at: "2026-11-23T07:57:51Z"
+    - id: 01a20766-952f-7ea2-adbc-86a7db1ef05b
+      path: wo-01-skeleton-migrasi.md
+      type: file
+      status: pending
+      updated_at: "2026-11-23T07:57:51Z"
+    - id: 01a20766-96ad-7d17-aaf8-8b747cc6b481
+      path: wo-02-permission-master.md
+      type: file
+      status: pending
+      updated_at: "2026-11-23T07:57:51Z"
+    - id: 01a20766-9840-7182-8e47-06b4df36169d
+      path: wo-03-transaksi-stok.md
+      type: file
+      status: pending
+      updated_at: "2026-11-23T07:57:51Z"
+    - id: 01a20766-99d2-742e-870e-7643f0f209a6
+      path: wo-04-generator-template.md
+      type: file
+      status: pending
+      updated_at: "2026-11-23T07:57:51Z"
+    - id: 01a20766-9b6f-7b12-a66b-70506f26efb0
+      path: wo-05-validator.md
+      type: file
+      status: pending
+      updated_at: "2026-11-23T07:57:51Z"
+    - id: 01a20766-9cf0-78df-8d6a-f4f52d21e3b4
+      path: wo-06-importer.md
+      type: file
+      status: pending
+      updated_at: "2026-11-23T07:57:51Z"
+    - id: 01a20766-9e68-79ab-a9dc-07239723dfc8
+      path: wo-07-ui-admin.md
+      type: file
+      status: pending
+      updated_at: "2026-11-23T07:57:51Z"
+    - id: 01a20766-9fde-74cf-ad07-7987446959fa
+      path: wo-08-swagger-bruno.md
+      type: file
+      status: pending
+      updated_at: "2026-11-23T07:57:51Z"
+    - id: 01a20766-a158-7d94-ac16-6cf1aac0d9cf
+      path: wo-09-integrasi-ai-chat.md
+      type: file
+      status: pending
+      updated_at: "2026-11-23T07:57:51Z"
+    - id: 01a20766-93ac-79aa-9383-0b7623a65340
+      path: work-order.md
+      type: file
+      status: progress
+      updated_at: "2026-11-23T07:57:51Z"
 assets:
     - path: conversation.md
       type: markdown

@@ -77,3 +77,27 @@ Referensi: D-1..D-8 & O-1/O-2 (`spec.md` §8), kontrak WO-03 (batch/movement/sum
 - AC-4: seluruh tabel memakai `TableSkeletonRows colSpan` / `TableStateRow colSpan`; tidak ada pemakaian prop `columns` atau children di keduanya.
 - Data uji dibersihkan: `wh_movements`/`wh_batches`/`wh_import_rows`/`wh_import_batches` dihapus, item/kategori/gudang dihapus via API (`DELETE` 200 semua) → `categories|items|warehouses|batches` total 0 dan `summary` 0/0/0/0; dua admin uji di-soft-delete. Backend tetap jalan (`/healthz` 200), dev server dihentikan.
 
+
+## Review Manager (2026-11-23) — LULUS ✅
+
+Verifikasi independen Manager:
+
+| Cek | Hasil |
+|---|---|
+| `git show --stat 7cb339a` | 18 file +3330, scope bersih (tidak ada AdminLayout/index.css) ✅ |
+| `git log origin/master..HEAD` | 7 commit lokal, tanpa push ✅ |
+| grep dist `http://(100\.|localhost):(8082\|5173)` | kosong — bundle stateless ✅ |
+| **RBAC via tab browser sesi uji** (http://100.125.175.34:5173/app/warehouse/stock, akun `whnoright`) | Sidebar hanya "Dashboard"; halaman menampilkan **"Akses ditolak (403) — membutuhkan izin `warehouse.read`"**; nav grup "Gudang" tidak muncul; document.title "Stok · BBH Data Board" ✅ |
+| Data uji | `wh_*` + staging = **0 semuanya** (7 tabel) ✅ |
+| Kontrak stok UI | Stok selalu dari server (`/wh/summary`/`qty_remaining`); penjumlahan klien hanya presentasional di header detail (dikomentari) ✅ |
+| 409 duplikat, 409 stok kurang, ADJUST ± riwayat, O-2 impor gudang asing + `new_masters` | Dibuktikan E2E ✅ |
+
+**Catatan review:**
+1. Tiga tingkat izin UI (read halaman / write tombol+impor / delete hapus) — konsisten dgn RBAC backend.
+2. Gudang tanpa toggle aktif + keterangan O-2 — keputusan O-2 dijunjung di UI.
+3. Error 403 di console tab lama = bukti guard, WebSocket refused = dev server mati setelah uji — normal.
+4. Gotcha tabel `TableSkeletonRows`/`TableStateRow` dipatuhi (AC-4).
+
+**WO-07 DITERIMA. WO-08 DIBUKA — mulai sekarang** (handoff terpisah di chat).
+
+Jabatan: Manager Agent — Nama Tugas: Review WO-07 warehouse UI. Sayonara.

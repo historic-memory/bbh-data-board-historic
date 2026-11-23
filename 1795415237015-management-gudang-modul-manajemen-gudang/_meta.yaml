@@ -1,7 +1,7 @@
 id: "1795415237015"
 title: Management Gudang — modul manajemen gudang
 created: "2026-11-23"
-updated_at: "2026-11-23T11:16:17Z"
+updated_at: "2026-11-23T11:18:34Z"
 files:
     - id: 01a20729-5911-79e3-bc8b-d5ac074a85b2
       path: notes.md
@@ -47,7 +47,7 @@ files:
       path: wo-07-ui-admin.md
       type: file
       status: complete
-      updated_at: "2026-11-23T11:16:17Z"
+      updated_at: "2026-11-23T11:18:34Z"
     - id: 01a20766-9fde-74cf-ad07-7987446959fa
       path: wo-08-swagger-bruno.md
       type: file

@@ -101,3 +101,25 @@ Batch/movement/summary (WO-03).
 - Tidak ada push; commit kode (`plugins/warehouse/**`, migrasi auth, `cmd` tidak berubah lagi) terpisah dari commit dokumen historic.
 
 
+
+## Review Manager (2026-11-23) — LULUS ✅
+
+Verifikasi independen Manager:
+
+| Cek | Hasil |
+|---|---|
+| `git show --stat c73127c` | Scope bersih: migrasi auth + `plugins/warehouse/**` saja; master index ikut complete ✅ |
+| DB: `permissions LIKE 'warehouse.%'` | 3 permission ter-seed ✅ |
+| DB: mapping `group_permissions` | `admin` = read+write, `viewer` = read, **`warehouse.delete` tidak di-group manapun** (root-only) ✅ |
+| `go test ./plugins/warehouse/...` (container) | `services` ok (8 test DB RUN) ✅ |
+| Data uji | `wh_*` 0/0/0/0 — bersih ✅ |
+| Bukti RBAC 16 kasus + viewer/admin/root | Lulus ✅ |
+| Tanpa push; AdminLayout/index.css tetap uncommitted | ✅ |
+| Log implementasi | Ada section + entri berkualitas ✅ |
+
+**Catatan review:**
+1. 15 route terbukti lulus 16 kasus negatif/positif; anomali tidak ditemukan.
+2. `warehouse.delete` khusus root konsekuensi pola hsh/sec — dipahami dan diterima; jika owner nanti mau grup admin bisa delete, itu keputusan owner (catat sebagai micro-decision opsional WO-08).
+3. **WO-02 DITERIMA. WO-03 DIBUKA — mulai sekarang.** Semantik `Movement.Qty` bertanda (OUT > 0; ADJUST ±) WAJIB ditegakkan + ditest (lanjutan catatan Review WO-01).
+
+Jabatan: Manager Agent — Nama Tugas: Review WO-02 warehouse. Sayonara.

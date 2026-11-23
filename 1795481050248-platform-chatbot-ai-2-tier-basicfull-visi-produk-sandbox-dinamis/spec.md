@@ -27,6 +27,22 @@ Lahir dari diskusi topic `1795470770884` (chatbot ACP Goose) saat WO-CP1 revisi 
    | **Basic** | Chatbot + tools basic **TANPA sandbox** | Sudah ada — ingest chat eksisting (CopilotKit, Node runtime, tools via registry) |
    | **Full** | Jalur sandbox ketat ala Goose + permission + fail-closed | Sedang dibangun (topic `1795470770884`, CP-1..CP-3) |
    - Tier = jalur integrasi yang dipilih per deployment/client; dapat menjadi flag per deployment di DB (masih usulan, belum dikunci).
+3. **Bentuk penyajian: SaaS** — platform ini disiapkan sebagai SaaS, dengan "kemudahan-kemudahan" untuk client (detail di bawah).
+
+## Detail Tier BASIC (dari owner, 2026-11-24 — SaaS)
+Goal Basic = SaaS self-service untuk bikin chatbot ber-tools, tanpa sandbox:
+
+1. **User membuat agent** (banyak agent per client/tenant; tiap agent = definisi di DB: nama, prompt, tools ter-assign, konfigurasi).
+2. **Editor function tools per agent** — kemudahan utama: user mendefinisikan/menyunting tools lewat editor; format standar **YAML** sebagai kandidat (belum dikunci) atau **stateless scripting minimal** untuk kebutuhan logic. Arah kandidat teknis: skema YAML deklaratif ala tool-spec (nama, deskripsi, parameter JSON-Schema, mapping) — mirip pola tools registry yang sudah ada di runtime Node (CopilotKit); logic kompleks opsional via scripting stateless kecil. Keamanan tetap: tools basic TIDAK dijalankan di sandbox, jadi scripting harus stateless + terbatas (tanpa IO, tanpa network, timeout).
+3. **Routing antar-agent** — tiap agent mengenali agent lain di tenant-nya; bila permintaan customer tidak tercakup knowledge/capability agent aktif, permintaan **dialihkan ke agent lain** yang relevan (handover/routing multi-agent, level tenant).
+
+Catatan: **versi ACP/Full = paket berbeda** dengan kasus berbeda (kerja dokumen di sandbox) — tidak dicampur fitur dengan Basic; Saya mempertahankan pemisahan tier.
+
+## Pertanyaan/keputusan teknis yang terbuka (untuk topic teknis nanti)
+- Format tool editor final: YAML deklaratif vs scripting minimal vs hybrid (YAML + hook logic).
+- Mekanisme routing antar-agent: router terpusat vs deskriptor capability vs prompt-based handover.
+- Batas keamanan scripting stateless (interpreter apa, sandbox CPU, kuota).
+- Model multi-tenant SaaS: isolasi data, billing, onboarding.
 
 ## Implikasi
 - **TIDAK mengubah scope** WO berjalan (CP-1..CP-3 di topic chatbot) — topic ini hanya arah produk.

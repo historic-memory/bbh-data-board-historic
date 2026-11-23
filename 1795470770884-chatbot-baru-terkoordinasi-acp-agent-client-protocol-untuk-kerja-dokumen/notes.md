@@ -54,4 +54,11 @@ Owner condong ke **Goose** (Block, Apache-2.0, Linux Foundation/AAIF; 56.9k★; 
 - **Jawaban pertanyaan owner "setup container isolasi ketat?"**: YA — itu justru prasyarat desain. Rencana isolation minimal: (1) container khusus `goose` terpisah dari `app`/`ingest-runtime`; (2) network internal/egress deny kecuali LLM provider via proxy whitelist; (3) volume kerja per-sesi (scratch) hanya berkas snapshot read-only; (4) non-root user, cap memori/CPU, timeout; (5) permission prompt ACP (`session/request_permission`) dipakai sebagai gerbang approve/deny — diterjemahkan jadi kartu konfirmasi di UI chatbot baru; (6) keluaran kerja = usulan/diff, penyimpanan tetap lewat validasi Go (fail-closed pola ingest).
 - PERHATIAN: memilih goose = keputusan O-1 diarahkan, tapi belum KUNCI final sampai: O-2 (container terpisah vs menumpang ingest_runtime — rekomendasi Manager: container terpisah) dan O-3 (provider LLM: donis-agent vs eksternal) diputus. Catat sebagai usulan finalis.
 
+## Konfirmasi owner (2026-11-24, "ok sip aku mantap")
+Owner setuju tanpa revisi: **O-1 Goose**, **O-2 container terpisah**, **O-3 provider = donis-agent**. SPEC diubah ke RANCANGAN FINAL (save 354875e) dengan rencana checkpoint:
+- **CP-1** container `goose` terisolasi + `goose acp` hidup + smoke test JSON-RPC stdio dari Node (fixture fiktif, tanpa data bisnis).
+- **CP-2** UI chatbot baru (halaman admin, ACP client di Node) + kartu permission approve/deny + tabel audit `acp_audit`.
+- **CP-3** integrasi kerja dokumen ingest: snapshot read-only → Goose usul diff → approve → eksekusi via validasi Go; pembersihan referensi "deterministik" usang (rules.go:18) masuk housekeeping WO di topic ini.
+Sisa terbuka: **O-4** (RBAC ↔ permission prompt ACP) dan **O-5** (scoping data per-sesi) — didraft saat WO CP-2/CP-3. Langkah berikutnya: drafting WO CP-1.
+
 

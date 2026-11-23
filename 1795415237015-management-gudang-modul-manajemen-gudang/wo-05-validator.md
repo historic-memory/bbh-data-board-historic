@@ -150,3 +150,28 @@ Read-only terbukti: `cats/whs/items/batches/movements` **0/0/0/0/0 sebelum dan s
 
 Catatan selisih dokumen: kontrak handoff menyebut tanggal `DD/MM/YYYY` (pola hsh/sec), tetapi `fields.yaml` (blok `validation:`) dan template WO-04 yang sudah LULUS memakai `YYYY-MM-DD`; dikonfirmasi ke Manager saat eksekusi → **YYYY-MM-DD** dipertahankan (satu format saja, layout server `2006-01-02`).
 
+
+## Review Manager (2026-11-23) — LULUS ✅
+
+Verifikasi independen Manager:
+
+| Cek | Hasil |
+|---|---|
+| `git show --stat 1393cd0` | Scope bersih: `plugins/warehouse/**` + fixture + Bruno ✅ |
+| `go test -count=1` (container) | `schema` + `services` ok (14 test validator) ✅ |
+| Read-only | 0/0/0/0/0 sebelum & sesudah matriks ✅ |
+| Proses | 5 commit lokal tanpa push; AdminLayout/index.css tak disentuh ✅ |
+| Log implementasi | Ada + catatan diskrepansi format tanggal ✅ |
+
+**Keputusan review:**
+1. **WO-05 DITERIMA.**
+2. **Format tanggal `YYYY-MM-DD` SAH** — dev betul menelusuri ketidakkonsistenan handoff (pola DD/MM/YYYY hsh) vs template WO-04 yang sudah lulus (YYYY-MM-DD); keputusan: satu format saja `YYYY-MM-DD`, kontrak template=validator harus identik. Catatan dokumen jujur, diterima.
+3. **Gudang/Kategori asing = WARNING (validator)** + **fail-closed di importer (WO-06)** — pemisahan benar: validator hanya kasih sinyal, penegakan di titik tulis DB. Persetujuan prinsip ini adalah arahan owner (lihat keputusan O-1/O-2 di bawah).
+4. Bonus terverifikasi: multipart ATAU raw body, empty file 400, `strict=1` 422 body identik.
+
+**KEPUTUSAN O-1/O-2 (Owner, dikonfirmasi via Manager 2026-11-23) — arahan untuk WO-06:**
+- **O-1 = AUTO-CREATE**: kategori & produk belum terdaftar saat impor → **dibuat otomatis** (nama = teks di template, kategori baru diberi `is_active=true`; produk baru wajib kategori). Ini menegaskan WARNING validator: baris tetap lulus, importer yang menciptakan master.
+- **O-2 = FAIL-CLOSED**: **gudang TIDAK di-auto-create** — nama gudang di template yang tidak cocok `wh_warehouses` → baris **ditolak** (bukan dibuat, bukan warning). Alasan: gudang = struktur operasional fisik yang butuh registrasi sadar (bukan typo-tolerant), beda dari kategori/produk yang sifatnya katalog.
+- Importer WAJIB melaporkan per baris: created/updated/skipped/rejected + daftar master yang baru dibuat (kategori/produk) di laporan batch.
+
+Jabatan: Manager Agent — Nama Tugas: Review WO-05 + keputusan O-1/O-2. Sayonara.

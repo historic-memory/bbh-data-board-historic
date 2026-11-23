@@ -1,0 +1,16 @@
+id: "1795469702082"
+title: Riset ACP/A2A untuk agent-platform (komunikasi antar-agent)
+created: "2026-11-23"
+updated_at: "2026-11-23T21:35:22Z"
+files:
+    - id: 01a20a55-c0bb-71fd-b3ca-0a3389b51a83
+      path: spec.md
+      type: file
+      status: create
+      updated_at: "2026-11-23T21:35:21Z"
+    - id: 01a20a55-c2f3-7cd9-bf14-7c5a3484e988
+      path: notes.md
+      type: file
+      status: create
+      updated_at: "2026-11-23T21:35:22Z"
+assets: []

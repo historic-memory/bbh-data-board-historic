@@ -1,7 +1,7 @@
 ---
 title: konteks
 description: "Folder induk sejajar bbh-branch berisi instance per cabang (selain bali)"
-status: create
+status: complete
 created: "2026-11-24"
 updated: "2026-11-24"
 ---
@@ -48,18 +48,41 @@ Masing-masing folder cabang = project deployment siap compose:
   3. Import folder dummy cabang itu Jan→Des.
   4. Akun admin dibuat (login pertama).
 
-## Pertanyaan terbuka
-1. Semua 4 cabang di host yang sama (1 laptop/VPS) atau tersebar?
-2. Domain akses per cabang (mis. `jogja.rolldev.my.id`) — perlu atau
-   cukup port?
-3. Port APP_PORT per cabang — urutkan (mis. 8101 jogja, 8102 semarang,
-   8103 lombok, 8104 java-children)?
+## Pertanyaan terbuka (SUDAH TERJAWAB 24 Nov 2026)
+1. ~~Semua 4 cabang di host yang sama (1 laptop/VPS) atau tersebar?~~
+   → **Semua di laptop ini** (dikerjakan di WO-01).
+2. ~~Domain akses per cabang (mis. `jogja.rolldev.my.id`) — perlu atau
+   cukup port?~~ → **Cukup port dulu** (8101–8104); domain menyusul.
+3. ~~Port APP_PORT per cabang — urutkan?~~ → **8101 jogja, 8102 semarang,
+   8103 lombok, 8104 java-children** (persis seperti usulan).
 
 ## Catatan
 - Topic ini untuk PLAN + WO pembuatan scaffolding deployment; eksekusi
   = Dev Agent.
 - Tidak menyentuh bbh-dummy-data (topic 1795513709400) dan instance
   bali yang berjalan.
+
+## Status Eksekusi (24 Nov 2026) — WO-01 COMPLETE
+
+Keempat cabang **hidup**: jogja 8101, semarang 8102, lombok 8103,
+java-children 8104 (`/healthz` 200, login admin lokal 200). Endpoint
+terdaftar di bali + probe Tailscale 200. 3 gudang dummy/cabang terdaftar.
+Import dummy Jan→Des selesai (360 baris/segmen/cabang, 0 rejected).
+SSO portal-token terverifikasi (pending 403 → approve → 200).
+
+**Dua hal yang MENYIMPANG dari rencana awal (perlu diketahui):**
+1. **Deployment butuh `docker compose` ≥ 2.24.** Override memakai tag
+   `!reset`/`!override`; Compose v2.5.0 (bawaan sistem) tidak mendukung
+   dan akan bentrok port. Dipasang **v2.32.4** di level user
+   (`~/.docker/cli-plugins/docker-compose`, tanpa sudo, reversible).
+   Ini prasyarat operasional semua `docker compose` milik user ini.
+2. **Tiap cabang butuh baris `endpoints` miliknya** (`console endpoint add
+   --key <key>`). Karena `branch_key` default = `INSTANCE_KEY` dan
+   divalidasi ke `endpoints.key`, sedangkan migrasi hanya seed `local`.
+   Tanpa baris ini semua tulis/baca resident & visit = 400
+   `ErrUnknownBranch`. Ini data, bukan perubahan source code.
+
+README operasional: `~/workspaces/bbh-branch/README.md`.
 
 ## Mekanisme login cabang via portal (fakta plugin portalsso)
 - Login TETAP di bali (pusat): `POST /api/admin/portal-token`

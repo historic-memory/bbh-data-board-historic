@@ -1,7 +1,7 @@
 ---
 title: konteks
-description: "Rencana repo terpisah untuk data dummy 5 cabang BBH (Jan-Des 2026)"
-status: create
+description: Rencana repo terpisah untuk data dummy 5 cabang BBH (Jan-Des 2026)
+status: complete
 created: "2026-11-24"
 updated: "2026-11-24"
 ---

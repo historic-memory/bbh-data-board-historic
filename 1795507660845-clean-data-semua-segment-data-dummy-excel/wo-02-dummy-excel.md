@@ -29,103 +29,172 @@ dengan template import yang sudah ada di `api-tests/fixtures/`:
 - Fasilitas/produk/gudang boleh fiktif; pastikan nama konsisten antar baris.
 
 ## Tugas
-1. [x] Susun 5 file .xlsx (generator Python + `openpyxl` di host, menyalin
-       template asli server — bukan retype CSV).
+1. [x] Susun file .xlsx (generator Python + `openpyxl` di host, menyalin
+       template asli server — bukan retype header).
 2. [x] Verifikasi file bisa dibaca & header cocok 1:1 dengan template.
-3. [x] Tes import via endpoint (semua segmen) → created = jumlah baris.
+3. [x] Tes validasi via endpoint (semua segmen) → 30/30 valid, 0 ditolak.
 4. [x] Update WO dengan hasil + dokumentasi folder.
 
 ## Acceptance
-- 5 file .xlsx per segment siap dipakai import manual.
+- Berkas .xlsx per segment siap dipakai import manual.
 - Header & format nilai sesuai template valid.
+
+## REVISI (owner, 2026-11-24): struktur per bulan + data-only
+
+Owner minta **real case**: impor bulan demi bulan seperti operator sungguhan.
+Keputusan yang mengubah bentuk keluaran:
+
+| # | Keputusan | Alasan |
+|---|---|---|
+| R-1 | **30 baris per segmen per bulan**, Januari–Desember 2026 | Skala realistis; 360 baris/segmen |
+| R-2 | **Satu folder per bulan** (`2026-01-januari` … `2026-12-desember`), 5 berkas di dalamnya | Real case impor bulanan; urut di file explorer |
+| R-3 | **Data saja** — sheet `PETUNJUK`/`REFERENSI`/`CONTOH` dihapus, dropdown dibersihkan | Permintaan owner: "cukup datanya aja, enggak perlu petunjuk referensi dll" |
+| R-4 | **Tanpa insert ke DB** — hanya berkas Excel | Permintaan owner: "hanya excelnya aja yaa bukan insertnya" |
+| R-5 | Item `hsh`/`sec` **diulang** tiap bulan (30 item tetap) | Kebutuhan rumah tangga memang berulang; item baru tiap bulan hanya menggelembungkan master |
+| R-6 | Verifikasi cukup `POST /validate` (read-only) | Bukti diterima server tanpa menulis DB |
+
+R-3 aman secara teknis dan **diverifikasi di kode**, bukan diasumsikan:
+validator kelima plugin membaca `f.GetRows("DATA")` saja
+(`plugins/{resident,hsh,sec,visit,warehouse}/services/validate.go`), dan
+`readTemplateVersion` mengembalikan `-1` bila `PETUNJUK` tidak ada; pemakaian
+versi dijaga `if in.Version >= 0 && in.Version != schema.Version`, sehingga
+`-1` melewati cek versi. `REFERENSI` tidak dipakai validator sama sekali
+(referensi diambil dari DB untuk hsh/sec/wh, enum statis untuk resident/visit).
+
+### Hasil akhir
+
+**60 berkas, 1.800 baris** (12 bulan × 5 segmen × 30 baris).
 
 ### Bukti
 
-Header diperiksa programatik terhadap template asli hasil `GET
-/api/admin/<segmen>-template?format=xlsx` — **identik** untuk kelima segmen:
+Header & bentuk (lokal, 60 berkas diperiksa):
 
-| Segment | Kolom | Header identik | Sheet identik | Baris data |
+| Segment | Kolom | Header identik | Sheet | Baris/berkas |
 |---|---|---|---|---|
-| resident | 23 | ✅ | ✅ | 12 |
-| hsh | 8 | ✅ | ✅ | 10 |
-| sec | 10 | ✅ | ✅ | 8 |
-| visit | 6 | ✅ | ✅ | 12 |
-| wh | 8 | ✅ | ✅ | 10 |
+| resident | 23 | ✅ | `['DATA']` saja | 30 |
+| hsh | 8 | ✅ | `['DATA']` saja | 30 |
+| sec | 10 | ✅ | `['DATA']` saja | 30 |
+| visit | 6 | ✅ | `['DATA']` saja | 30 |
+| wh | 8 | ✅ | `['DATA']` saja | 30 |
 
-Validasi (`POST /api/admin/<segmen>-template/validate?format=xlsx`):
-resident 12/12, hsh 10/10, sec 8/8, visit 12/12, wh 10/10 **valid, 0 ditolak**.
+Data validation tersisa: **0** di semua berkas (dropdown dibersihkan agar Excel
+tidak mengeluh sheet rujukan hilang).
 
-Impor nyata (`POST /api/admin/<segmen>-template/import?format=xlsx`):
-resident `{total:12, created:12, rejected:0}`, hsh `{10,10,0}`, sec `{8,8,0}`,
-visit `{12,12,0}`, wh `{10,10,0}`.
+Integritas lintas bulan:
 
-Setelah uji, DB dibersihkan kembali: 308 baris dihapus +
-`--reseed` memulihkan 7 kategori hsh / 2 kategori sec (lihat WO-01).
+| Pemeriksaan | Hasil |
+|---|---|
+| NIK bayi unik | 360/360 |
+| NIK ibu unik | 360/360 |
+| No HP ibu unik | 360/360 |
+| Nama resident unik | 360/360 |
+| No HP visit unik | 360/360 |
+| Nama visit unik | 360/360 |
+| Irisan nama resident ↔ visit | 0 |
+| Kunci `(periode,item)` hsh | 360/360 unik |
+| Kunci `(periode,item)` sec | 360/360 unik |
+| Kunci `(gudang,produk,tgl,qty)` wh | 360/360 unik |
+| Tanggal jatuh di bulan folder | 360/360 untuk kelima segmen |
+| Satuan/enum di luar daftar resmi | 0 |
 
-### Berkas
+Validasi server (`POST /api/admin/<segmen>-template/validate?format=xlsx`,
+read-only) — **seluruh 60 berkas**:
 
-`api-tests/fixtures/dummy-excel/`
+| Segment | Total | Valid | Ditolak |
+|---|---|---|---|
+| resident | 30 | 30 | 0 |
+| hsh | 30 | 30 | 0 |
+| sec | 30 | 30 | 0 |
+| visit | 30 | 30 | 0 |
+| wh | 30 | 30 | 0 |
 
-| Berkas | Ukuran | Isi |
-|---|---|---|
-| `generate.py` | — | generator: salin template → isi sheet `DATA` |
-| `dummy-resident.xlsx` | 13.364 B | 12 warga fiktif |
-| `dummy-hsh.xlsx` | 10.129 B | 10 baris kebutuhan hsh |
-| `dummy-sec.xlsx` | 10.385 B | 8 baris kebutuhan sekunder |
-| `dummy-visit.xlsx` | 8.588 B | 12 kunjungan |
-| `dummy-wh.xlsx` | 9.600 B | 10 baris gudang |
-| `README.md` | — | cara pakai, prasyarat, regenerasi, bukti |
+(× 12 bulan; tidak ada satu pun berkas dengan `rejected > 0`.)
 
-## Catatan
-- Enum yang dipakai: persalinan NORMAL/CAESAR/VAKUM/SENDIRI, penolong
-  DOKTER/BIDAN/SENDIRI, status warga DIRAWAT/DIKEMBALIKAN, status kebutuhan
-  URGENT/ENOUGH/UNKNOWN, status kunjungan
-  SCHEDULED/DONE/CANCELLED/NO_SHOW/RESCHEDULED.
-- Semua data fiktif, nama diberi sufiks `Dummy` agar mudah dikenali.
-- **Prasyarat wajib impor:** kategori hsh/sec harus ada (impoter menolak kode
-  tak dikenal) → jalankan `clean-data --yes --reseed`; gudang wh harus sudah
-  terdaftar (fail-closed O-2). Kategori & produk gudang auto-create (O-1).
+DB **tidak berubah** setelah validasi: `residents=0`, `visit_visits=0`,
+`hsh_entries=0`, `wh_batches=0`, `admins=20` — membuktikan tidak ada insert.
 
-## Catatan Implementasi (Dev)
+### Dua bug yang ditemukan saat verifikasi
 
-- `api-tests/fixtures/dummy-excel/generate.py:1-30` — header modul: menjelaskan
-  strategi "salin template, bukan retipe header". Kenapa: jaminan 1:1 hanya
-  bisa dipertahankan jika bukan hasil ketik ulang.
-- `api-tests/fixtures/dummy-excel/generate.py` — `fill()` membuka workbook
-  template dengan `openpyxl.load_workbook`, mencari sheet `DATA`, menulis baris
-  mulai baris 2, lalu **raise `SystemExit`** bila `len(row) != jumlah kolom
-  header`. Kenapa: pergeseran satu kolom adalah kegagalan senyap yang baru
-  ketahuan saat impor; gagal saat generate jauh lebih murah.
-- `api-tests/fixtures/dummy-excel/generate.py` — `--templates` / `--out`
-  dipisah supaya template tidak muncul sebagai artefak repo. Kenapa: template
-  masuk ke `/tmp/tpl` hasil unduhan server, bukan disimpan ganda di repo.
-- `generate.py` — `RESIDENT_ROWS` 12 baris × 23 kolom, `Kode RM` sengaja kosong.
-  Kenapa: server lalu membangkitkan `BBH-<YY>-<P|L>-<NNN>` — sekaligus menguji
-  jalur auto-numbering, bukan hanya menerima nilai jadi.
-- `generate.py` — `HSH_ROWS` / `SEC_ROWS` memakai kode kategori yang benar-benar
-  ada di seed (`baby_needs`, `milk`, `food`, `stationery`, `medicine`,
-  `housekeeping`, `linen`; `elektronik-peralatan`, `mainan-rekreasi`).
-  Kenapa: importer resolve kategori lewat tabel, kode asal-asalan = ditolak.
-- `generate.py` — `VISIT_ROWS` memakai format `DD Bulan YYYY HH:MM` dengan nama
-  bulan Indonesia, bukan `YYYY-MM-DD HH:MM`. Kenapa: itu format yang diterima
-  parser visit; mencoba format ISO akan gagal validasi.
-- `generate.py` — `WH_ROWS` memakai satuan `unit` setelah 3 baris `botol`
-  **ditolak** validasi gudang. Kenapa: REFERENSI unit gudang tertutup
-  (pcs/unit/set/box/pak/lusin/gram/kg/liter) dan `botol` tidak termasuk.
-- `api-tests/fixtures/dummy-excel/README.md:1-18` — tabel berkas → segmen →
-  endpoint impor → jumlah baris. Kenapa: agar operator tidak menebak endpoint.
-- `api-tests/fixtures/dummy-excel/README.md:20-45` — bagian "Bagaimana header
-  dijamin sama" + perintah regenerasi lengkap (unduh template dengan token,
-  lalu `generate.py`). Kenapa: dummy bisa basi bila template berubah.
-- `api-tests/fixtures/dummy-excel/README.md:46-62` — **prasyarat** impor:
-  kategori hsh/sec wajib ada, gudang wh wajib terdaftar, fasilitas opsional
-  (NULL). Kenapa: dua kegagalan lapangan saat pengujian berasal dari sini.
-- `api-tests/fixtures/dummy-excel/README.md:63-88` — tabel format tanggal per
-  segmen + daftar enum yang dipakai. Kenapa: validasi segmen memakai enum
-  tertutup; salah satu nilai = seluruh baris ditolak.
-- `api-tests/fixtures/dummy-excel/README.md:89-101` — bukti verifikasi nyata
-  (validate 12/10/8/12/10; import created = jumlah baris, rejected 0) dan
-  perintah pembersihan. Kenapa: reviewer bisa mereproduksi tanpa bertanya.
-- `api-tests/README.md` — baris `fixtures/dummy-excel/` ditambahkan di blok
-  struktur. Kenapa: folder baru harus ditemukan dari indeks utama, bukan hanya
-  dari ingatan orang yang membuatnya.
+1. **Nama dobel 20 baris** — `Eka` ada di daftar nama pria *dan* wanita, jadi
+   `Eka Adnyana`/`Eka Baskara`/… muncul dua kali. Diperbaiki: `Eka` (wanita)
+   → `Elisa`.
+2. **Nama resident = nama visit** — generator memakai offset yang sama untuk
+   kedua pool. Terlihat seperti copy-paste bug pada dataset "real case".
+   Diperbaiki: visit memakai offset 180 (separuh pool yang tidak dipakai
+   resident), sehingga irisan = 0.
+
+Selain itu ditemukan **satuan tidak valid** yang akan menolak baris:
+`set` dipakai di item hsh (`Krayon`, `Baju bayi`) padahal daftar satuan hsh
+tidak memuat `set` (hanya ada di sec/wh). Diganti `box`/`lusin`.
+
+## Catatan Implementasi (Dev) — Revisi R-1..R-6
+
+- `generate.py:1-35` — docstring ditulis ulang: menjelaskan bentuk keluaran
+  per bulan dan **tiga keputusan owner** (30 baris, data-only, tanpa insert).
+  Kenapa: pembaca harus tahu ini disengaja, bukan kelalaian.
+- `generate.py:36-60` — `ROWS_PER_MONTH = 30` + `MONTHS` + `MONTH_NAMES_ID`.
+  Kenapa: satu konstanta mengendalikan skala; nama bulan Indonesia dipakai
+  karena parser visit menerima `DD Bulan YYYY HH:MM`.
+- `generate.py:112-118` — `name_stream(gender, offset)` mengembalikan 400
+  kombinasi (20 nama depan × 20 marga) lalu dirotasi. Kenapa: butuh 360 nama
+  unik per segmen tanpa menulis 360 literal.
+- `generate.py:120-130` — `RESIDENT_NAMES` interleave L/P; `VISIT_NAMES` pakai
+  **offset 180**. Kenapa: offset sama membuat nama resident = nama visit
+  (bug nyata yang ditemukan saat verifikasi).
+- `generate.py:` `FEMALE_FIRST` — `Eka` diganti `Elisa`. Kenapa: `Eka` juga ada
+  di `MALE_FIRST` → 20 nama dobel (bug nyata kedua).
+- `generate.py:` `HSH_ITEMS` — 30 item, satuan hanya dari
+  `plugins/hsh/schema/fields.yaml` (pcs/box/botol/pak/roll/unit/lusin/kg/gram/
+  liter/ml/kaleng). Kenapa: `set` sempat dipakai dan **tidak ada** di daftar
+  hsh → baris akan ditolak.
+- `generate.py:` `SEC_ITEMS` — 30 item; satuan hanya pcs/unit/set/box/pak/
+  roll/lusin/meter. Kenapa: daftar sec beda dari hsh; memakai daftar hsh akan
+  menolak `botol`/`kaleng`.
+- `generate.py:` `WH_ITEMS` + `WH_WAREHOUSE` — 30 produk, 3 gudang dummy
+  (Utama/Obat/Linen). Kenapa: gudang **fail-closed (O-2)** harus terdaftar
+  dulu; kategori/produk auto-create (O-1). Satuan wh tidak memuat `botol`.
+- `generate.py:` `resident_rows()` — `Kode RM` dikosongkan dan NIK dibangun
+  `5171<kec><DDMMYY><serial>` (16 digit). Kenapa: `Kode RM` kosong menguji
+  jalur auto-numbering server (`BBH-26-P/L-nnn`), dan NIK harus unik 360 kali.
+- `generate.py:` `hsh_rows()`/`sec_rows()` — periode = `f"2026-{month:02d}"`,
+  item diambil dari katalog tetap. Kenapa: kunci idempotensi importer
+  `(periode, item)`; item baru tiap bulan akan menggelembungkan master.
+- `generate.py:` `visit_rows()` — HP dibangun dari 5 prefix
+  (0812/0813/0821/0857/0878) + serial unik. Kenapa: `phone_e164` adalah kunci
+  dedup visitor; HP kembar = jumlah visitor < 360.
+- `generate.py:` `wh_rows()` — hari dibuat `2 + i % 26` sehingga tiap produk
+  punya tanggal berbeda. Kenapa: kunci idempotensi
+  `(gudang, produk, tanggal masuk, qty)` tidak boleh bertabrakan dalam satu bulan.
+- `generate.py:` `fill()` — menghapus semua sheet selain `DATA`, lalu
+  `ws.data_validations.dataValidation = []`. Kenapa dua-duanya: sheet
+  rujukan hilang tanpa membersihkan dropdown membuat Excel melaporkan berkas
+  rusak (dropdown menunjuk sheet yang sudah tidak ada).
+- `generate.py:` `fill()` — tetap `raise SystemExit` bila jumlah sel ≠ lebar
+  header. Kenapa: pergeseran satu kolom adalah kegagalan senyap yang baru
+  ketahuan saat impor.
+- `generate.py:` `main()` — `--months` (default `1-12`), indeks resident/visit
+  naik 30 per bulan. Kenapa: memungkinkan regenerasi sebagian bulan saat
+  debug tanpa kehilangan keunikan lintas bulan.
+- `generate.py:` `random.Random(month * 7919 + len(segment))` — seed tetap per
+  bulan+segmen. Kenapa: keluaran deterministik; regenerasi menghasilkan berkas
+  identik sehingga diff git tidak berisik.
+- `README.md:1-30` — pohon folder + total 60 berkas/1.800 baris + penjelasan
+  kenapa `DATA` saja aman (rujuk ke perilaku validator, bukan asumsi).
+- `README.md:` bagian "Karakter data" — tabel jaminan per segmen (NIK unik,
+  HP unik, kunci unik). Kenapa: reviewer bisa memeriksa klaim tanpa menjalankan
+  ulang generator.
+- `README.md:` bagian "Prasyarat" — kategori hsh/sec wajib ada (`--reseed`),
+  gudang wh fail-closed, fasilitas resident opsional. Kenapa: dua kegagalan
+  lapangan saat pengujian berasal dari sini.
+
+---
+
+## Riwayat versi pertama (usang, disimpan sebagai catatan)
+
+Versi awal WO-02 menghasilkan **5 berkas datar** (`dummy-resident.xlsx` dst.)
+dengan 12/10/8/12/10 baris dan sudah diuji impor nyata (created = jumlah baris,
+rejected 0) sebelum DB dibersihkan lagi. Berkas itu **dihapus** dan diganti
+struktur per bulan (R-1/R-2); angka dan bukti impor di atas tidak lagi berlaku
+untuk keluaran sekarang. Satu temuan dari versi lama tetap relevan dan
+dipertahankan: satuan gudang `botol` **ditolak** REFERENSI wh sehingga diganti
+`unit`.

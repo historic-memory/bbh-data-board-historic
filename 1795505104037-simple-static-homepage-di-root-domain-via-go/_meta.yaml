@@ -1,0 +1,16 @@
+id: "1795505104037"
+title: Simple Static Homepage di Root Domain (/) via Go
+created: "2026-11-24"
+updated_at: "2026-11-24T07:33:52Z"
+files:
+    - id: 01a20c72-0784-7d77-8a4b-844c9758bbb8
+      path: konteks.md
+      type: file
+      status: create
+      updated_at: "2026-11-24T07:29:04Z"
+    - id: 01a20c74-0558-74f1-955a-b99bde3ad2c1
+      path: wo-01-homepage.md
+      type: file
+      status: progress
+      updated_at: "2026-11-24T07:33:52Z"
+assets: []

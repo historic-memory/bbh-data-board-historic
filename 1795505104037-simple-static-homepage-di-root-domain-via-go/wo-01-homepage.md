@@ -1,7 +1,7 @@
 ---
 title: wo 01 homepage
 description: "Menyajikan homepage statis di path / dari Go (plugin pages)"
-status: progress
+status: complete
 created: "2026-11-24"
 updated: "2026-11-24"
 ---
@@ -38,6 +38,17 @@ Menyajikan homepage statis sederhana saat akses `https://bbh.rolldev.my.id/`
 - `GET /app/` → 200 SPA (tidak regressed).
 - `GET /healthz` → 200 JSON.
 - Tidak ada perubahan route API.
+
+### Bukti
+- Commit kode: `bbe6376` (`feat(pages): homepage statis di path / via
+  go:embed`) — 2 file, +78 baris, tanpa push.
+- `GET /` → 200 `text/html; charset=utf-8`, body memuat `href="/app/"`.
+- `GET /app/` → 200 SPA; aset `/app/assets/index-CbzXS9gG.js` → 200.
+- `GET /healthz` → 200 `{"status":"ok"}`.
+- Tanpa regresi: `/halaman-tidak-dikenal` → 200 index SPA; `/api/tidak-ada`
+  → 404 JSON; `/spa` → 301 `/app/`; `/doc.json` 200; `/swagger/index.html`
+  200; `/api/admin/residents` → 401 (route API asli tetap menang).
+- Swagger tidak diregenerasi (tidak ada endpoint API baru).
 
 ## Catatan
 - File `deploy/nginx/` DIBATALKAN — sudah dihapus. Solusi murni dari Go.

@@ -1,7 +1,7 @@
 ---
 title: konteks
 description: ""
-status: create
+status: complete
 created: "2026-11-24"
 updated: "2026-11-24"
 ---

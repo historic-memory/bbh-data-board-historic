@@ -3,17 +3,17 @@ title: Chatbot baru terkoordinasi ACP (Agent Client Protocol) untuk kerja dokume
 created: "2026-11-23"
 updated_at: "2026-11-23T22:54:49Z"
 files:
-    - id: 01a20c75-530f-7d67-8a65-0512f911421d
+    - id: 01a20c75-532a-7642-9f15-7b12fa81c92f
       path: notes.md
       type: file
       status: progress
       updated_at: "2026-11-24T00:00:00Z"
-    - id: 01a20c75-530f-7104-b8fb-d8dd1ea8f4b0
+    - id: 01a20c75-532a-7b4b-a10e-8ceac4e9db00
       path: spec.md
       type: spec
       status: draft
       updated_at: "2026-11-24T00:00:00Z"
-    - id: 01a20c75-530f-70af-8be7-83f5c7aa548a
+    - id: 01a20c75-532a-792f-af47-736f682beb40
       path: wos/01-cp1-container-goose-acp-smoke.md
       type: task
       status: planned

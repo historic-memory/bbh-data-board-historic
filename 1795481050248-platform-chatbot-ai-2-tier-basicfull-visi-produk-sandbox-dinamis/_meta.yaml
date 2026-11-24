@@ -2,5 +2,10 @@ id: "1795481050248"
 title: Platform chatbot AI 2-tier (Basic/Full) — visi produk sandbox dinamis
 created: "2026-11-23"
 updated_at: "2026-11-23T23:57:50Z"
-files: []
+files:
+    - id: 01a20c75-5311-723d-a01e-ba60d093d7bc
+      path: spec.md
+      type: spec
+      status: draft
+      updated_at: "2026-11-24T00:00:00Z"
 assets: []

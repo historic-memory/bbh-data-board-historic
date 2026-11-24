@@ -6,7 +6,7 @@ files:
     - id: 01a20707-9e35-7ed6-ac45-0fa880b2973f
       path: notes.md
       type: file
-      status: create
+      status: progress
       updated_at: "2026-11-23T21:44:32Z"
     - id: 01a20707-9b1d-7da3-b994-5b2c5ebfd368
       path: spec.md

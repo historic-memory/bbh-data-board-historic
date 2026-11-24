@@ -1,16 +1,17 @@
 id: "1795513709400"
-title: Repo Dummy Data 5 Cabang (Jan-Des 2026)
+title: repo dummy data 5 cabang jan des 2026
 created: "2026-11-24"
-updated_at: "2026-11-24T10:20:35Z"
+updated: "2026-11-24"
+updated_at: "2026-11-24T09:48:29Z"
 files:
-    - id: 01a20cf8-d880-734c-8d5a-f9a6d4901ac4
+    - id: 01a20d43-3b17-7e12-8b29-10092e459ce7
       path: konteks.md
       type: file
       status: complete
-      updated_at: "2026-11-24T10:20:35Z"
-    - id: 01a20cf8-d880-71ec-9e3b-a3ac877650e1
+      updated_at: "2026-11-24T00:00:00Z"
+    - id: 01a20d43-3b17-7cfd-9c65-a43403bf6da6
       path: wo-01-repo-generator.md
       type: file
       status: complete
-      updated_at: "2026-11-24T10:08:07Z"
+      updated_at: "2026-11-24T00:00:00Z"
 assets: []

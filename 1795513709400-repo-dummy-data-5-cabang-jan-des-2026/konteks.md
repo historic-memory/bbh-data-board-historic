@@ -54,10 +54,45 @@ updated: "2026-11-24"
   terdaftar (fail-closed), fasilitas boleh NULL.
 
 ## Pertanyaan terbuka (untuk WO, konfirmasi user)
-1. Jumlah baris per segmen/bulan/cabang — tetap 30?
-2. Unik global lintas cabang (NIK/HP) dengan awalan per cabang, atau unik
-   per cabang saja?
-3. Awalan nomor HP per cabang (disarankan, mis. +62-3xx dst)?
+1. ~~Jumlah baris per segmen/bulan/cabang — tetap 30?~~ Terjawab: **30**.
+2. ~~Unik global lintas cabang (NIK/HP) dengan awalan per cabang, atau unik
+   per cabang saja?~~ Terjawab: **unik per cabang**, tanpa awalan buatan.
+3. ~~Awalan nomor HP per cabang (disarankan)?~~ Terjawab: **prefix seluler
+   nyata per cabang** (`0812`, `0813`, `0821`, `0857`, `0878` untuk ibu;
+   `0856`, `0858`, `0877`, `0881`, `0895` untuk pengunjung), bukan `+62-3xx`.
+
+## Hasil (24 Nov 2026)
+
+WO-01 **complete**. Repo sudah ada, ter-push, dan terverifikasi.
+
+- Repo: `~/workspaces/bbh-dummy-data/` →
+  `https://github.com/AkasaTechDev/bbh-dummy-data` (private, `main`).
+- Isi: `generate.py`, `verify.py`, `validate-all.sh`, `branches/*.yaml` (5),
+  `data/<cabang>/2026-01-januari…2026-12-desember/{resident,hsh,sec,visit,wh}.xlsx`,
+  `README.md`, `.gitignore`.
+- 300 berkas / 9.000 baris / 3,1 MB; deterministik (regenerate → isi sel
+  identik).
+- Keunikan per cabang dipenuhi tanpa awalan buatan: prefix wilayah NIK
+  berbeda (5171/3471/3374/5271/3173), prefix HP berbeda, dan 20 nama
+  keluarga yang lepas antar cabang. Generator menolak profil yang
+  bertabrakan.
+- Verifikasi: `verify.py` **68/68 lulus**; `validate-all.sh` **300 berkas,
+  9.000 baris, 0 baris ditolak**; DB aplikasi tidak berubah
+  (`residents=0 visit_visits=0 hsh_entries=0 wh_batches=0 admins=20`).
+- Commit: `0935e4c` (generator) → `49c7b84` (data) → `8f95027` (README).
+- Repo `bbh-data-board` tidak tersentuh (working tree bersih).
+
+Prasyarat impor per instance cabang (detail di README repo data):
+
+1. Kategori hsh (`baby_needs`, `milk`, `food`, `stationery`, `medicine`,
+   `housekeeping`, `linen`) dan sec (`elektronik-peralatan`,
+   `mainan-rekreasi`) harus ada — pulihkan dengan
+   `console maintenance clean-data --yes --reseed` bila instance pernah
+   dibersihkan.
+2. Tiga gudang per cabang wajib terdaftar (fail-closed):
+   `Gudang Utama <Cabang> Dummy`, `Gudang Obat <Cabang> Dummy`,
+   `Gudang Linen <Cabang> Dummy`.
+3. Fasilitas resident opsional (nama tak terdaftar → `facility_id` NULL).
 
 ## Catatan
 - Eksekusi repo & generator = Dev Agent (bukan Manager).

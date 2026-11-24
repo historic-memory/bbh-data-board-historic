@@ -1,7 +1,7 @@
 ---
 title: konteks
-description: "Scope clean data per segment + rencana data dummy excel sesuai template import"
-status: create
+description: Scope clean data per segment + rencana data dummy excel sesuai template import
+status: complete
 created: "2026-11-24"
 updated: "2026-11-24"
 ---

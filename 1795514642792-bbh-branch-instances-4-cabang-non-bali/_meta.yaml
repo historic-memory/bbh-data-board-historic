@@ -1,7 +1,7 @@
 id: "1795514642792"
 title: BBH Branch Instances — 4 Cabang Non-Bali
 created: "2026-11-24"
-updated_at: "2026-11-24T10:18:14Z"
+updated_at: "2026-11-24T11:13:59Z"
 files:
     - id: 01a20d06-f0d6-7fae-84eb-e7c4949796f2
       path: konteks.md
@@ -11,6 +11,6 @@ files:
     - id: 01a20d08-db4c-7515-81bd-b22005a50291
       path: wo-01-branch-scaffold.md
       type: file
-      status: planned
-      updated_at: "2026-11-24T10:18:14Z"
+      status: complete
+      updated_at: "2026-11-24T11:13:59Z"
 assets: []

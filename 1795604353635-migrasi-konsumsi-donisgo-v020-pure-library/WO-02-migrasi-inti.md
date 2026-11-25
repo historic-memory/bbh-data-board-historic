@@ -103,4 +103,20 @@ Semua perubahan dikerjakan sebagai **satu commit atomik** (tidak ada keadaan set
 
 ## Review Manager
 
-(dikosongkan)
+**LULUS — WO-02 COMPLETE.** Dev: commit `e99477d` (244 file, +955/−4218), dok historic `500a0eb`, tanpa push, working tree bersih. Verifikasi spot-check Manager (independen, 2026-11-25):
+
+- **Struktur**: `go.mod:1` = `github.com/AkasaTechDev/bbh-data-board` ✅; `require donisgo v0.2.0` ✅; grep `donisgo/internal` di source (tanpa `.kilo`) = **0** ✅; `internal/` **terhapus** ✅; `plugins/plugin_registry/` **terhapus** (O-B dieksekusi) ✅.
+- **H-3 varian A dipilih dengan benar**: `cmd/server/main.go:57-73` — `Plugins: [...]` memuat `healthzplugin.New()` paling awal dan `pagesplugin.New()` sebagai elemen **TERAKHIR**; larangan pola template didokumentasikan sebagai komentar `main.go:40-51` ✅.
+- **H-2 rumah baru `/healthz`**: `plugins/healthz/plugin.go` (baru) — curl runtime `{"status":"ok"}` 200 ✅.
+- **H-1**: `migrations/postgres/.gitkeep` ada ✅; `migrate list` → `core: current=0 pending=0`; **`migrate up` POLOS exit 0** (bukan `no migration paths`) ✅ — regresi operasional tertangani dengan benar.
+- **Runtime AC-1** (Manager boot sendiri `/tmp/server-wo02` di container): `/healthz` 200, `/spa` 301→`/app/`, `/app/` 200, `/api/nope` 404-JSON, `/api/admin/residents` 401 — semua cocok laporan dev. Server uji Manager sudah dibersihkan (`pkill server-wo02`).
+- **Test suite penuh** `go test -count=1 ./...`: satu-satunya FAIL = `TestProxyPath` — **identik dengan baseline WO-01 AC-7c** (pre-existing, bukan regresi migrasi) ✅.
+- **Bookkeeping DB**: `migration_targets` (core) = 1, `migrations` = 33 — tidak ada eksekusi ulang migrasi ✅.
+- Build + vet di container (lingkungan kanonik): OK ✅.
+
+**Catatan review:**
+1. **AC-4 anomali data diterima sebagai jujur & tepat metode**: `n_live_tup` memang estimasi stale; sentinel-resistance test (sisip baris → jalankan suite penuh → selamat) adalah bukti yang benar bahwa pengosongan `residents`/`wh_*` terjadi **sebelum** WO-02 (churn `n_tup_ins/del` + `mothers` masih 10 — `clean-data --yes` akan menghapus mothers juga). Kesimpulan "bukan akibat migrasi" SAH. Manager mencatat sebagai tugas kecil: state data dev `residents=0` kini baseline resmi (dashboard kosong normal).
+2. **Swagger module path lama** — sesuai rencana, re-baseline di WO-04 (bukan blocker); H-6 tetap mengikat (regen di container, jangan host).
+3. Commit tunggal atomik (rename+rewrite+hapus+wiring = `e99477d`) sesuai prinsip WO ✅.
+
+Status: **WO-02 complete**. Prasyarat WO-03 (auth instans) terpenuhi — lingkup kecil: 5 call-site / 2 file di `plugins/auth` (`middleware/middleware.go:146`, `handlers/auth.go:44,140,210,211`), bukti dari WO-01 AC-5.

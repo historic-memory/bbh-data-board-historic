@@ -24,8 +24,8 @@ Topic: `1795604353635` · SPEC: `spec.md` (draft → disetujui owner 2026-11-25)
 | WO | Judul | Status | Prasyarat | Commit kode | Dok historic |
 |---|---|---|---|---|---|
 | WO-01 | Inventarisasi & pemetaan (read-only) | complete (lulus review; O-B disetujui) | — | (tanpa kode) | `38b9ee3` + review `cabe109` |
-| WO-02 | Migrasi inti: module rename + hapus internal/ + cmd ala template | pending (SIAP — prasyarat lulus) | — | — | — |
-| WO-03 | Migrasi auth ke API instans (D-4) | pending | WO-02 | — | — |
+| WO-02 | Migrasi inti: module rename + hapus internal/ + cmd ala template | complete (review Manager LULUS) | — | `e99477d` | `500a0eb` + review `cabe109`→terbaru |
+| WO-03 | Migrasi auth ke API instans (D-4) | pending (SIAP) | WO-02 | — | — |
 | WO-04 | Verifikasi & dokumentasi + re-review WO multi-DB (D-5) | pending | WO-03 | — | — |
 
 Urutan eksekusi: WO-01 → WO-02 → WO-03 → WO-04 (linear; tidak ada yang bisa paralel karena semuanya menyentuh tree yang sama).
@@ -40,6 +40,16 @@ Urutan eksekusi: WO-01 → WO-02 → WO-03 → WO-04 (linear; tidak ada yang bis
 - Baseline: swagger 141/209/248; build/vet OK; 1 test merah pre-existing (`TestProxyPath`, bukan regresi migrasi).
 - **BLOCKER O-B (DISELESAIKAN, owner 2026-11-25: SETUJU)** — swap `plugins/plugin_registry` → library dieksekusi di WO-02.
 - **7 hazard utk WO-02..04**: H-1 default `migrate --plugin` `all`→`core` + tanpa dir `migrations/` → **solusi WO-02: buat `migrations/postgres/` kosong (.gitkeep) + koreksi docs**; **H-2 `/healthz` kehilangan rumah** → WO-02 pindah ke plugin kecil/pages (konsumen endpoint/federation/vite/client.ts tak boleh putus); **H-3 🔴 `EnsurePluginLast` setelah `app.New` TIDAK me-register route (pola README template bugged) → WO-02 WAJIB varian A (pages terakhir di `Config.Plugins`) atau B (pre-register sebelum New)** + usulan issue upstream ke `donisgo-template` (WO-04); H-4 generator `plugin new` jadi `console/plugin.go` app; H-5 `TRUSTED_PROXIES` default trust-none (dampak nol, dokumentasi WO-04); H-6 swagger re-baseline di container (WO-04); H-7 koreksi 104→55 di SPEC (WO-04). **WO-02 SIAP EKSEKUSI.**
+
+## Hasil WO-02 (2026-11-25, review Manager LULUS — kode `e99477d`, dok `500a0eb`)
+
+- **Migrasi inti tuntas ATOMIK**: 244 file +955/−4218; `go.mod` = `github.com/AkasaTechDev/bbh-data-board` + `require donisgo v0.2.0`; grep `donisgo/internal` source = 0; `internal/` + `plugins/plugin_registry/` terhapus (O-B dieksekusi).
+- **H-3 varian A**: `pages` elemen TERAKHIR `app.Config.Plugins` (`cmd/server/main.go:57-73`); larangan pola template terdokumentasi di komentar main.go. **H-2**: `/healthz` rumah baru `plugins/healthz` (200). **H-1**: `migrations/postgres/.gitkeep` + `migrate up` POLOS exit 0; docs dikoreksi (README/AGENT/DONISGO).
+- **H-4**: generator `plugin new` → `console/` milik app (plugin.go + plugin_test.go).
+- Runtime: `/healthz` 200, `/` html, `/app/`+aset 200, `/spa` 301, `/api/*` 404-JSON, API 401; login root 200; RBAC utuh; CLI sampling (auth/endpoint/hsh/sso/maintenance) jalan; idempoten `down/up/up` (0 applied ke-2); bookkeeping `migration_targets(core)=1`, `migrations=33` tanpa eksekusi ulang.
+- Test suite penuh `go test -count=1`: hanya `TestProxyPath` FAIL = pre-existing baseline (bukan regresi).
+- **AC-4 anomaly accepted**: pengosongan `residents`/`wh_*` terjadi SEBELUM WO-02 (bukti sentinel-resistance + churn + mothers masih 10); state data dev `residents=0` kini baseline resmi.
+- Sisa untuk WO-04: swagger re-baseline (module path baru), `DONISGO.md` banner usang + koreksi `internal/admin` referensi, TRUSTED_PROXIES dokumentasi, issue upstream H-3 ke donisgo-template, re-review multi-DB.
 
 ## Ringkasan per WO (rincian AC di file masing-masing)
 

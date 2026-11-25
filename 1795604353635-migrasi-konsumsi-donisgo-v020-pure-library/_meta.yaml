@@ -1,0 +1,11 @@
+id: "1795604353635"
+title: Migrasi konsumsi donisgo v0.2.0 pure library
+created: "2026-11-25"
+updated_at: "2026-11-25T10:59:13Z"
+files:
+    - id: 01a2125d-2d2e-7043-aa1e-133a40c7b036
+      path: notes.md
+      type: file
+      status: progress
+      updated_at: "2026-11-25T00:00:00Z"
+assets: []

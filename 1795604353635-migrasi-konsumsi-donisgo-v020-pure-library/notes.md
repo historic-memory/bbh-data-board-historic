@@ -74,10 +74,22 @@ Tanggal riset: 2026-11-25. Sumber: `https://pkg.go.dev/github.com/rolldone/donis
 7. `DONISGO.md` perlu di-usangkan/di-repoint ke pkg.go.dev + README starter.
 8. Git: repo ini dulunya di-push ke remote `donisgo` (insiden reset 2026-10-29 tercatat di memori); pasca-rename module repo ini murni aplikasi konsumen.
 
-## Pertanyaan terbuka untuk owner (sebelum WO)
+## Pertanyaan terbuka untuk owner (sebelum WO) — DIJAWAB owner 2026-11-25
 
-- O-1: Nama module baru untuk repo bbh? (usulan `github.com/AkasaTechDev/bbh-data-board`)
-- O-2: Strategi plugin `pages`: pertahankan lokal atau adopsi milik `donisgo-template`?
-- O-3: `plugins/plugin_registry` lokal: ganti ke paket library, atau ada divergensi lokal yang harus dipertahankan?
-- O-4: Timing migrasi auth instance API ( Deprecated tetap aman) — kerjakan di WO ini atau tunda?
-- O-5: Review ulang strategi WO multi-DB (topic `1792765876397`) — refactor kini di sisi library; apakah WO di-revisi/re-scoped?
+- O-1: **DIJAWAB ("Ok")** — module baru = `github.com/AkasaTechDev/bbh-data-board`.
+- O-2: **DIJAWAB ("ya, itu kan emang bukan bagian dari internal")** — plugin `pages` TETAP milik bbh; bukan bagian internal, tidak diadopsi dari template.
+- O-3: **DIJAWAB ("yaa")** — `plugins/plugin_registry` lokal diganti paket library.
+- O-4: **DIJAWAB ("yaa")** — migrasi auth ke API instans dikerjakan dalam migrasi ini.
+- O-5: **DIJAWAB ("ya")** — re-review WO multi-DB (`1792765876397`) dikerjakan di topic ini.
+
+## Tambahan owner: `donisgo-template` = cetakan bentuk bbh
+
+Owner: *"kamu bisa ngecek ada donisgo-template kan, nah sebenarnya sama seperti project ini, cuma internal tidak ada."* Terkonfirmasi via repo `rolldone/donisgo-template` (v0.1.0, rilis 2026-11-25, konsumsi donisgo v0.2.0):
+- `cmd/server` tipis (boot logic di `app` donisgo) + `cmd/console` (migrate/seed dari library + generator `plugin new` di `console/plugin.go` milik starter).
+- `plugins/pages` milik STARTER (SPA `./sub_app/webapp/dist`, redirect `/spa`→`/app`, proxy `HOMEPAGE_URL`, wildcard `NoRoute`) — WAJIB `plugins.Registry.EnsurePluginLast`.
+- Kontrak plugin & registrasi: `app.New(app.Config{Plugins: []plugins.Plugin{...}})` (prefer) / hook `app.Options.RegisterPlugins` (deprecated); CLI: `console.RegisterAdditionalPlugins([]plugins.Plugin{...})` + `console.Execute()`.
+- Env: `APP_NAME`, `APP_ENV`, **`PORT`** (default 8080) — bbh memakai `APP_PORT`; perlu verifikasi di WO-01. `TRUSTED_PROXIES` (kosong = trust-none).
+- Migrasi: core `migrations/{db_type}` + plugin `plugins/{id}/migrations/{db_type}`; tabel bookkeeping `migrations`/`migration_targets`; dirty → tolak.
+- DB: `db.Open(db.ConfigFromEnv())` + `db.WithTransaction(ctx, gdb, fn)`; inject handle, jangan global.
+
+Keputusan D-1..D-6 terkunci di spec.md; **SPEC draft dibuat** (`spec.md`, status draft) dengan rencana 4 WO — menunggu review owner sebelum `work-order.md` dibuat.

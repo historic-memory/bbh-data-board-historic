@@ -22,7 +22,7 @@ Konteks: donisgo rilis `v0.2.0` (2026-11-25) sebagai **pure library BREAKING** �
 
 ## Baseline (saat ini)
 - `go.mod` = `module github.com/rolldone/donisgo` (repo bbh = repo framework, monorepo pra-v0.1.0).
-- `internal/*` lengkap; **104 file Go** meng-import `donisgo/internal/...`.
+- `internal/*` lengkap; **55 file Go** meng-import `donisgo/internal/...` (koreksi H-7 dari angka awal 104 yang ikut menghitung salinan `.kilo/worktrees/` di luar repo).
 - `plugins/` 14 folder: auth, dashboard, endpoint, federation, hsh, ingest, maintenance, pages, plugin_registry, resident, sec, visit, warehouse (plugin_registry = errors.go/registry.go/registry_test.go).
 - `cmd/server` + `cmd/console` milik repo; bootstrap di `internal/app/bootstrap.go` (registrasi plugin + `/healthz`).
 - Migrasi hanya di `plugins/<id>/migrations/postgres/` (auth memegang tabel framework: admins/RBAC/endpoints).
@@ -75,7 +75,7 @@ Catatan mekanis penting: module rename mengubah SEMUA import (`github.com/rolldo
 
 ## Rencana Work Order (draf — 4 WO, partial principle)
 - **WO-01 — Inventarisasi & pemetaan (read-only)**: daftar file `internal/*` lengkap + mapping tabel di atas diverifikasi satu per satu; diff `plugins/plugin_registry` lokal vs library v0.2.0; daftar pemakaian API `auth` package-level per plugin; cek env port (`APP_PORT` vs `PORT`) di sumber `app` v0.2.0; cek go directive library vs bbh (go 1.25.3); baseline swagger + `go version -m bin/*` (stamp VCS). Output = tabel bukti di dok WO + laporan divergensi (D-3, `internal/admin`) ke owner.
-- **WO-02 — Migrasi inti (atomik)**: module rename (D-1) + `require donisgo v0.2.0` + rewrite 104 import + hapus `internal/` yang terganti library + bootstrap ke `cmd/server` + `cmd/console` pola template (+ generator `plugin new`) + swap plugin_registry (D-3) + registrasi eksplisit 13 plugin + `EnsurePluginLast(pages)`. Gates: `go build/vet/test ./...` hijau; server boot + `/healthz` + `/app/` + `/` homepage + API 401/404 tetap; `migrate up/down/up` idempotent; CLI `auth`/`endpoint`/`sso`/`maintenance` jalan; Bruno smoke PASS.
+- **WO-02 — Migrasi inti (atomik)**: module rename (D-1) + `require donisgo v0.2.0` + rewrite 55 import (H-7) + hapus `internal/` yang terganti library + bootstrap ke `cmd/server` + `cmd/console` pola template (+ generator `plugin new`) + swap plugin_registry (D-3) + registrasi eksplisit 13 plugin (varian A: `pages` terakhir di `Config.Plugins`).
 - **WO-03 — Migrasi auth ke API instans (D-4)**: `plugins/auth` memakai `auth.New(auth.ConfigFromEnv())` satu titik, inject ke service; hapus semua pemakaian wrapper deprecated di kode bbh; test isolasi dua instance; fail-closed secret kosong tetap tertegak.
 - **WO-04 — Verifikasi & dokumentasi + re-review multi-DB (D-5)**: `build.sh --verify-docs` re-baseline swagger (module path baru); Bruno smoke + RBAC e2e (viewer/limited); Docker build + compose (APP_PORT/PORT sesuai temuan WO-01); `.env.example` (TRUSTED_PROXIES, port); README repoint (dokumentasi app-level ala template) + `DONISGO.md` di-usangkan (repoint ke pkg.go.dev + README template); tulis re-review WO multi-DB (posisi refactor kini upstream library — rekomendasi disimpan di dok WO); housekeeping remote git.
 

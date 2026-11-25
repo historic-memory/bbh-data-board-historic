@@ -59,7 +59,8 @@ Tanggal riset: 2026-11-25. Sumber: `https://pkg.go.dev/github.com/rolldone/donis
 
 - Workspace **masih monorepo lama pra-v0.1.0**: `go.mod` = `module github.com/rolldone/donisgo` (repo bbh = repo framework yang sama, remote `donisgo` sudah tidak terpasang — hanya `origin` = `AkasaTechDev/bbh-data-board`).
 - `internal/*` lengkap (app, pluginloader, console, db, auth, events, keydb, mail, storage, secrets, uuid, plugins, admin, ...), `cmd/server` + `cmd/console` ada.
-- **104 file Go** meng-import `donisgo/internal/...`.
+- **55 file Go** meng-import `donisgo/internal/...` (koreksi H-7: angka awal "104" ikut menghitung salinan
+  `.kilo/worktrees/` yang bukan bagian repo).
 - `plugins/` 14 folder: auth, dashboard, endpoint, federation, hsh, ingest, maintenance, pages, plugin_registry (errors.go/registry.go/registry_test.go), resident, sec, visit, warehouse (+ plugin_registry juga di internal).
 - `DONISGO.md` di repo = dokumentasi monorepo (usang terhadap v0.2.0).
 

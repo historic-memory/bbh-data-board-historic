@@ -1,12 +1,15 @@
 ---
 title: Temuan riset donisgo v0.2.0 pure library
-description: "Hasil cek pkg.go.dev + CHANGELOG donisgo v0.2.0 (pure library, breaking) dan status monorepo bbh-data-board; dasar draft SPEC migrasi."
-status: progress
+description: Hasil cek pkg.go.dev + CHANGELOG donisgo v0.2.0 (pure library, breaking) dan status monorepo bbh-data-board; dasar draft SPEC migrasi.
+status: complete
 created: "2026-11-25"
 updated: "2026-11-25"
-tags: [donisgo, migrasi, library, framework]
+tags:
+    - donisgo
+    - migrasi
+    - library
+    - framework
 ---
-
 # Temuan Riset: donisgo v0.2.0 (Pure Library)
 
 Tanggal riset: 2026-11-25. Sumber: `https://pkg.go.dev/github.com/rolldone/donisgo@v0.2.0` + `CHANGELOG.md` tag `v0.2.0`.

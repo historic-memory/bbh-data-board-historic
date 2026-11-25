@@ -1,12 +1,15 @@
 ---
 title: work-order
-description: "Master index Work Order migrasi bbh-data-board ke donisgo v0.2.0 pure library (bentuk donisgo-template, tanpa internal/)."
-status: progress
+description: Master index Work Order migrasi bbh-data-board ke donisgo v0.2.0 pure library (bentuk donisgo-template, tanpa internal/).
+status: complete
 created: "2026-11-25"
 updated: "2026-11-25"
-tags: [donisgo, migrasi, work-order, master-index]
+tags:
+    - donisgo
+    - migrasi
+    - work-order
+    - master-index
 ---
-
 # Work Order — Migrasi bbh-data-board ke donisgo v0.2.0
 
 Topic: `1795604353635` · SPEC: `spec.md` (draft → disetujui owner 2026-11-25) · Dibuat: 2026-11-25

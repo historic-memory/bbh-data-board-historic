@@ -345,4 +345,21 @@ tidak ada yang menghalangi WO-02 secara teknis begitu O-B diputuskan.
 
 ## Review Manager
 
-(dikosongkan)
+**LULUS dengan 1 blocker keputusan (O-B) — 2026-11-25.** Dev: commit dok historic `38b9ee3`, working tree kode bersih, tanpa perubahan kode ✅ (sesuai lingkup read-only).
+
+Verifikasi spot-check Manager (independen, hari yang sama):
+- `grep -rln "donisgo/internal/" --include="*.go" . | grep -v .kilo` → **55 file** ✅ (koreksi 104→55 sah; 104 terinflasi worktree `.kilo/laced-surprise`).
+- `grep APP_HOST|APP_PORT --include="*.go"` → **0 hasil** ✅ (AC-4 tegas: hanya `PORT` via gin; compose sudah suntik `PORT: "8080"`; tidak ada perubahan env).
+- `plugin_registry` importir nyata di luar paketnya → **0** ✅ (3 match grep = package declaration milik paket itu sendiri; klaim "scaffold mati" benar).
+- `ls -d migrations` → **tidak ada** ✅ (H-1 valid: `migrate up` tanpa flag akan gagal karena default library `core`).
+- `go.mod` masih `module github.com/rolldone/donisgo` ✅ (baseline konsisten).
+
+Penilaian AC: AC-1 ✅ (tabel 12 paket/31 file berbukti; temuan `mail` 0 importir + `pluginloader` bbh-specific + `console/plugin.go` pindah tangan = input langsung WO-02). AC-2 ✅ prosedur fail-loud ditegakkan dengan benar — divergensi tekstual dilaporkan, tidak ditukar diam-diam; bukti normalisasi menunjukkan kode executable identik. AC-3 ✅ O-A ditutup (`internal/admin` fiktif, hanya koreksi 2 baris `DONISGO.md` di WO-04). AC-4 ✅ rantai bukti bootstrap→gin→PORT meyakinkan. AC-5 ✅ 5 call-site / 2 file — lingkup WO-03 kecil dan jelas. AC-6 ✅ klasifikasi tetap-vs-inject rapi (`keydb.Init` & `storage.NewStore` bootstrap → `app.Config.KeyDB`/`.Store`). AC-7 ✅ baseline lengkap (binari, swagger 141/209/248, 1 test merah pre-existing `TestProxyPath` — dicatat bukan regresi migrasi). AC-8 ✅ blocker+hazard dipetakan.
+
+**Temuan paling berharga: H-3** — pola `app.New` dulu → `EnsurePluginLast` TIDAK me-register route `pages` (bukti empiris A/B/C). Konsekuensi:
+1. WO-02 **wajib** pakai varian A (pages sebagai elemen terakhir `app.Config.Plugins`) atau varian B (pre-register ke default registry sebelum `New`) — bukan pola README `donisgo-template`.
+2. Ini bug dokumentasi **upstream `donisgo-template`** — Manager usulkan issue/PR kecil ke repo template setelah migrasi bbh selesai (terpisah dari topic ini; catat di WO-04 housekeeping).
+
+Catatan review tambahan: laporan menyebut "route `/` homepage menangkap exact `/`" menyebabkan `TestProxyPath` merah — koreksi kecil: itu perilaku `homepage.html` WO-01 topic `1795505104037` yang **disengaja** (exact-`/` dilayani homepage, bukan proxy). Konsisten dengan H-7 (angka 104→55 dikoreksi WO-04).
+
+Status WO-01: **selesai dijalankan, lulus review; WO-02 tertahan keputusan O-B owner** (swap `plugin_registry` → library: kode identik, 0 importir, rekomendasi Manager = SETUJU swap).

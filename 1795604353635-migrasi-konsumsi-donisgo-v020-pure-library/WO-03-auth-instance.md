@@ -73,4 +73,16 @@ Urutan aman terbukti dari sumber library: `app/bootstrap.go:474-492` → `attach
 
 ## Review Manager
 
-(dikosongkan)
+**LULUS — WO-03 COMPLETE.** Dev: commit `c495e2c` (5 file, +202/−9), dok historic `e42314d`, tanpa push. Verifikasi spot-check Manager (independen, 2026-11-25):
+
+- `grep auth.New(` di source → **1 titik konstruksi** `plugins/auth/plugin.go:65` (2 hit lain = unit test) ✅ AC-1.
+- **Klaim deviasi sadar TERVERIFIKASI di sumber library**: `auth/config.go` v0.2.0 — `ConfigFromEnv()` memang memakai fallback insecure (`"change-me-access-secret"` dst. via `getEnv(..., default)`) bila env kosong → `auth.New` TIDAK error. Tanpa guard dev, AC-3 (fail-closed) pasti gagal. **Deviasi DIADILI: SAH dan WAJIB** — guard eksplisit `AUTH_JWT_SECRET` + `JWT_ACCESS_SECRET` kosong → error keras; env legacy utuh (`TestBuildTokenAuth_LegacyAccessSecret` PASS). Ini perbaikan keamanan riil, bukan penyimpangan.
+- **Desain penyimpanan instance DIADILI: SETUJU** — `SetTokenAuth`/`TokenAuth` di paket `services` alih-alih parameter tambahan: `middleware.RequirePermission(svc, perm)` dipakai 9 plugin lain; injeksi parameter = puluhan call-site di luar lingkup WO-03. Signature publik tak berubah → benar secara rekayasa (prinsip: lingkup minimum per WO).
+- Test eksplisit dijalankan Manager: `TestBuildTokenAuth_FailClosed` + `TestBuildTokenAuth_FailClosedFromDotEnv` + `TestInstances_IsolatedSecrets` + `TestBuildTokenAuth_LegacyAccessSecret` = **4/4 PASS** ✅ AC-3/AC-4.
+- Grep wrapper deprecated di source (excl `.kilo` & module cache) = **0** ✅ AC-5.
+- Runtime: boot server Manager sendiri → `POST /api/admin/login` root = 200 (token HS256 dari instance baru) ✅ AC-2.
+- `portalsso` diperiksa dev & dikonfirmasi nol keterkaitan util token (`authservices.New` + `RequirePermission` saja) — diterima, tidak ada STOP.
+- **Temuan gofmt debt (27 file pra-ada sisa WO-02) → diterima sebagai usulan**: commit `style: gofmt` terpisah SEBELUM WO-04 dieksekusi (WO-04 akan regen swagger; diff harus bersih dulu). Ditambahkan ke lingkup WO-04 §F housekeeping.
+- Artefak uji dibersihkan (`/tmp/seccheck`, admin uji soft-delete) ✅; `.env.example` tidak perlu berubah ✅.
+
+Status: **WO-03 complete**. Prasyarat WO-04 terpenuhi. Sisa untuk menutup topik: WO-04 (swagger re-baseline, docs/TRUSTED_PROXIES/DONISGO.md banner, Bruno regresi + RBAC sampling, issue upstream H-3, re-review multi-DB D-5, housekeeping gofmt).

@@ -25,8 +25,8 @@ Topic: `1795604353635` · SPEC: `spec.md` (draft → disetujui owner 2026-11-25)
 |---|---|---|---|---|---|
 | WO-01 | Inventarisasi & pemetaan (read-only) | complete (lulus review; O-B disetujui) | — | (tanpa kode) | `38b9ee3` + review `cabe109` |
 | WO-02 | Migrasi inti: module rename + hapus internal/ + cmd ala template | complete (review Manager LULUS) | — | `e99477d` | `500a0eb` + review `cabe109`→terbaru |
-| WO-03 | Migrasi auth ke API instans (D-4) | pending (SIAP) | WO-02 | — | — |
-| WO-04 | Verifikasi & dokumentasi + re-review WO multi-DB (D-5) | pending | WO-03 | — | — |
+| WO-03 | Migrasi auth ke API instans (D-4) | complete (review Manager LULUS) | — | `c495e2c` | `e42314d` |
+| WO-04 | Verifikasi & dokumentasi + re-review WO multi-DB (D-5) | pending (SIAP — WO terakhir) | WO-03 | — | — |
 
 Urutan eksekusi: WO-01 → WO-02 → WO-03 → WO-04 (linear; tidak ada yang bisa paralel karena semuanya menyentuh tree yang sama).
 
@@ -50,6 +50,14 @@ Urutan eksekusi: WO-01 → WO-02 → WO-03 → WO-04 (linear; tidak ada yang bis
 - Test suite penuh `go test -count=1`: hanya `TestProxyPath` FAIL = pre-existing baseline (bukan regresi).
 - **AC-4 anomaly accepted**: pengosongan `residents`/`wh_*` terjadi SEBELUM WO-02 (bukti sentinel-resistance + churn + mothers masih 10); state data dev `residents=0` kini baseline resmi.
 - Sisa untuk WO-04: swagger re-baseline (module path baru), `DONISGO.md` banner usang + koreksi `internal/admin` referensi, TRUSTED_PROXIES dokumentasi, issue upstream H-3 ke donisgo-template, re-review multi-DB.
+
+## Hasil WO-03 (2026-11-25, review Manager LULUS — kode `c495e2c`, dok `e42314d`)
+
+- **Migrasi auth ke API instans tuntas**: 1 titik konstruksi `auth.New(auth.ConfigFromEnv())` di `plugins/auth/plugin.go:65` (dari `buildTokenAuth`); 5 call-site wrapper deprecated diganti method instance; grep wrapper di source = 0; signature publik tidak berubah → 9 plugin lain tidak tersentuh.
+- **Deviasi sadar SAH (adili Manager)**: `ConfigFromEnv()` library punya fallback insecure (`change-me-*`) → tanpa guard, AC-3 pasti gagal. Guard eksplisit (`AUTH_JWT_SECRET` & `JWT_ACCESS_SECRET` kosong → error) = perbaikan keamanan riil; env legacy tetap didukung (`TestBuildTokenAuth_LegacyAccessSecret`).
+- **Desain penyimpanan instance SETUJU (adili Manager)**: `SetTokenAuth`/`TokenAuth` di paket `services` alih-alih parameter — menghindari puluhan call-site di luar lingkup.
+- Test 4/4 PASS (fail-closed ×2 + isolasi instance + legacy); runtime login root 200 via instance baru; token lama pre-change tetap valid; RBAC regression (viewer 200/403) lulus; CLI auth jalan.
+- **Temuan baru → WO-04**: gofmt debt 27 file pra-ada (sisa rewrite WO-02) → commit `style: gofmt` terpisah SEBELUM regen swagger.
 
 ## Ringkasan per WO (rincian AC di file masing-masing)
 

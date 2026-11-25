@@ -1,7 +1,7 @@
 id: "1795604353635"
 title: Migrasi konsumsi donisgo v0.2.0 pure library
 created: "2026-11-25"
-updated_at: "2026-11-25T13:31:21Z"
+updated_at: "2026-11-25T13:50:59Z"
 files:
     - id: 01a21265-b639-7d88-8647-8c436c5ff47b
       path: WO-01-inventarisasi-pemetaan.md
@@ -31,8 +31,8 @@ files:
     - id: 01a21262-d818-7a37-b9ac-55f38896de29
       path: spec.md
       type: spec
-      status: progress
-      updated_at: "2026-11-25T13:31:21Z"
+      status: complete
+      updated_at: "2026-11-25T13:50:59Z"
     - id: 01a21265-b639-76d8-83ac-20ed34c76c84
       path: work-order.md
       type: file

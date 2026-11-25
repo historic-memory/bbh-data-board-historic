@@ -181,4 +181,25 @@ Ref: `spec.md` §Perubahan perilaku 4–6, D-5, D-6. Prasyarat: WO-03 complete.
 
 ## Review Manager
 
-(dikosongkan)
+**LULUS — WO-04 COMPLETE. TOPIK MIGRASI TUNTAS.** Dev: `fafafd8` (gofmt terpisah) + `af73b4f` (WO-04), dok historic `3490295`, tanpa push. Verifikasi spot-check Manager (independen, 2026-11-25):
+
+- **AC-1**: `docs/swagger/swagger.json` dihitung sendiri = **141 paths / 209 ops / 248 defs** — identik baseline WO-01 (nol regresi dokumentasi); `rolldone` di definitions = **0** ✅. Regenerasi di container (lingkungan kanonik) ✅ H-6.
+- **AC-6**: `gofmt -l` di container = **kosong** (0 file) ✅; commit `style: gofmt` terpisah `fafafd8` ✅.
+- **AC-2**: `/healthz` 200 dari host ✅; Dockerfile/compose bersih dari `internal/`.
+- **Sisa 50 kemunculan `rolldone` di kode = SAH**: itu import framework ke library yang di-pin (`github.com/rolldone/donisgo/{plugins,db,secrets,...}`) — bukan sisa monorepo. Tidak perlu dibersihkan; berbeda dengan `internal/` yang salah.
+- **AC-4**: Bruno smoke 13/36 PASS + RBAC sampling (viewer 200/403, limited group dashboard 12/12) — diterima.
+- **AC-7**: data uji dibersihkan (verified count=0) ✅.
+
+**Adili temuan besar (temuan #1): `1792765876397` TIDAK ADA — koreksi terhadap dokumen topic ini.**
+Manager verifikasi langsung: `ls .historic/` + `.historic/.database/` = **tidak ada** topic itu; bukti di `SPEC.md` topic federasi `1793013271539:14` — arah multi-DB terpusat **dibatalkan owner** (WO-15 destroy: rollback migrasi, potong commit `1f5a9b2`, hapus topic). Konsekuensi:
+1. D-5 dalam topic ini **terbentur realita**: target re-review (WO multi-DB) sudah dihancurkan. Bagian §E kini bukan memilih cara akses banyak DB, melainkan **menutup kebutuhan yang sudah tidak ada**.
+2. **Keputusan §E: usulan dev Opsi 3 (tunda) diterima Manager** — federasi instance menyelesaikan kebutuhan via HTTP (plugin `endpoint` + `federation`, WO-01..02 topic itu complete); membangun engine migrate sendiri = mengembalikan duplikasi ±4.218 baris yang baru dihapus WO-02. Gap A–E tetap terdokumentasi di dok WO bila arah berubah kelak.
+3. **Dokumen yang perlu disesuaikan** (perbaikan kecil): D-5 di `spec.md` & ringkasan master index diberi catatan penutup — "target re-review sudah di-destroy owner; keputusan akhir = tunda (Opsi 3), arah aktif = federasi instance".
+
+**Adili temuan #2 (jebakan swag)**: 2 jebakan nyata (`analysis_apply.go` blank-var + nama tipe baru; `record_write.go:181` path lama) diterima — pola swag berulang (3x terdokumentasi) dan sudah ditangani benar.
+
+**Adili temuan #3 (gotcha Bruno)**: diterima — catatan untuk keputusan kecil owner (bisa jadi patch kecil tanpa WO per preferensi fix kecil: ubah `{{process.env.BBH_TOKEN}}` ke var biasa di `environments/Local.bru`).
+
+**Catatan `go.mod` godotenv indirect→direct**: diterima (konsekuensi sah test WO-03 meng-import langsung).
+
+Status akhir: **WO-01..04 semua complete → migrasi ke donisgo v0.2.0 pure library SELESAI**. Rekap kode: `e99477d` (inti, 244 file), `c495e2c` (auth instans), `fafafd8` (gofmt), `af73b4f` (verifikasi/docs). Bahan keputusan owner pasca-topik: (a) push 4 commit ke `origin/master`; (b) kirim draft issue H-3 ke `donisgo-template`; (c) konfirmasi penutupan (close) topic ini; (d) patch kecil Bruno env (opsional).

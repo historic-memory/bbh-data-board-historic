@@ -26,7 +26,7 @@ Topic: `1795604353635` · SPEC: `spec.md` (draft → disetujui owner 2026-11-25)
 | WO-01 | Inventarisasi & pemetaan (read-only) | complete (lulus review; O-B disetujui) | — | (tanpa kode) | `38b9ee3` + review `cabe109` |
 | WO-02 | Migrasi inti: module rename + hapus internal/ + cmd ala template | complete (review Manager LULUS) | — | `e99477d` | `500a0eb` + review `cabe109`→terbaru |
 | WO-03 | Migrasi auth ke API instans (D-4) | complete (review Manager LULUS) | — | `c495e2c` | `e42314d` |
-| WO-04 | Verifikasi & dokumentasi + re-review WO multi-DB (D-5) | pending (SIAP — WO terakhir) | WO-03 | — | — |
+| WO-04 | Verifikasi & dokumentasi + re-review WO multi-DB (D-5) | complete (review Manager LULUS — topik TUNTAS) | — | `fafafd8` + `af73b4f` | `3490295` |
 
 Urutan eksekusi: WO-01 → WO-02 → WO-03 → WO-04 (linear; tidak ada yang bisa paralel karena semuanya menyentuh tree yang sama).
 
@@ -59,7 +59,19 @@ Urutan eksekusi: WO-01 → WO-02 → WO-03 → WO-04 (linear; tidak ada yang bis
 - Test 4/4 PASS (fail-closed ×2 + isolasi instance + legacy); runtime login root 200 via instance baru; token lama pre-change tetap valid; RBAC regression (viewer 200/403) lulus; CLI auth jalan.
 - **Temuan baru → WO-04**: gofmt debt 27 file pra-ada (sisa rewrite WO-02) → commit `style: gofmt` terpisah SEBELUM regen swagger.
 
-## Ringkasan per WO (rincian AC di file masing-masing)
+## Hasil WO-04 (2026-11-25, review Manager LULUS — kode `fafafd8`+`af73b4f`, dok `3490295`)
+
+- **Swagger re-baseline**: 141 paths/209 ops/248 defs (identik baseline, nol regresi), 0 sisa `rolldone` di definitions; regen di container; idempotent byte-identik.
+- **Housekeeping**: gofmt 27 file → `gofmt -l` = 0 (commit terpisah `fafafd8`); JWT env sudah 7200.
+- **Docs**: `.env.example` TRUSTED_PROXIES + APP_PORT diperjelas; README ekosistem/struktur tanpa internal; `DONISGO.md` banner USANG + koreksi internal/admin.
+- **Bruno**: smoke 13 req/36 test PASS; RBAC viewer 200/403; limited group dashboard 12/12; data uji dibersihkan.
+- **D-5 DITUTUP BEDA DARI RENCANA (temuan besar dev, verifikasi Manager)**: topic `1792765876397` **sudah di-destroy owner** (bukti SPEC federasi `1793013271539:14` — arah multi-DB terpusat dibatalkan, diganti federasi instance). Keputusan §E = **Opsi 3 (tunda) diterima**; gap A–E terdokumentasi di dok WO; draft issue upstream H-3 siap kirim.
+- Jebakan swag baru terdokumentasi: `analysis_apply.go` (blank-var + nama tipe baru), `record_write.go:181` (path lama). Gotcha Bruno: `{{process.env.BBH_TOKEN}}` tak terbaca bru 4.2.1 → wajib `--env-var token=...`.
+- **MIGRASI KE DONISGO v0.2.0 PURE LIBRARY SELESAI** — rekap kode: `e99477d` (inti 244 file), `c495e2c` (auth instans), `fafafd8` (gofmt), `af73b4f` (verifikasi/docs). Semua tanpa push.
+
+## Penutup Topik (Manager, 2026-11-25)
+
+MIGRASI TUNTAS — semua 4 WO complete & lulus review. Bukti akhir: `go.mod` = `github.com/AkasaTechDev/bbh-data-board` + `require donisgo v0.2.0`; nol import `donisgo/internal` di source; `internal/` + `plugins/plugin_registry/` terhapus; serving SPA via pages (varian A); `/healthz` plugin; migrate `--plugin core` aman (dir core kosong); auth instans fail-closed; swagger re-baseline; Bruno/RBAC hijau. **Keputusan owner pasca-topik (menunggu)**: (a) push 4 commit ke `origin/master`; (b) kirim draft issue H-3 ke `donisgo-template`; (c) konfirmasi close topic; (d) patch kecil Bruno env (opsional, tanpa WO).
 
 - **WO-01** — Tanpa perubahan kode. Output = tabel pemetaan terverifikasi + laporan divergensi (`plugin_registry`, `internal/admin`) + jawaban env port (`APP_PORT` vs `PORT` di sumber `app` v0.2.0) + baseline swagger/binari. Bila D-3 fail-loud terpicu → BERHENTI, lapor owner.
 - **WO-02** — Satu commit atomik: `go.mod` rename + `require donisgo v0.2.0`, rewrite ~104 import, hapus `internal/*` yang terganti, bootstrap `cmd/server` (registrasi 13 plugin eksplisit + `EnsurePluginLast(pages)`), `cmd/console` (`RegisterAdditionalPlugins` + generator `plugin new` dari template), hapus `internal/pluginloader`. Gates: build/vet/test, boot server, migrate idempotent, CLI plugin jalan, Bruno smoke.

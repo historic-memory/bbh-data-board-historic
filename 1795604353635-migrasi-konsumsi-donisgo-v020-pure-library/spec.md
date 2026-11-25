@@ -1,13 +1,18 @@
 ---
 title: spec
-description: "SPEC migrasi bbh-data-board dari monorepo donisgo (pra-v0.1.0, module github.com/rolldone/donisgo + internal/) menjadi aplikasi konsumen donisgo v0.2.0 pure library, bentuk sejajar donisgo-template."
-status: draft
+description: SPEC migrasi bbh-data-board dari monorepo donisgo (pra-v0.1.0, module github.com/rolldone/donisgo + internal/) menjadi aplikasi konsumen donisgo v0.2.0 pure library, bentuk sejajar donisgo-template.
+status: progress
 created: "2026-11-25"
 updated: "2026-11-25"
-tags: [donisgo, migrasi, module-rename, plugin, spec]
-related: ["1795604353635"]
+tags:
+    - donisgo
+    - migrasi
+    - module-rename
+    - plugin
+    - spec
+related:
+    - "1795604353635"
 ---
-
 # SPEC — Migrasi bbh-data-board ke donisgo v0.2.0 (pure library)
 
 ## Status

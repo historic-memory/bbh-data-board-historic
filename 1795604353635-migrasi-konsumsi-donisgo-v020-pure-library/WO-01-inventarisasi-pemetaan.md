@@ -1,7 +1,7 @@
 ---
 title: WO-01 — Inventarisasi & pemetaan (read-only)
 description: "Inventaris lengkap internal/* + pemetaan ke library donisgo v0.2.0, diff plugin_registry, cek env port, baseline swagger/binari. TANPA perubahan kode."
-status: progress
+status: complete
 created: "2026-11-25"
 updated: "2026-11-25"
 tags: [donisgo, migrasi, wo-01, read-only]
@@ -363,3 +363,4 @@ Penilaian AC: AC-1 ✅ (tabel 12 paket/31 file berbukti; temuan `mail` 0 importi
 Catatan review tambahan: laporan menyebut "route `/` homepage menangkap exact `/`" menyebabkan `TestProxyPath` merah — koreksi kecil: itu perilaku `homepage.html` WO-01 topic `1795505104037` yang **disengaja** (exact-`/` dilayani homepage, bukan proxy). Konsisten dengan H-7 (angka 104→55 dikoreksi WO-04).
 
 Status WO-01: **selesai dijalankan, lulus review; WO-02 tertahan keputusan O-B owner** (swap `plugin_registry` → library: kode identik, 0 importir, rekomendasi Manager = SETUJU swap).
+**KEPUTUSAN O-B (owner 2026-11-25): SETUJU.** Swap `plugins/plugin_registry` → paket library disetujui; dieksekusi di WO-02. **WO-01 COMPLETE** — semua AC lulus + 7 hazard diturunkan ke WO-02..04 (master index). Prasyarat WO-02 terpenuhi.

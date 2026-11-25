@@ -23,8 +23,8 @@ Topic: `1795604353635` · SPEC: `spec.md` (draft → disetujui owner 2026-11-25)
 
 | WO | Judul | Status | Prasyarat | Commit kode | Dok historic |
 |---|---|---|---|---|---|
-| WO-01 | Inventarisasi & pemetaan (read-only) | progress (lulus review; tunggu O-B) | — | (tanpa kode) | `38b9ee3` |
-| WO-02 | Migrasi inti: module rename + hapus internal/ + cmd ala template | pending | WO-01 + O-B | — | — |
+| WO-01 | Inventarisasi & pemetaan (read-only) | complete (lulus review; O-B disetujui) | — | (tanpa kode) | `38b9ee3` + review `cabe109` |
+| WO-02 | Migrasi inti: module rename + hapus internal/ + cmd ala template | pending (SIAP — prasyarat lulus) | — | — | — |
 | WO-03 | Migrasi auth ke API instans (D-4) | pending | WO-02 | — | — |
 | WO-04 | Verifikasi & dokumentasi + re-review WO multi-DB (D-5) | pending | WO-03 | — | — |
 
@@ -38,8 +38,8 @@ Urutan eksekusi: WO-01 → WO-02 → WO-03 → WO-04 (linear; tidak ada yang bis
 - AC-4: library hanya baca env **`PORT`** (via gin); compose sudah benar; tidak ada perubahan env.
 - WO-03 lingkup kecil: 5 call-site `auth` / 2 file, semua di plugin `auth`.
 - Baseline: swagger 141/209/248; build/vet OK; 1 test merah pre-existing (`TestProxyPath`, bukan regresi migrasi).
-- **BLOCKER O-B (keputusan owner)**: swap `plugins/plugin_registry` → library? (divergensi tekstual saja, kode identik, 0 importir — rekomendasi Manager: SETUJU).
-- **7 hazard utk WO-02..04**: H-1 default `migrate --plugin` `all`→`core` + tanpa dir `migrations/` (docs kena); **H-2 `/healthz` kehilangan rumah** (pindah ke plugin kecil/pages); **H-3 🔴 `EnsurePluginLast` setelah `app.New` TIDAK me-register route (pola README template bugged) → WO-02 wajib varian A (pages terakhir di `Config.Plugins`) atau B (pre-register)** + usulan issue upstream ke `donisgo-template` (WO-04); H-4 generator `plugin new` jadi `console/plugin.go` app; H-5 `TRUSTED_PROXIES` default trust-none (dampak nol, dokumentasikan); H-6 swagger re-baseline di container; H-7 koreksi 104→55.
+- **BLOCKER O-B (DISELESAIKAN, owner 2026-11-25: SETUJU)** — swap `plugins/plugin_registry` → library dieksekusi di WO-02.
+- **7 hazard utk WO-02..04**: H-1 default `migrate --plugin` `all`→`core` + tanpa dir `migrations/` → **solusi WO-02: buat `migrations/postgres/` kosong (.gitkeep) + koreksi docs**; **H-2 `/healthz` kehilangan rumah** → WO-02 pindah ke plugin kecil/pages (konsumen endpoint/federation/vite/client.ts tak boleh putus); **H-3 🔴 `EnsurePluginLast` setelah `app.New` TIDAK me-register route (pola README template bugged) → WO-02 WAJIB varian A (pages terakhir di `Config.Plugins`) atau B (pre-register sebelum New)** + usulan issue upstream ke `donisgo-template` (WO-04); H-4 generator `plugin new` jadi `console/plugin.go` app; H-5 `TRUSTED_PROXIES` default trust-none (dampak nol, dokumentasi WO-04); H-6 swagger re-baseline di container (WO-04); H-7 koreksi 104→55 di SPEC (WO-04). **WO-02 SIAP EKSEKUSI.**
 
 ## Ringkasan per WO (rincian AC di file masing-masing)
 

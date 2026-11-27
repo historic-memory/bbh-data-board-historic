@@ -1,7 +1,7 @@
 ---
 title: 'WO-02 — Halaman Cabang: tampil + enable/disable (frontend-only)'
 description: 'Halaman /endpoints di shell admin: daftar cabang (read-only) + toggle status active/suspended; TANPA create/edit/delete'
-status: planned
+status: progress
 created: "2026-11-27"
 updated: "2026-11-27"
 ---
@@ -28,7 +28,7 @@ updated: "2026-11-27"
 4. **Whitelist file (hanya 3):**
    - BARU `src/pages/admin/endpoints/EndpointListPage.tsx`
    - SENTUH `src/App.tsx` — tambah 1 route
-   - SENTUH `src/navigation/menu.tsx` — tambah 1 item menu
+   - SENTUH `src/navigation/menu.ts` — tambah 1 item menu (path aktual di repo; WO semula menulis `menu.tsx`)
 5. Guard izin mengikuti pola halaman lain: lihat `endpoint.read`, toggle hanya
    tampil aktif bila `endpoint.write` (pola `useAuth().hasPermission` seperti
    di halaman hsh/sec/warehouse).
@@ -75,10 +75,10 @@ updated: "2026-11-27"
 - `<Route path="/endpoints" element={<EndpointListPage />} />` di dalam grup
   admin ter-guard, konsisten urutan import/route yang ada.
 
-### T-3 `src/navigation/menu.tsx` (1 item)
+### T-3 `src/navigation/menu.ts` (1 item)
 
 - Tambah item "Cabang" → `/endpoints` pada group yang relevan — ikuti struktur
-  `menu.tsx` yang ada (tipe NavItem/NavGroup + mapping ikon yang dipakai
+  `menu.ts` yang ada (tipe NavItem/NavGroup + mapping ikon yang dipakai
   `AdminLayout.iconFor`); judul header otomatis mengikuti jika dipetakan.
 
 ## Acceptance criteria

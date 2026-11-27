@@ -1,7 +1,7 @@
 ---
 title: WO-01 — Integrasi portal ke dashboard admin (frontend-only)
 description: Switcher cabang + badge instance aktif di header AdminLayout, memakai helper client.ts yang sudah ada; /portal tetap debug harness
-status: progress
+status: review
 created: "2026-11-27"
 updated: "2026-11-27"
 ---

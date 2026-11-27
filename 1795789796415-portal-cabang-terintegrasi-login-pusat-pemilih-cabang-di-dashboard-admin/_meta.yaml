@@ -1,7 +1,7 @@
 id: "1795789796415"
 title: Portal Cabang Terintegrasi — login pusat & pemilih cabang di dashboard admin
 created: "2026-11-27"
-updated_at: "2026-11-27T22:12:51Z"
+updated_at: "2026-11-27T22:34:03Z"
 extends: "1793013271539"
 files:
     - id: 01a21d69-cbf0-7fe6-8ee5-7d464e6e9e71
@@ -17,10 +17,16 @@ files:
     - id: 01a21ef1-138e-7909-9226-72a27a413da8
       path: wo-02-halaman-cabang-view-toggle.md
       type: file
-      status: progress
-      updated_at: "2026-11-27T22:12:51Z"
+      status: complete
+      updated_at: "2026-11-27T22:34:03Z"
 assets:
     - path: assets/ac4-01-pending.png
       type: image
     - path: assets/ac4-02-active.png
+      type: image
+    - path: assets/wo02-ac4-toggle-disabled.png
+      type: image
+    - path: assets/wo02-ac6-tanpa-read-403.png
+      type: image
+    - path: assets/wo02-ac6-viewer-tanpa-toggle.png
       type: image

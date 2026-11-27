@@ -1,7 +1,7 @@
 ---
 title: WO-01 — Integrasi portal ke dashboard admin (frontend-only)
 description: Switcher cabang + badge instance aktif di header AdminLayout, memakai helper client.ts yang sudah ada; /portal tetap debug harness
-status: review
+status: complete
 created: "2026-11-27"
 updated: "2026-11-27"
 ---
@@ -241,6 +241,24 @@ Base URL: `http://100.125.175.34:8082/app` (pusat), cabang `:8101` jogja,
 - **AC-7 LULUS** — `npm run build` sukses (tsc -b + vite build, ±21s).
 - **AC-8 LULUS** — `git status --porcelain` hanya 3 entri whitelist
   (`AdminLayout.tsx`, `Portal.tsx`, folder `src/portal/`).
-- **AC-4 BELUM DIVERIFIKASI** — butuh akun pusat yang belum ter-enroll di
-  cabang (mis. `ops@bbh.dev`); kredensial tidak tersedia di
-  `.credentials/`. Menunggu keputusan owner.
+- **AC-4 LULUS** — diuji dengan akun pusat `tester@bbh.dev` yang belum
+  ter-enroll di cabang semarang (`:8102`):
+  1. Login pusat → dropdown → pilih **Semarang Baby Home** → probe
+     `GET /api/business/whoami` 403 → badge **kuning** amber
+     (`bg-emerald-*` tidak aktif, background `oklch(0.987 0.022 95.277)`)
+     dengan teks "Menunggu persetujuan admin cabang". Screenshot:
+     `assets/ac4-01-pending.png`.
+  2. Enrollment ter-auto-provision saat probe pertama:
+     `GET /api/admin/sso-enrollments` (admin cabang semarang) →
+     `{ id: 01a21f08-9b5e-7678-8fd9-ccdfc8231b08, email: tester@bbh.dev,
+     status: pending, origin: sso }`.
+  3. Approve via API cabang:
+     `POST /api/admin/sso-enrollments/01a21f08-.../approve` → **200**
+     `{"message":"approved"}`.
+  4. Kembali ke pusat → tombol **Cek Status** (`refreshStatus`) →
+     `whoami` 200 → badge berubah **hijau** (emerald,
+     `bg-emerald-50 text-emerald-700 ring-emerald-200`), pesan pending
+     hilang, dashboard terisi penuh. Screenshot:
+     `assets/ac4-02-active.png`.
+
+AC-1..AC-8 seluruhnya LULUS. WO-01 selesai.

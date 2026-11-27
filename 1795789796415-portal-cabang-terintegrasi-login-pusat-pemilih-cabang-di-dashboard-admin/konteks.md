@@ -1,7 +1,7 @@
 ---
 title: konteks
 description: Analisa alur portal saat ini + usulan integrasi login pusat & pemilih cabang ke dashboard admin (frontend-only)
-status: draft
+status: complete
 created: "2026-11-27"
 updated: "2026-11-27"
 ---

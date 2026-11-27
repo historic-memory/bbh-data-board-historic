@@ -1,7 +1,7 @@
 ---
 title: WO-01 — Integrasi portal ke dashboard admin (frontend-only)
 description: Switcher cabang + badge instance aktif di header AdminLayout, memakai helper client.ts yang sudah ada; /portal tetap debug harness
-status: planned
+status: progress
 created: "2026-11-27"
 updated: "2026-11-27"
 ---
@@ -157,3 +157,90 @@ updated: "2026-11-27"
   refresh browser; **tidak perlu** restart container/server.
 - Deployment lintas instance tidak diperlukan: fitur hanya UI pusat; cabang
   tidak butuh build baru (approve enrollment tetap via API cabang).
+
+## Catatan Implementasi (Dev)
+
+Bukti & alasan per berkas. Semua perubahan frontend-only; tidak ada perubahan
+Go/migrasi/api-tests dan tidak ada dependensi npm baru (AC-8).
+
+1. `sub_app/webapp/src/portal/PortalContext.tsx:141` — `PortalProvider`
+   memasang state machine portal (`idle|loading|active|pending|error`) tepat di
+   bawah `RequireAuth`, sehingga semua aksi token terpusat di satu tempat (T-1).
+2. `PortalContext.tsx:146` — status awal `loading` bila `getActiveEndpoint()`
+   dan `getPortalToken()` sudah ada. Tanpa ini badge sempat berkedip
+   "Pusat — BBH Data Board" setelah reload sebelum probe selesai.
+3. `PortalContext.tsx:173` — `probe()` hanya memanggil
+   `GET /api/business/whoami` lewat `apiPortal`, jadi header `X-Portal-Token`
+   dan `X-Branch-Endpoint` diurus `client.ts` (tidak ada header manual) — AC-3.
+4. `PortalContext.tsx:184` — 403 dengan body `pending` dipetakan ke status
+   `pending` + `PENDING_MESSAGE`, bukan dianggap error, agar AC-4 tampil kuning
+   tanpa toast merah.
+5. `PortalContext.tsx:196` — `enterPortal()` meminta token ke
+   `POST /api/admin/portal-token {audience}` lalu menyimpannya lewat
+   `setPortalSession()`; storage tidak disentuh bila permintaan gagal (T-1).
+6. `PortalContext.tsx:230` — `refreshStatus()` dipakai tombol "Cek Status";
+   tanpa sesi ia mereset ke `idle`, sehingga tidak ada probe tanpa token.
+7. `PortalContext.tsx:244` — `exitPortal()` memakai `clearPortalSession()`
+   (`portal_token` + `active_endpoint` dibuang, `main_token` utuh = AC-5) dan
+   menaikkan `requestRef` untuk membatalkan probe yang masih berjalan.
+8. `PortalContext.tsx:255` — effect mount memuat daftar cabang sekali dan
+   memulihkan sesi tersimpan dengan satu `probe`, sehingga reload tidak
+   memaksa user memilih cabang ulang.
+9. `PortalContext.tsx:267` — `branches` menyaring `is_local`, jadi instance
+   `local` tidak muncul sebagai pilihan cabang (AC-1).
+10. `sub_app/webapp/src/portal/EndpointSwitcher.tsx:91` — badge tombol dengan
+    `data-testid="endpoint-switcher"` + `aria-haspopup="menu"` supaya switcher
+    dapat diakses keyboard dan mudah diverifikasi otomatis (T-2, AC-1).
+11. `EndpointSwitcher.tsx:18` — peta warna per status (`active` hijau,
+    `pending` kuning, `error` merah, `loading/idle` netral) memberi umpan balik
+    visual status kepesertaan tanpa membuka halaman terpisah.
+12. `EndpointSwitcher.tsx:115` — teks badge (`active-endpoint-badge`)
+    "Pusat — BBH Data Board" / "<label> — cabang" agar instance aktif selalu
+    terbaca di header (D-13/D-14).
+13. `EndpointSwitcher.tsx:126` — pesan status (`portal-status`, `role="status"`)
+    memuat teks baku pending "Menunggu persetujuan admin cabang" (AC-4).
+14. `EndpointSwitcher.tsx:151` — daftar cabang dalam `max-h-80 overflow-y-auto`
+    supaya tetap ringkas bila jumlah cabang bertambah.
+15. `EndpointSwitcher.tsx:174` — setiap item memakai ikon `Building2`, baris
+    kedua `key · base_url`, dan `Check` pada cabang aktif; item aktif
+    di-`disabled` kecuali status `error` agar user bisa mencoba ulang.
+16. `EndpointSwitcher.tsx:220` — "Kembali ke Pusat" (`portal-exit`) didelegasikan
+    ke `exitPortal()`, bukan menghapus storage langsung (batas WO).
+17. `sub_app/webapp/src/layouts/AdminLayout.tsx:60` — `AdminLayout` membungkus
+    body lama (dipindah utuh ke `AdminLayoutContent`) dengan `PortalProvider`,
+    sehingga provider hidup di dalam shell admin dan state portal tidak bocor
+    ke halaman publik (T-3).
+18. `AdminLayout.tsx:184` — `<EndpointSwitcher />` ditempatkan di kanan header
+    (setelah judul + ikon), tanpa mengubah sidebar/menu/footer.
+19. `sub_app/webapp/src/pages/Portal.tsx:140` — halaman debug harness dirapikan
+    memakai `Card`/`Button`/`Badge`/`Input` (container `max-w-5xl`) agar tidak
+    lagi tampil sebagai HTML polos; logika, `data-testid`, dan teks log tidak
+    berubah sehingga AC-6 regresi nol.
+20. `Portal.tsx:290` — snapshot tetap satu blok `data-testid="snapshot"`
+    berisi `value-main_token`, `value-portal_token`, `value-active_endpoint`
+    (dipakai verifikasi AC-2/AC-5); `data-testid="log"` di `Portal.tsx:325`
+    tetap `<pre>` berisi baris log apa adanya.
+
+### Hasil verifikasi (lingkungan Tailscale)
+
+Base URL: `http://100.125.175.34:8082/app` (pusat), cabang `:8101` jogja,
+`:8102` semarang, `:8103` lombok, `:8104` java-children.
+
+- **AC-1 LULUS** — login `root@admin.local`; dropdown memuat 4 cabang non-local
+  (Java Children, Jogja, Lombok, Semarang) tanpa reload.
+- **AC-2 LULUS** — pilih Jogja → badge "Jogja Baby Home — cabang";
+  `/app/portal` snapshot: `main_token=ADA`, `portal_token=ADA`,
+  `active_endpoint=jogja`.
+- **AC-3 LULUS** — `GET /api/business/whoami` membawa
+  `X-Portal-Token` (287 char) dan `X-Branch-Endpoint: jogja`.
+- **AC-5 LULUS** — "Kembali ke Pusat" → badge "Pusat — BBH Data Board";
+  snapshot `portal_token=KOSONG`, `active_endpoint=KOSONG`, `main_token=ADA`.
+- **AC-6 LULUS** — alur `/app/portal` (login → masuk portal → whoami) tetap
+  menghasilkan log identik: `endpoints: 5`, `login OK (main_token disimpan)`,
+  `masuk portal "jogja" OK (portal_token disimpan)`, `whoami OK: {...}`.
+- **AC-7 LULUS** — `npm run build` sukses (tsc -b + vite build, ±21s).
+- **AC-8 LULUS** — `git status --porcelain` hanya 3 entri whitelist
+  (`AdminLayout.tsx`, `Portal.tsx`, folder `src/portal/`).
+- **AC-4 BELUM DIVERIFIKASI** — butuh akun pusat yang belum ter-enroll di
+  cabang (mis. `ops@bbh.dev`); kredensial tidak tersedia di
+  `.credentials/`. Menunggu keputusan owner.
